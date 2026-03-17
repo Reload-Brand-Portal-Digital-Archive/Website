@@ -53,18 +53,24 @@ function NavbarSkeleton() {
         {user ? (
           <div className="hidden md:flex items-center gap-4">
             {user.role === 'admin' && (
-              <Button asChild variant="outline" className="rounded-none border-zinc-500 text-zinc-300 bg-transparent hover:bg-zinc-800 hover:text-white transition-colors h-9 px-4 text-xs tracking-widest uppercase">
-                <Link to="/admin/dashboard">Admin Panel</Link>
-              </Button>
+              <Link 
+                to="/admin/dashboard" 
+                className="inline-flex items-center justify-center rounded-none border border-zinc-500 text-zinc-300 bg-transparent hover:bg-zinc-800 hover:text-white transition-colors h-9 px-4 text-xs tracking-widest uppercase cursor-pointer"
+              >
+                Admin Panel
+              </Link>
             )}
             <Button onClick={handleLogout} variant="ghost" className="text-zinc-400 hover:text-red-500 hover:bg-transparent transition-colors uppercase tracking-widest text-xs">
               [ Logout ]
             </Button>
           </div>
         ) : (
-          <Button asChild variant="outline" className="hidden md:inline-flex rounded-full border-white/70 bg-transparent text-white hover:bg-white/10 hover:text-white transition-colors h-9 px-6 text-sm font-normal">
-            <Link to="/login">Login</Link>
-          </Button>
+          <Link 
+            to="/login"
+            className="hidden md:inline-flex items-center justify-center rounded-full border border-white/70 bg-transparent text-white hover:bg-white/10 hover:text-white transition-colors h-9 px-6 text-sm font-normal cursor-pointer"
+          >
+            Login
+          </Link>
         )}
         <Button variant="outline" className="hidden md:inline-flex rounded-full border-white/70 bg-transparent text-white hover:bg-white/10 hover:text-white transition-colors h-9 px-6 text-sm font-normal">
           Shop Now
@@ -86,12 +92,12 @@ function NavbarSkeleton() {
               {user ? (
                 <>
                   {user.role === 'admin' && (
-                    <Link to="/admin/dashboard" className="text-left text-zinc-400 hover:text-white transition-colors">Admin Panel</Link>
+                    <Link to="/admin/dashboard" className="block w-full text-left py-2 text-zinc-400 hover:text-white transition-colors">Admin Panel</Link>
                   )}
-                  <button onClick={handleLogout} className="text-left text-red-500 hover:text-red-400 transition-colors">Logout</button>
+                  <button onClick={handleLogout} className="block w-full text-left py-2 text-red-500 hover:text-red-400 transition-colors">Logout</button>
                 </>
               ) : (
-                <Link to="/login" className="text-left text-zinc-400 hover:text-white transition-colors">Login / Register</Link>
+                <Link to="/login" className="block w-full text-left py-2 text-zinc-400 hover:text-white transition-colors">Login / Register</Link>
               )}
             </div>
           </SheetContent>
