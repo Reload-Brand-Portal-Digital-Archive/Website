@@ -6,11 +6,19 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
+import { useNavigate, Link } from "react-router-dom"
 
 function NavbarSkeleton() {
   const [scrolled, setScrolled] = useState(false)
+  const [user, setUser] = useState(null)
+  const navigate = useNavigate()
 
   useEffect(() => {
+    const loggedInUser = localStorage.getItem('user')
+    if (loggedInUser) {
+      setUser(JSON.parse(loggedInUser))
+    }
+
     const handleScroll = () => {
       setScrolled(window.scrollY > 50)
     }
@@ -18,16 +26,22 @@ function NavbarSkeleton() {
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
+  const handleLogout = () => {
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    setUser(null)
+    navigate('/')
+  }
+
   return (
-    <nav 
-      className={`fixed top-0 w-full z-50 flex items-center justify-between px-4 py-6 md:px-12 text-zinc-50 transition-all duration-300 ${
-        scrolled ? "bg-zinc-950/80 backdrop-blur-md" : "bg-transparent"
-      }`}
+    <nav
+      className={`fixed top-0 w-full z-50 flex items-center justify-between px-4 py-6 md:px-12 text-zinc-50 transition-all duration-300 ${scrolled ? "bg-zinc-950/80 backdrop-blur-md" : "bg-transparent"
+        }`}
     >
       <div className="font-['Outfit'] font-bold text-xl md:text-2xl tracking-widest leading-none">
         RELOAD
       </div>
-      
+
       <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 gap-8 text-sm font-normal">
         <button className="hover:text-zinc-300 transition-colors">Collections</button>
         <button className="hover:text-zinc-300 transition-colors">Shop</button>
@@ -36,6 +50,22 @@ function NavbarSkeleton() {
       </div>
 
       <div className="flex items-center gap-4">
+        {user ? (
+          <div className="hidden md:flex items-center gap-4">
+            {user.role === 'admin' && (
+              <Button asChild variant="outline" className="rounded-none border-zinc-500 text-zinc-300 bg-transparent hover:bg-zinc-800 hover:text-white transition-colors h-9 px-4 text-xs tracking-widest uppercase">
+                <Link to="/admin/dashboard">Admin Panel</Link>
+              </Button>
+            )}
+            <Button onClick={handleLogout} variant="ghost" className="text-zinc-400 hover:text-red-500 hover:bg-transparent transition-colors uppercase tracking-widest text-xs">
+              [ Logout ]
+            </Button>
+          </div>
+        ) : (
+          <Button asChild variant="outline" className="hidden md:inline-flex rounded-full border-white/70 bg-transparent text-white hover:bg-white/10 hover:text-white transition-colors h-9 px-6 text-sm font-normal">
+            <Link to="/login">Login</Link>
+          </Button>
+        )}
         <Button variant="outline" className="hidden md:inline-flex rounded-full border-white/70 bg-transparent text-white hover:bg-white/10 hover:text-white transition-colors h-9 px-6 text-sm font-normal">
           Shop Now
         </Button>
@@ -52,6 +82,17 @@ function NavbarSkeleton() {
               <button className="text-left hover:text-zinc-300 transition-colors">Shop</button>
               <button className="text-left hover:text-zinc-300 transition-colors">Contact</button>
               <button className="text-left hover:text-zinc-300 transition-colors">About</button>
+              <Separator className="bg-zinc-800 my-4" />
+              {user ? (
+                <>
+                  {user.role === 'admin' && (
+                    <Link to="/admin/dashboard" className="text-left text-zinc-400 hover:text-white transition-colors">Admin Panel</Link>
+                  )}
+                  <button onClick={handleLogout} className="text-left text-red-500 hover:text-red-400 transition-colors">Logout</button>
+                </>
+              ) : (
+                <Link to="/login" className="text-left text-zinc-400 hover:text-white transition-colors">Login / Register</Link>
+              )}
             </div>
           </SheetContent>
         </Sheet>
@@ -68,13 +109,13 @@ function HeroSkeleton() {
         Left-aligned giant typography, right side raw image/video setup.
       */}
       <div className="order-2 md:order-1 col-span-1 md:col-span-5 flex flex-col gap-6">
-         {/* TODO: Add typography stagger reveal variants */}
-         <h1 className="text-6xl md:text-[8vw] text-zinc-50 font-sans font-bold leading-none tracking-tighter uppercase whitespace-pre-line">
-           Embrace{`\n`}The Decay.
-         </h1>
-         <p className="text-base text-zinc-400 max-w-[40ch] leading-relaxed">
-           Limited edition drops bridging the gap between digital brutalism and physical streetwear. 
-         </p>
+        {/* TODO: Add typography stagger reveal variants */}
+        <h1 className="text-6xl md:text-[8vw] text-zinc-50 font-sans font-bold leading-none tracking-tighter uppercase whitespace-pre-line">
+          Embrace{`\n`}The Decay.
+        </h1>
+        <p className="text-base text-zinc-400 max-w-[40ch] leading-relaxed">
+          Limited edition drops bridging the gap between digital brutalism and physical streetwear.
+        </p>
       </div>
 
       <div className="order-1 md:order-2 col-span-1 md:col-span-7 h-[50vh] md:h-full w-full bg-zinc-900 border border-zinc-800 flex items-center justify-center relative overflow-hidden">
@@ -91,46 +132,46 @@ function FeaturedCollectionsSkeleton() {
       <h2 className="text-4xl md:text-[5vw] font-bold leading-none tracking-tighter uppercase mb-16 md:mb-24">
         Archive // 01
       </h2>
-      
+
       {/* Rule Check: Masonry/Asymmetric UI, w-full fallback on mobile */}
       <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr] gap-4 md:gap-8">
-        
+
         {/* Main large collection card */}
         <Card className="group relative aspect-square md:aspect-[4/3] w-full bg-zinc-900 border-zinc-800 rounded-none overflow-hidden text-zinc-50">
-           <CardContent className="h-full flex flex-col justify-between p-8">
-             <div className="z-10 flex justify-between items-start">
-               <span className="text-xs font-mono text-zinc-400">[ FV-01 ]</span>
-               <Badge variant="outline" className="border-zinc-500 text-zinc-300 uppercase tracking-widest rounded-none text-[10px]">Limited Edition</Badge>
-             </div>
-             <div className="z-10">
-               <h3 className="text-2xl font-bold uppercase tracking-tight">Null Protocol</h3>
-               <p className="text-sm text-zinc-400 mt-2">Available Now</p>
-             </div>
-           </CardContent>
+          <CardContent className="h-full flex flex-col justify-between p-8">
+            <div className="z-10 flex justify-between items-start">
+              <span className="text-xs font-mono text-zinc-400">[ FV-01 ]</span>
+              <Badge variant="outline" className="border-zinc-500 text-zinc-300 uppercase tracking-widest rounded-none text-[10px]">Limited Edition</Badge>
+            </div>
+            <div className="z-10">
+              <h3 className="text-2xl font-bold uppercase tracking-tight">Null Protocol</h3>
+              <p className="text-sm text-zinc-400 mt-2">Available Now</p>
+            </div>
+          </CardContent>
         </Card>
 
         {/* Smaller side cards */}
         <Card className="group relative aspect-square w-full bg-zinc-900 border-zinc-800 rounded-none text-zinc-50">
-           <CardContent className="h-full flex flex-col justify-between p-8">
-             <div className="z-10 flex justify-between items-start">
-               <span className="text-xs font-mono text-zinc-400">[ FV-02 ]</span>
-             </div>
-             <div className="z-10">
-               <h3 className="text-xl font-bold uppercase tracking-tight">Core Dump</h3>
-             </div>
-           </CardContent>
+          <CardContent className="h-full flex flex-col justify-between p-8">
+            <div className="z-10 flex justify-between items-start">
+              <span className="text-xs font-mono text-zinc-400">[ FV-02 ]</span>
+            </div>
+            <div className="z-10">
+              <h3 className="text-xl font-bold uppercase tracking-tight">Core Dump</h3>
+            </div>
+          </CardContent>
         </Card>
 
         <Card className="group relative aspect-square w-full bg-zinc-900 border-zinc-800 rounded-none text-zinc-50">
-           <CardContent className="h-full flex flex-col justify-between p-8">
-             <div className="z-10 flex justify-between items-start">
-               <span className="text-xs font-mono text-zinc-400">[ FV-03 ]</span>
-               <Badge variant="destructive" className="uppercase tracking-widest rounded-none text-[10px]">Sold Out</Badge>
-             </div>
-             <div className="z-10">
-               <h3 className="text-xl font-bold uppercase tracking-tight">Syntax Error</h3>
-             </div>
-           </CardContent>
+          <CardContent className="h-full flex flex-col justify-between p-8">
+            <div className="z-10 flex justify-between items-start">
+              <span className="text-xs font-mono text-zinc-400">[ FV-03 ]</span>
+              <Badge variant="destructive" className="uppercase tracking-widest rounded-none text-[10px]">Sold Out</Badge>
+            </div>
+            <div className="z-10">
+              <h3 className="text-xl font-bold uppercase tracking-tight">Syntax Error</h3>
+            </div>
+          </CardContent>
         </Card>
 
       </div>
@@ -181,9 +222,9 @@ function NewsletterSkeleton() {
           <div className="relative w-full">
             {/* TODO: Setup custom fluid states, Liquid glass push on submit */}
             <div className="flex items-center border-b border-zinc-700 focus-within:border-zinc-50 transition-colors">
-              <Input 
-                type="email" 
-                placeholder="ENTER EMAIL ADDRESS_" 
+              <Input
+                type="email"
+                placeholder="ENTER EMAIL ADDRESS_"
                 className="w-full bg-transparent border-0 py-6 text-zinc-50 font-mono text-sm uppercase placeholder:text-zinc-600 focus-visible:ring-0 focus-visible:ring-offset-0 px-0 rounded-none h-auto"
               />
               <Button type="button" variant="ghost" className="text-xs font-bold tracking-[0.2em] text-zinc-400 hover:text-zinc-50 hover:bg-transparent uppercase px-0 h-auto">
