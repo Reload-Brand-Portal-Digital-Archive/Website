@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { GoogleLogin } from '@react-oauth/google';
+// eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
 

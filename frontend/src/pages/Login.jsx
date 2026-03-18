@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { GoogleLogin } from '@react-oauth/google';
+// eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
 
@@ -10,6 +11,8 @@ export default function Login() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+    const location = useLocation();
+    const fromPath = location.state?.from || '/';
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -94,7 +97,7 @@ export default function Login() {
                 className="relative z-10 w-full max-w-[420px] pt-12 pb-16 px-8 md:px-12 bg-zinc-950/40 backdrop-blur-2xl border border-white/10 shadow-[0_0_40px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.05)]"
             >
                 {/* Close Button */}
-                <Link to="/" className="absolute top-6 right-6 text-zinc-500 hover:text-zinc-50 transition-colors">
+                <Link to={fromPath} className="absolute top-6 right-6 text-zinc-500 hover:text-zinc-50 transition-colors">
                     <X className="w-5 h-5 stroke-[1.5]" />
                     <span className="sr-only">Close</span>
                 </Link>
