@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { GoogleLogin } from '@react-oauth/google';
+// eslint-disable-next-line no-unused-vars
+import { motion } from 'framer-motion';
+import { X } from 'lucide-react';
 
 export default function Register() {
     const [formData, setFormData] = useState({ name: '', email: '', password: '' });
@@ -20,10 +23,10 @@ export default function Register() {
 
         try {
             await axios.post('http://localhost:5000/api/auth/register', formData);
-            alert('Registrasi berhasil! Silakan login.');
+            alert('Registration successful! Please sign in.');
             navigate('/login');
         } catch (err) {
-            setError(err.response?.data?.message || 'Terjadi kesalahan saat registrasi');
+            setError(err.response?.data?.message || 'Registration failed');
         } finally {
             setLoading(false);
         }
@@ -44,63 +47,148 @@ export default function Register() {
                 navigate('/');
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Register dengan Google gagal');
+            setError(err.response?.data?.message || 'Google registration failed');
+        }
+    };
+
+    // Stagger container for the motion reveal
+    const containerVariants = {
+        hidden: { opacity: 0 },
+        show: {
+            opacity: 1,
+            transition: {
+                staggerChildren: 0.1,
+                delayChildren: 0.1,
+            }
+        }
+    };
+
+    const itemVariants = {
+        hidden: { opacity: 0, y: 15 },
+        show: { 
+            opacity: 1, 
+            y: 0,
+            transition: {
+                type: "spring",
+                stiffness: 100,
+                damping: 20
+            }
         }
     };
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-zinc-950 px-4">
-            <div className="w-full max-w-md bg-zinc-900 p-8 rounded-lg shadow-xl border border-zinc-800">
-                <h2 className="text-3xl font-bold text-white text-center mb-6 tracking-wider">RELOAD <span className="text-red-600">DISTRO</span></h2>
-                <h3 className="text-xl text-zinc-400 text-center mb-8">Buat Akun Baru</h3>
+        <main className="relative flex items-center justify-center min-h-[100dvh] bg-zinc-950 px-4 py-8 font-sans selection:bg-zinc-50 selection:text-zinc-950 overflow-hidden">
+            {/* Minimal background noise/grain */}
+            <div className="absolute inset-0 z-0 pointer-events-none opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
 
-                {error && <div className="bg-red-500/10 border border-red-500 text-red-500 p-3 rounded mb-4 text-sm text-center">{error}</div>}
+            <motion.div 
+                variants={containerVariants}
+                initial="hidden"
+                animate="show"
+                className="relative z-10 w-full max-w-[420px] pt-12 pb-16 px-8 md:px-12 bg-zinc-950/40 backdrop-blur-2xl border border-white/10 shadow-[0_0_40px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.05)]"
+            >
+                {/* Close Button */}
+                <Link to="/" className="absolute top-6 right-6 text-zinc-500 hover:text-zinc-50 transition-colors">
+                    <X className="w-5 h-5 stroke-[1.5]" />
+                    <span className="sr-only">Close</span>
+                </Link>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label className="block text-zinc-400 text-sm font-bold mb-2">Nama Lengkap</label>
-                        <input type="text" name="name" onChange={handleChange} required
-                            className="w-full px-3 py-2 bg-zinc-800 text-white border border-zinc-700 rounded focus:outline-none focus:border-red-500 transition-colors"
-                            placeholder="Masukkan nama lengkap Anda" />
+                <motion.div variants={itemVariants} className="mb-12">
+                    <div className="flex items-center gap-4 mb-2">
+                        <span className="text-zinc-50 font-sans font-bold text-xl tracking-widest leading-none">RELOAD</span>
                     </div>
-                    <div>
-                        <label className="block text-zinc-400 text-sm font-bold mb-2">Email</label>
-                        <input type="email" name="email" onChange={handleChange} required
-                            className="w-full px-3 py-2 bg-zinc-800 text-white border border-zinc-700 rounded focus:outline-none focus:border-red-500 transition-colors"
-                            placeholder="Masukkan email Anda" />
+                    <h2 className="text-3xl md:text-4xl font-bold text-zinc-50 tracking-tighter uppercase leading-none mt-8">
+                        Join The <br className="hidden sm:block" />Network
+                    </h2>
+                    <p className="text-sm text-zinc-400 mt-4 leading-relaxed max-w-[30ch]">
+                        Create your account to access exclusive drops.
+                    </p>
+                </motion.div>
+
+                {error && (
+                    <motion.div 
+                        initial={{ opacity: 0, height: 0 }} 
+                        animate={{ opacity: 1, height: 'auto' }} 
+                        className="bg-red-950/30 border border-red-900/50 text-red-500 p-4 rounded-none mb-8 text-xs font-mono uppercase tracking-widest text-center"
+                    >
+                        {error}
+                    </motion.div>
+                )}
+
+                <motion.form variants={itemVariants} onSubmit={handleSubmit} className="space-y-6">
+                    <div className="space-y-2">
+                        <label className="block text-zinc-400 text-xs font-mono uppercase tracking-[0.1em]">Full Name</label>
+                        <input 
+                            type="text" 
+                            name="name" 
+                            onChange={handleChange} 
+                            required
+                            className="w-full bg-transparent border-0 border-b border-zinc-700 py-3 text-zinc-50 font-mono text-sm uppercase placeholder:text-zinc-600 focus:outline-none focus:border-zinc-50 focus:ring-0 px-0 rounded-none transition-colors"
+                            placeholder="YOUR FULL NAME" 
+                        />
                     </div>
-                    <div>
-                        <label className="block text-zinc-400 text-sm font-bold mb-2">Password</label>
-                        <input type="password" name="password" onChange={handleChange} required
-                            className="w-full px-3 py-2 bg-zinc-800 text-white border border-zinc-700 rounded focus:outline-none focus:border-red-500 transition-colors"
-                            placeholder="Masukkan password Anda" />
+                    
+                    <div className="space-y-2">
+                        <label className="block text-zinc-400 text-xs font-mono uppercase tracking-[0.1em]">Email</label>
+                        <input 
+                            type="email" 
+                            name="email" 
+                            onChange={handleChange} 
+                            required
+                            className="w-full bg-transparent border-0 border-b border-zinc-700 py-3 text-zinc-50 font-mono text-sm uppercase placeholder:text-zinc-600 focus:outline-none focus:border-zinc-50 focus:ring-0 px-0 rounded-none transition-colors"
+                            placeholder="YOUR@EMAIL.COM" 
+                        />
                     </div>
-                    <button type="submit" disabled={loading}
-                        className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded focus:outline-none transition-colors mt-4">
-                        {loading ? 'Memproses...' : 'Daftar Sekarang'}
-                    </button>
-                </form>
 
-                <div className="my-6 flex items-center justify-center">
-                    <span className="w-1/5 border-b border-zinc-700"></span>
-                    <span className="text-xs text-zinc-500 uppercase px-2">Atau masuk dengan</span>
-                    <span className="w-1/5 border-b border-zinc-700"></span>
-                </div>
+                    <div className="space-y-2">
+                        <label className="block text-zinc-400 text-xs font-mono uppercase tracking-[0.1em]">Password</label>
+                        <input 
+                            type="password" 
+                            name="password" 
+                            onChange={handleChange} 
+                            required
+                            className="w-full bg-transparent border-0 border-b border-zinc-700 py-3 text-zinc-50 font-mono text-sm uppercase placeholder:text-zinc-600 focus:outline-none focus:border-zinc-50 focus:ring-0 px-0 rounded-none transition-colors"
+                            placeholder="••••••••" 
+                        />
+                    </div>
 
-                <div className="flex justify-center">
-                    <GoogleLogin
-                        onSuccess={handleGoogleSuccess}
-                        onError={() => setError('Google Register dibatalkan.')}
-                        theme="filled_black"
-                        shape="rectangular"
-                        text="signup_with"
-                    />
-                </div>
+                    <motion.button 
+                        whileHover={{ scale: 0.98 }}
+                        whileTap={{ scale: 0.95 }}
+                        type="submit" 
+                        disabled={loading}
+                        className="w-full bg-zinc-50 text-zinc-950 font-bold uppercase text-sm tracking-widest hover:bg-zinc-200 transition-colors rounded-none h-14 px-8 mt-6 flex items-center justify-center"
+                    >
+                        {loading ? 'Processing...' : 'Create Account'}
+                    </motion.button>
+                </motion.form>
 
-                <p className="text-center text-zinc-400 mt-6 text-sm">
-                    Sudah punya akun? <Link to="/login" className="text-red-500 hover:text-red-400">Login di sini</Link>
-                </p>
-            </div>
-        </div>
+                <motion.div variants={itemVariants} className="my-10 flex items-center justify-center gap-4">
+                    <span className="flex-1 border-b border-zinc-800"></span>
+                    <span className="text-[10px] text-zinc-500 font-mono uppercase tracking-widest">Or register with</span>
+                    <span className="flex-1 border-b border-zinc-800"></span>
+                </motion.div>
+
+                <motion.div variants={itemVariants} className="flex justify-center w-full [&>div]:w-full">
+                    <div className="flex justify-center w-full">
+                        <GoogleLogin
+                            onSuccess={handleGoogleSuccess}
+                            onError={() => setError('Google registration failed.')}
+                            theme="filled_black"
+                            shape="rectangular"
+                            text="signup_with"
+                            width="100%"
+                        />
+                    </div>
+                </motion.div>
+
+                <motion.p variants={itemVariants} className="text-center text-zinc-500 mt-10 text-xs font-mono uppercase tracking-widest">
+                    Already an entity?{' '}
+                    <Link to="/login" className="text-zinc-300 hover:text-zinc-50 transition-colors">
+                        Sign in
+                    </Link>
+                </motion.p>
+            </motion.div>
+        </main>
     );
 }

@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-unused-vars
 import React, { useState, useEffect } from "react"
 import { Menu } from "lucide-react"
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet"
@@ -6,100 +7,9 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
+// eslint-disable-next-line no-unused-vars
 import { useNavigate, Link } from "react-router-dom"
-
-function NavbarSkeleton() {
-  const [scrolled, setScrolled] = useState(false)
-  const [user, setUser] = useState(null)
-  const navigate = useNavigate()
-
-  useEffect(() => {
-    const loggedInUser = localStorage.getItem('user')
-    if (loggedInUser) {
-      setUser(JSON.parse(loggedInUser))
-    }
-
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 50)
-    }
-    window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
-  }, [])
-
-  const handleLogout = () => {
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
-    setUser(null)
-    navigate('/')
-  }
-
-  return (
-    <nav
-      className={`fixed top-0 w-full z-50 flex items-center justify-between px-4 py-6 md:px-12 text-zinc-50 transition-all duration-300 ${scrolled ? "bg-zinc-950/80 backdrop-blur-md" : "bg-transparent"
-        }`}
-    >
-      <div className="font-['Outfit'] font-bold text-xl md:text-2xl tracking-widest leading-none">
-        RELOAD
-      </div>
-
-      <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 gap-8 text-sm font-normal">
-        <button className="hover:text-zinc-300 transition-colors">Collections</button>
-        <button className="hover:text-zinc-300 transition-colors">Shop</button>
-        <button className="hover:text-zinc-300 transition-colors">Contact</button>
-        <button className="hover:text-zinc-300 transition-colors">About</button>
-      </div>
-
-      <div className="flex items-center gap-4">
-        {user ? (
-          <div className="hidden md:flex items-center gap-4">
-            {user.role === 'admin' && (
-              <Button asChild variant="outline" className="rounded-none border-zinc-500 text-zinc-300 bg-transparent hover:bg-zinc-800 hover:text-white transition-colors h-9 px-4 text-xs tracking-widest uppercase">
-                <Link to="/admin/dashboard">Admin Panel</Link>
-              </Button>
-            )}
-            <Button onClick={handleLogout} variant="ghost" className="text-zinc-400 hover:text-red-500 hover:bg-transparent transition-colors uppercase tracking-widest text-xs">
-              [ Logout ]
-            </Button>
-          </div>
-        ) : (
-          <Button asChild variant="outline" className="hidden md:inline-flex rounded-full border-white/70 bg-transparent text-white hover:bg-white/10 hover:text-white transition-colors h-9 px-6 text-sm font-normal">
-            <Link to="/login">Login</Link>
-          </Button>
-        )}
-        <Button variant="outline" className="hidden md:inline-flex rounded-full border-white/70 bg-transparent text-white hover:bg-white/10 hover:text-white transition-colors h-9 px-6 text-sm font-normal">
-          Shop Now
-        </Button>
-        <Sheet>
-          <SheetTrigger asChild>
-            <button className="md:hidden p-2 text-zinc-50 hover:text-zinc-300 transition-colors">
-              <Menu className="w-6 h-6" />
-            </button>
-          </SheetTrigger>
-          <SheetContent side="right" className="bg-zinc-950 border-zinc-800 text-zinc-50 p-6 z-[100]">
-            <SheetTitle className="sr-only">Mobile Menu</SheetTitle>
-            <div className="flex flex-col gap-8 mt-12 text-sm uppercase tracking-widest font-sans">
-              <button className="text-left hover:text-zinc-300 transition-colors">Collections</button>
-              <button className="text-left hover:text-zinc-300 transition-colors">Shop</button>
-              <button className="text-left hover:text-zinc-300 transition-colors">Contact</button>
-              <button className="text-left hover:text-zinc-300 transition-colors">About</button>
-              <Separator className="bg-zinc-800 my-4" />
-              {user ? (
-                <>
-                  {user.role === 'admin' && (
-                    <Link to="/admin/dashboard" className="text-left text-zinc-400 hover:text-white transition-colors">Admin Panel</Link>
-                  )}
-                  <button onClick={handleLogout} className="text-left text-red-500 hover:text-red-400 transition-colors">Logout</button>
-                </>
-              ) : (
-                <Link to="/login" className="text-left text-zinc-400 hover:text-white transition-colors">Login / Register</Link>
-              )}
-            </div>
-          </SheetContent>
-        </Sheet>
-      </div>
-    </nav>
-  )
-}
+import Navbar from "../components/ui/Navbar"
 
 function HeroSkeleton() {
   return (
@@ -274,13 +184,13 @@ function FooterSkeleton() {
 
 export default function LandingPage() {
   return (
-    <main className="w-full min-h-screen bg-zinc-950 font-sans selection:bg-zinc-50 selection:text-zinc-950">
-      <NavbarSkeleton />
+    <div className="min-h-screen bg-zinc-950 text-zinc-50 font-sans cursor-default selection:bg-white selection:text-black">
+      <Navbar />
       <HeroSkeleton />
       <FeaturedCollectionsSkeleton />
       <ShopCTASkeleton />
       <NewsletterSkeleton />
       <FooterSkeleton />
-    </main>
+    </div>
   )
 }
