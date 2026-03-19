@@ -10,8 +10,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 const authRoutes = require('./routes/authRoutes');
+const collectionRoutes = require('./routes/collectionRoutes');
 
 app.use('/api/auth', authRoutes);
+app.use('/api/collections', collectionRoutes);
 
 app.get('/', (req, res) => {
     res.json({ message: "Welcome to RELOAD API" });
