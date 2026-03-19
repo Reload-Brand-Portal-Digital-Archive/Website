@@ -5,6 +5,10 @@ import LandingPage from "./pages/LandingPage"
 import AdminDashboard from './pages/AdminDashboard';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import Collections from './pages/Collections';
+import CollectionDetail from './pages/CollectionDetail';
+import Shop from './pages/Shop';
+import ShopDetail from './pages/ShopDetail';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -12,6 +16,10 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/collections" element={<Collections />} />
+        <Route path="/collections/:slug" element={<CollectionDetail />} />
+        <Route path="/shop" element={<Shop />} />
+        <Route path="/shop/:slug" element={<ShopDetail />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
