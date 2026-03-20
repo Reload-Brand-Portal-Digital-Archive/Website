@@ -1,3 +1,7 @@
 node_modules/
 .env
 .DS_Store
+
+# Ignore uploaded cover images but keep the directory tracked
+frontend/src/assets/collections/*
+!frontend/src/assets/collections/.gitkeep
