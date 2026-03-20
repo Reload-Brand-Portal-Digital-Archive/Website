@@ -5,6 +5,7 @@ import { GoogleLogin } from '@react-oauth/google';
 // eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
+import { notify } from '../lib/toast';
 
 export default function Register() {
     const [formData, setFormData] = useState({ name: '', email: '', password: '' });
@@ -23,10 +24,12 @@ export default function Register() {
 
         try {
             await axios.post('http://localhost:5000/api/auth/register', formData);
-            alert('Registration successful! Please sign in.');
-            navigate('/login');
+            notify.success('Registration successful! Redirecting to login...');
+            setTimeout(() => navigate('/login'), 1500);
         } catch (err) {
-            setError(err.response?.data?.message || 'Registration failed');
+            const errorMessage = err.response?.data?.message || 'Registration failed';
+            setError(errorMessage);
+            notify.error(errorMessage);
         } finally {
             setLoading(false);
         }
@@ -41,13 +44,17 @@ export default function Register() {
             localStorage.setItem('token', response.data.token);
             localStorage.setItem('user', JSON.stringify(response.data.user));
 
+            notify.success('Google registration successful! Redirecting...');
+
             if (response.data.user.role === 'admin') {
                 navigate('/admin/dashboard');
             } else {
                 navigate('/');
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Google registration failed');
+            const errorMessage = err.response?.data?.message || 'Google registration failed';
+            setError(errorMessage);
+            notify.error(errorMessage);
         }
     };
 
@@ -173,7 +180,11 @@ export default function Register() {
                     <div className="flex justify-center w-full">
                         <GoogleLogin
                             onSuccess={handleGoogleSuccess}
-                            onError={() => setError('Google registration failed.')}
+                            onError={() => {
+                                const errorMsg = 'Google registration failed';
+                                setError(errorMsg);
+                                notify.error(errorMsg);
+                            }}
                             theme="filled_black"
                             shape="rectangular"
                             text="signup_with"

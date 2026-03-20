@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Layers, Plus, Search, Edit2, Trash2, ArrowLeft, Image as ImageIcon, Loader2 } from 'lucide-react';
 import axios from 'axios';
+import { notify } from '../lib/toast';
+import { useConfirm } from '../lib/confirm-dialog';
 
 export default function AdminCollections() {
     // Current view: 'list', 'create', 'edit'
@@ -19,6 +21,8 @@ export default function AdminCollections() {
     });
 
     const [errors, setErrors] = useState({});
+    
+    const confirm = useConfirm();
 
     // Fetch collections from backend
     const fetchCollections = async () => {
@@ -51,11 +55,14 @@ export default function AdminCollections() {
                 const file = files[0];
                 const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
                 if (!allowedTypes.includes(file.type)) {
-                    setErrors(prev => ({ ...prev, cover_image: "Format tidak didukung. Gunakan JPG, PNG, atau WEBP." }));
+                    const errorMsg = "Format tidak didukung. Gunakan JPG, PNG, atau WEBP";
+                    setErrors(prev => ({ ...prev, cover_image: errorMsg }));
+                    notify.error(errorMsg);
                     return;
                 }
                 setFormData(prev => ({ ...prev, cover_image: file }));
                 setErrors(prev => ({ ...prev, cover_image: null }));
+                notify.success("Gambar berhasil diunggah");
             }
             return;
         }
@@ -85,6 +92,11 @@ export default function AdminCollections() {
         if (formData.name && formData.name.length < 3) newErrors.name = "Nama terlalu pendek";
         
         setErrors(newErrors);
+        
+        if (Object.keys(newErrors).length > 0) {
+            Object.values(newErrors).forEach(error => notify.error(error));
+        }
+        
         return Object.keys(newErrors).length === 0;
     };
 
@@ -106,14 +118,18 @@ export default function AdminCollections() {
         }
 
         try {
+            const loadingToastId = notify.loading(currentView === 'create' ? 'Membuat koleksi...' : 'Menyimpan perubahan...');
+            
             if (currentView === 'create') {
                 await axios.post('http://localhost:5000/api/collections', formPayload, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
+                notify.update(loadingToastId, { render: 'Koleksi berhasil dibuat!', type: 'success', isLoading: false, autoClose: 3000 });
             } else if (currentView === 'edit') {
                 await axios.put(`http://localhost:5000/api/collections/${selectedCollection.collection_id}`, formPayload, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
+                notify.update(loadingToastId, { render: 'Koleksi berhasil diperbarui!', type: 'success', isLoading: false, autoClose: 3000 });
             }
             
             // Reload data and go back to list
@@ -121,8 +137,8 @@ export default function AdminCollections() {
             setCurrentView('list');
             setSelectedCollection(null);
         } catch (error) {
-            console.error("Error saving collection", error);
-            alert(error.response?.data?.message || 'Terjadi kesalahan saat menyimpan data');
+            const errorMessage = error.response?.data?.message || 'Terjadi kesalahan saat menyimpan data';
+            notify.error(errorMessage);
         }
     };
 
@@ -139,13 +155,22 @@ export default function AdminCollections() {
 
     const handleDelete = async (id, e) => {
         e.stopPropagation(); // prevent triggering card click
-        if (window.confirm('Apakah Anda yakin ingin menghapus koleksi ini?')) {
+        const confirmed = await confirm({
+            title: 'Hapus Koleksi',
+            description: 'Apakah Anda yakin ingin menghapus koleksi ini? Tindakan ini tidak dapat dikembalikan',
+            confirmText: 'Hapus',
+            cancelText: 'Batal',
+        });
+
+        if (confirmed) {
             try {
+                const loadingToastId = notify.loading('Menghapus koleksi...');
                 await axios.delete(`http://localhost:5000/api/collections/${id}`);
                 setCollections(collections.filter(c => c.collection_id !== id));
+                notify.update(loadingToastId, { render: 'Koleksi berhasil dihapus!', type: 'success', isLoading: false, autoClose: 3000 });
             } catch (error) {
-                console.error("Failed to delete", error);
-                alert("Gagal menghapus koleksi");
+                const errorMessage = error.response?.data?.message || "Gagal menghapus koleksi";
+                notify.error(errorMessage);
             }
         }
     };

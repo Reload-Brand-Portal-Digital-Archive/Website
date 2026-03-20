@@ -4,6 +4,7 @@ import axios from 'axios';
 // eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Lock } from 'lucide-react';
+import { notify } from '../lib/toast';
 
 export default function ResetPassword() {
     const [password, setPassword] = useState('');
@@ -20,19 +21,26 @@ export default function ResetPassword() {
         setError('');
 
         if (password !== confirmPassword) {
-            return setError('Credentials do not match.');
+            const errorMsg = 'Credentials do not match';
+            setError(errorMsg);
+            notify.error(errorMsg);
+            return;
         }
 
         setLoading(true);
 
         try {
+            const loadingToastId = notify.loading('Memperbarui password...');
             const response = await axios.post(`http://localhost:5000/api/auth/reset-password/${id}/${token}`, {
                 newPassword: password
             });
             setMessage(response.data.message);
-            setTimeout(() => navigate('/login'), 3000);
+            notify.update(loadingToastId, { render: 'Password berhasil diperbarui! Mengarahkan ke login...', type: 'success', isLoading: false, autoClose: 2000 });
+            setTimeout(() => navigate('/login'), 2500);
         } catch (err) {
-            setError(err.response?.data?.message || 'Invalid or expired payload link.');
+            const errorMessage = err.response?.data?.message || 'Invalid or expired payload link';
+            setError(errorMessage);
+            notify.error(errorMessage);
         } finally {
             setLoading(false);
         }
