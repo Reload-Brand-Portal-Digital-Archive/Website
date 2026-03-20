@@ -5,6 +5,7 @@ import { GoogleLogin } from '@react-oauth/google';
 // eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
+import { notify } from '../lib/toast';
 
 export default function Login() {
     const [formData, setFormData] = useState({ email: '', password: '' });
@@ -29,13 +30,17 @@ export default function Login() {
             localStorage.setItem('token', response.data.token);
             localStorage.setItem('user', JSON.stringify(response.data.user));
 
+            notify.success('Login successful! Redirecting...');
+
             if (response.data.user.role === 'admin') {
                 navigate('/admin/dashboard');
             } else {
                 navigate('/');
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Invalid credentials');
+            const errorMessage = err.response?.data?.message || 'Invalid credentials';
+            setError(errorMessage);
+            notify.error(errorMessage);
         } finally {
             setLoading(false);
         }
@@ -50,13 +55,17 @@ export default function Login() {
             localStorage.setItem('token', response.data.token);
             localStorage.setItem('user', JSON.stringify(response.data.user));
 
+            notify.success('Google sign-in successful! Redirecting...');
+
             if (response.data.user.role === 'admin') {
                 navigate('/admin/dashboard');
             } else {
                 navigate('/');
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Google sign-in failed');
+            const errorMessage = err.response?.data?.message || 'Google sign-in failed';
+            setError(errorMessage);
+            notify.error(errorMessage);
         }
     };
 
@@ -175,7 +184,11 @@ export default function Login() {
                     <div className="flex justify-center w-full">
                         <GoogleLogin
                             onSuccess={handleGoogleSuccess}
-                            onError={() => setError('Google sign-in verification failed.')}
+                            onError={() => {
+                                const errorMsg = 'Google sign-in verification failed';
+                                setError(errorMsg);
+                                notify.error(errorMsg);
+                            }}
                             theme="filled_black"
                             shape="rectangular"
                             text="signin_with"

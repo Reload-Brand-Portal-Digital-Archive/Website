@@ -4,6 +4,7 @@ import axios from 'axios';
 // eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ArrowRight } from 'lucide-react';
+import { notify } from '../lib/toast';
 
 export default function ForgotPassword() {
     const [email, setEmail] = useState('');
@@ -18,10 +19,14 @@ export default function ForgotPassword() {
         setLoading(true);
 
         try {
+            const loadingToastId = notify.loading('Mengirim email pemulihan...');
             const response = await axios.post('http://localhost:5000/api/auth/forgot-password', { email });
             setMessage(response.data.message);
+            notify.update(loadingToastId, { render: 'Email pemulihan berhasil dikirim! Periksa inbox Anda', type: 'success', isLoading: false, autoClose: 4000 });
         } catch (err) {
-            setError(err.response?.data?.message || 'Terjadi kesalahan pada server.');
+            const errorMessage = err.response?.data?.message || 'Terjadi kesalahan pada server';
+            setError(errorMessage);
+            notify.error(errorMessage);
         } finally {
             setLoading(false);
         }
