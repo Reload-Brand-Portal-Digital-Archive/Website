@@ -36,6 +36,44 @@ exports.getAllProducts = async (req, res) => {
     }
 };
 
+exports.getProductBySlug = async (req, res) => {
+    const slug = req.params.slug;
+    try {
+        const query = `
+            SELECT 
+                p.*, 
+                c.name AS collection_name,
+                (
+                    SELECT GROUP_CONCAT(image_path ORDER BY is_primary DESC, sort_order ASC SEPARATOR ',') 
+                    FROM product_images 
+                    WHERE product_id = p.product_id
+                ) AS all_images
+            FROM products p
+            LEFT JOIN collections c ON p.collection_id = c.collection_id
+            WHERE p.slug = ?
+        `;
+        const [products] = await db.query(query, [slug]);
+
+        if (products.length === 0) {
+            return res.status(404).json({ message: 'Produk tidak ditemukan' });
+        }
+
+        const p = products[0];
+
+        const formattedProduct = {
+            ...p,
+            images: p.all_images ? p.all_images.split(',') : [],
+            primary_image: p.all_images ? p.all_images.split(',')[0] : null,
+            sizes: p.sizes ? p.sizes.split(',').map(s => s.trim()) : []
+        };
+
+        res.json(formattedProduct);
+    } catch (error) {
+        console.error('Get Product By Slug Error:', error);
+        res.status(500).json({ message: 'Gagal mengambil detail produk' });
+    }
+};
+
 exports.createProduct = async (req, res) => {
     const { collection_id, name, description, category, sizes, status, cover_identifier } = req.body;
     if (!name) return res.status(400).json({ message: 'Nama produk wajib diisi!' });

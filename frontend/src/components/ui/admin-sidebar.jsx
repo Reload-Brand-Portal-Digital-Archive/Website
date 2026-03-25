@@ -1,13 +1,15 @@
 import React from 'react';
 import { 
     LayoutDashboard, ShoppingBag, Layers, 
-    MessageSquare, Mail, Settings, Users, LogOut, X
+    MessageSquare, Mail, Settings, Users, LogOut, X, Tag, Palette
 } from 'lucide-react';
 
 export const navigationItems = [
     { id: 'home', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'products', label: 'Produk', icon: ShoppingBag },
     { id: 'collections', label: 'Koleksi', icon: Layers },
+    { id: 'categories', label: 'Kategori', icon: Tag },
+    { id: 'materials', label: 'Material', icon: Palette },
     { id: 'messages', label: 'Pesan', icon: MessageSquare },
     { id: 'newsletter', label: 'Newsletter', icon: Mail },
     { id: 'settings', label: 'Pengaturan', icon: Settings },
@@ -23,7 +25,6 @@ export default function AdminSidebar({
 }) {
     return (
         <>
-            {/* Sidebar Mobile Overlay */}
             {!isSidebarOpen && (
                 <div 
                     className="md:hidden fixed inset-0 bg-black/50 z-40 transition-opacity"
@@ -31,13 +32,11 @@ export default function AdminSidebar({
                 />
             )}
 
-            {/* Sidebar */}
             <aside 
                 className={`fixed md:relative flex flex-col z-50 h-screen bg-zinc-900 border-r border-zinc-800 transition-all duration-300 ease-in-out shrink-0 ${
                     isSidebarOpen ? "w-64 translate-x-0" : "w-0 md:w-20 -translate-x-full md:translate-x-0"
                 }`}
             >
-                {/* Sidebar Header */}
                 <div className="h-16 flex items-center justify-between px-4 border-b border-zinc-800 shrink-0">
                     <div className={`font-bold text-xl tracking-wider text-rose-500 transition-all duration-300 overflow-hidden whitespace-nowrap ${isSidebarOpen ? "opacity-100 w-auto" : "opacity-0 w-0 md:opacity-100 md:w-auto md:mx-auto md:text-sm"}`}>
                         {isSidebarOpen ? "RELOAD." : "R."}
@@ -52,7 +51,6 @@ export default function AdminSidebar({
                     )}
                 </div>
 
-                {/* Navigation Links */}
                 <div className="flex-1 overflow-y-auto overflow-x-hidden py-6 px-3 flex flex-col gap-2">
                     {navigationItems.map((item) => {
                         const Icon = item.icon;
@@ -82,7 +80,6 @@ export default function AdminSidebar({
                     })}
                 </div>
 
-                {/* User Profile & Logout */}
                 <div className="border-t border-zinc-800 p-4 shrink-0 overflow-hidden">
                     {isSidebarOpen ? (
                         <div className="flex items-center justify-between">

@@ -1,8 +1,8 @@
-import React, { useState } from "react"
-// eslint-disable-next-line no-unused-vars
+import React, { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Link } from "react-router-dom"
 import { ArrowRight, ShoppingBag, Instagram, Twitter, Music } from "lucide-react"
+import axios from "axios"
 import heroModel from "../assets/hero_model.png"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -11,9 +11,6 @@ import { Input } from "@/components/ui/input"
 import Navbar from "../components/ui/Navbar"
 import SplashScreen from "../components/ui/SplashScreen"
 
-// ────────────────────────────────────────────────────────────────────────────
-// Shared animation variants
-// ────────────────────────────────────────────────────────────────────────────
 const staggerContainer = {
   hidden: {},
   visible: { transition: { staggerChildren: 0.12, delayChildren: 0.05 } }
@@ -27,13 +24,9 @@ const fadeIn = {
   visible: { opacity: 1, transition: { duration: 0.9, ease: "easeOut" } }
 }
 
-// ────────────────────────────────────────────────────────────────────────────
-// HERO
-// ────────────────────────────────────────────────────────────────────────────
 function HeroSection() {
   return (
     <header className="relative w-full min-h-[100dvh] bg-zinc-950 overflow-hidden pt-16">
-      {/* Grain noise overlay */}
       <div
         className="absolute inset-0 z-0 pointer-events-none opacity-[0.035] mix-blend-screen"
         style={{
@@ -42,7 +35,6 @@ function HeroSection() {
       />
 
       <div className="relative z-10 grid grid-cols-1 md:grid-cols-12 min-h-[100dvh]">
-        {/* Left: Copy — 5 cols */}
         <motion.div
           variants={staggerContainer}
           initial="hidden"
@@ -97,7 +89,6 @@ function HeroSection() {
           </motion.div>
         </motion.div>
 
-        {/* Right: Visual — 7 cols */}
         <motion.div
           variants={fadeIn}
           initial="hidden"
@@ -121,16 +112,55 @@ function HeroSection() {
   )
 }
 
-// ────────────────────────────────────────────────────────────────────────────
-// CURRENT DROP — ShopDetail-style split cards
-// ────────────────────────────────────────────────────────────────────────────
-const currentDrop = [
-  { id: "01", name: "Vortex Hoodie V1", spec: "Premium Cotton", slug: "vortex-hoodie-v1", status: "Available" },
-  { id: "02", name: "Cargo Tee [01]", spec: "Heavy Cotton", slug: "cargo-tee-01", status: "Available" },
-  { id: "03", name: "Nomad Shell", spec: "Water-Resistant Nylon", slug: "nomad-shell", status: "Limited" },
-]
-
 function CurrentDropSection() {
+  const [currentDrop, setCurrentDrop] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCurrentDrop = async () => {
+      try {
+        const [productsRes, collectionsRes] = await Promise.all([
+          axios.get('http://localhost:5000/api/products'),
+          axios.get('http://localhost:5000/api/collections')
+        ]);
+
+        const products = (productsRes.data || []).map(p => ({
+          ...p,
+          type: 'product',
+          display_name: p.name,
+          spec: p.category || 'Product',
+          slug: p.slug,
+          created_at: p.created_at
+        }));
+
+        const collections = (collectionsRes.data || []).map(c => ({
+          ...c,
+          type: 'collection',
+          display_name: c.name,
+          spec: `Collection · ${c.year || 'Archive'}`,
+          slug: c.slug,
+          created_at: c.created_at
+        }));
+
+        const merged = [...products, ...collections].sort((a, b) => {
+          const dateA = new Date(a.created_at || 0).getTime();
+          const dateB = new Date(b.created_at || 0).getTime();
+          if (dateA !== dateB) return dateB - dateA;
+          return a.type === 'product' ? -1 : 1;
+        });
+
+        setCurrentDrop(merged.slice(0, 3));
+      } catch (error) {
+        console.error('Error fetching current drop:', error);
+        setCurrentDrop([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCurrentDrop();
+  }, []);
+
   return (
     <section className="w-full bg-zinc-950 font-sans">
       <div className="max-w-[1600px] mx-auto px-6 md:px-12 py-32 md:py-48">
@@ -158,91 +188,141 @@ function CurrentDropSection() {
           </Link>
         </motion.div>
 
-        {/* ShopDetail-style split cards */}
-        <div className="flex flex-col gap-0 border-t border-zinc-800">
-          {currentDrop.map((item, i) => (
-            <motion.div
-              key={item.id}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.2 }}
-              transition={{ duration: 0.65, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
-              className="border-b border-zinc-800"
-            >
-              <Link
-                to="/shop"
-                className="group grid grid-cols-1 md:grid-cols-2 gap-0 hover:bg-zinc-900/40 transition-colors"
-              >
-                {/* Left: Image placeholder */}
-                <div
-                  className="w-full aspect-[4/3] bg-zinc-800 border border-dashed border-zinc-700 border-r-0 md:border-r md:border-solid md:border-zinc-800 flex flex-col items-center justify-center gap-2"
-                  aria-label="Product Image Placeholder"
-                >
-                  <span className="font-mono text-[10px] text-zinc-600 uppercase tracking-widest">
-                    Product Image
-                  </span>
-                  <span className="font-mono text-[9px] text-zinc-700 uppercase tracking-wider">
-                    4 : 3
-                  </span>
-                </div>
+        {loading && (
+          <div className="text-center py-16">
+            <span className="font-mono text-xs text-zinc-500 uppercase tracking-widest animate-pulse">
+              Loading...
+            </span>
+          </div>
+        )}
 
-                {/* Right: Product details */}
-                <div className="flex flex-col justify-between p-8 md:p-12">
-                  <div className="flex flex-col gap-4">
-                    <span className="font-mono text-[10px] text-zinc-600 uppercase tracking-widest">
-                      {item.id} — {item.spec}
-                    </span>
-                    <h3 className="text-3xl md:text-4xl lg:text-5xl font-black uppercase tracking-tighter leading-none text-zinc-50 group-hover:text-white transition-colors">
-                      {item.name}
-                    </h3>
+        {!loading && currentDrop.length === 0 && (
+          <div className="text-center py-16">
+            <span className="font-mono text-xs text-zinc-500 uppercase tracking-widest">
+              No items available
+            </span>
+          </div>
+        )}
+
+        {!loading && currentDrop.length > 0 && (
+          <div className="flex flex-col gap-0 border-t border-zinc-800">
+            {currentDrop.map((item, i) => (
+              <motion.div
+                key={`${item.type}-${item.id || item.collection_id}`}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.65, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
+                className="border-b border-zinc-800"
+              >
+                <Link
+                  to={item.type === 'product' ? `/shop/${item.slug}` : `/collections/${item.slug}`}
+                  className="group grid grid-cols-1 md:grid-cols-2 gap-0 hover:bg-zinc-900/40 transition-colors"
+                >
+                  <div className="w-full aspect-[4/3] bg-zinc-800 border border-dashed border-zinc-700 border-r-0 md:border-r md:border-solid md:border-zinc-800 flex flex-col items-center justify-center gap-2 overflow-hidden">
+                    {item.type === 'product' && item.primary_image ? (
+                      <img
+                        src={`http://localhost:5000${item.primary_image}`}
+                        alt={item.display_name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : item.type === 'collection' && item.cover_image ? (
+                      <img
+                        src={`http://localhost:5000/uploads/${item.cover_image}`}
+                        alt={item.display_name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <>
+                        <span className="font-mono text-[10px] text-zinc-600 uppercase tracking-widest">
+                          {item.type} Image
+                        </span>
+                        <span className="font-mono text-[9px] text-zinc-700 uppercase tracking-wider">
+                          4 : 3
+                        </span>
+                      </>
+                    )}
                   </div>
-                  <div className="flex items-center justify-between mt-10">
-                    <Badge
-                      variant="outline"
-                      className={`border rounded-none font-mono text-[10px] tracking-widest uppercase ${
-                        item.status === "Available"
-                          ? "border-zinc-700 text-zinc-400"
-                          : item.status === "Limited"
-                          ? "border-amber-700/50 text-amber-500"
-                          : "border-blue-700/50 text-blue-400"
-                      }`}
-                    >
-                      {item.status}
-                    </Badge>
-                    <div className="flex items-center gap-2 font-mono text-xs text-zinc-500 group-hover:text-white transition-colors uppercase tracking-widest">
-                      View Product
-                      <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+
+                  <div className="flex flex-col justify-between p-8 md:p-12">
+                    <div className="flex flex-col gap-4">
+                      <span className="font-mono text-[10px] text-zinc-600 uppercase tracking-widest">
+                        {String(i + 1).padStart(2, '0')} — {item.spec}
+                      </span>
+                      <h3 className="text-3xl md:text-4xl lg:text-5xl font-black uppercase tracking-tighter leading-none text-zinc-50 group-hover:text-white transition-colors">
+                        {item.display_name}
+                      </h3>
+                    </div>
+                    <div className="flex items-center justify-between mt-10">
+                      <Badge
+                        variant="outline"
+                        className={`border rounded-none font-mono text-[10px] tracking-widest uppercase ${item.type === 'collection'
+                          ? 'border-purple-700/50 text-purple-400'
+                          : item.status === 'Available'
+                            ? 'border-zinc-700 text-zinc-400'
+                            : 'border-amber-700/50 text-amber-500'
+                          }`}
+                      >
+                        {item.type === 'collection' ? 'Collection' : (item.status || 'Available')}
+                      </Badge>
+                      <div className="flex items-center gap-2 font-mono text-xs text-zinc-500 group-hover:text-white transition-colors uppercase tracking-widest">
+                        View {item.type === 'collection' ? 'Collection' : 'Product'}
+                        <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                      </div>
                     </div>
                   </div>
-                </div>
-              </Link>
-            </motion.div>
-          ))}
-        </div>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   )
 }
 
-// ────────────────────────────────────────────────────────────────────────────
-// MATERIAL INTEGRITY — 3-stat row (new section from Stitch)
-// ────────────────────────────────────────────────────────────────────────────
-const materialStats = [
-  {
-    stat: "Premium\nMaterials",
-    desc: "Selected fabrics that feel good and hold their shape."
-  },
-  {
-    stat: "Comfortable\nFit",
-    desc: "Built for daily movement with a clean streetwear silhouette."
-  },
-  {
-    stat: "Made To\nLast",
-    desc: "Strong construction designed for repeated wear."
-  }
-]
-
 function MaterialIntegritySection() {
+  const [materials, setMaterials] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchMaterials = async () => {
+      try {
+        const res = await axios.get('http://localhost:5000/api/materials');
+        setMaterials((res.data || []).slice(0, 3));
+      } catch (error) {
+        console.error('Error fetching materials:', error);
+        setMaterials([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMaterials();
+  }, []);
+
+  const displayMaterials = materials.length > 0
+    ? materials
+    : loading
+      ? []
+      : [
+        {
+          id: "default-1",
+          title: "Premium\nMaterials",
+          description: "Selected fabrics that feel good and hold their shape."
+        },
+        {
+          id: "default-2",
+          title: "Comfortable\nFit",
+          description: "Built for daily movement with a clean streetwear silhouette."
+        },
+        {
+          id: "default-3",
+          title: "Made To\nLast",
+          description: "Strong construction designed for repeated wear."
+        }
+      ];
+
   return (
     <section className="w-full bg-zinc-900 border-y border-zinc-800 font-sans">
       <div className="max-w-[1600px] mx-auto px-6 md:px-12 py-24 md:py-36">
@@ -259,36 +339,43 @@ function MaterialIntegritySection() {
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-0">
-          {materialStats.map((item, i) => (
+          {displayMaterials.map((item, i) => (
             <motion.div
-              key={i}
+              key={item.id || i}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.3 }}
               transition={{ duration: 0.7, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
-              className={`py-8 md:py-0 flex flex-col gap-8 ${
-                i > 0 ? "md:border-l border-t md:border-t-0 border-zinc-800 md:pl-12" : ""
-              } ${i < materialStats.length - 1 ? "md:pr-12" : ""}`}
+              className={`py-8 md:py-0 flex flex-col gap-8 ${i > 0 ? "md:border-l border-t md:border-t-0 border-zinc-800 md:pl-12" : ""
+                } ${i < displayMaterials.length - 1 ? "md:pr-12" : ""}`}
             >
-              {/* Material image placeholder — swap with real fabric/material photo */}
-              <div
-                className="w-full aspect-[4/3] bg-zinc-800 border border-dashed border-zinc-700 flex flex-col items-center justify-center gap-2"
-                aria-label="Material Image Placeholder"
-              >
-                <span className="font-mono text-[9px] text-zinc-600 uppercase tracking-widest">
-                  Material Image
-                </span>
-                <span className="font-mono text-[8px] text-zinc-700 uppercase tracking-wider">
-                  4 : 3
-                </span>
+              <div className="w-full aspect-[4/3] bg-zinc-800 border border-dashed border-zinc-700 flex flex-col items-center justify-center gap-2 overflow-hidden">
+                {item.image_path ? (
+                  <img
+                    src={`http://localhost:5000${item.image_path}`}
+                    alt={item.title || item.description}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <>
+                    <span className="font-mono text-[9px] text-zinc-600 uppercase tracking-widest">
+                      Material Image
+                    </span>
+                    <span className="font-mono text-[8px] text-zinc-700 uppercase tracking-wider">
+                      4 : 3
+                    </span>
+                  </>
+                )}
               </div>
               <div>
                 <h3 className="text-3xl md:text-4xl font-black uppercase tracking-tighter leading-tight text-zinc-50 mb-6 whitespace-pre-line">
-                  {item.stat}
+                  {item.title || item.description}
                 </h3>
-                <p className="text-sm text-zinc-400 leading-relaxed max-w-[36ch]">
-                  {item.desc}
-                </p>
+                {item.description && (
+                  <p className="text-sm text-zinc-400 leading-relaxed max-w-[36ch]">
+                    {item.description}
+                  </p>
+                )}
               </div>
             </motion.div>
           ))}
@@ -298,9 +385,6 @@ function MaterialIntegritySection() {
   )
 }
 
-// ────────────────────────────────────────────────────────────────────────────
-// SHOP CTA
-// ────────────────────────────────────────────────────────────────────────────
 function ShopCTASection() {
   return (
     <section className="w-full bg-zinc-950 border-b border-zinc-900 font-sans overflow-hidden">
@@ -352,9 +436,6 @@ function ShopCTASection() {
   )
 }
 
-// ────────────────────────────────────────────────────────────────────────────
-// NEWSLETTER
-// ────────────────────────────────────────────────────────────────────────────
 function NewsletterSection() {
   const [email, setEmail] = useState("")
 
@@ -403,14 +484,10 @@ function NewsletterSection() {
   )
 }
 
-// ────────────────────────────────────────────────────────────────────────────
-// FOOTER — Expanded per Stitch design
-// ────────────────────────────────────────────────────────────────────────────
 function FooterSection() {
   return (
     <footer className="w-full bg-zinc-950 text-zinc-50 px-6 md:px-12 pt-24 pb-8 border-t border-zinc-900 font-sans">
       <div className="max-w-[1600px] mx-auto">
-        {/* Top grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-10 mb-24">
           <div className="flex flex-col gap-3">
             <span className="text-xs uppercase font-mono text-zinc-500 mb-2">[ SHOP ]</span>
@@ -459,7 +536,6 @@ function FooterSection() {
 
         <Separator className="bg-zinc-900 mb-8" />
 
-        {/* Bottom bar */}
         <div className="flex flex-col sm:flex-row w-full justify-between items-start sm:items-center gap-2 pb-2">
           <span className="text-xs text-zinc-600 font-mono uppercase tracking-widest">
             (c) {new Date().getFullYear()} RELOAD Distro - All rights reserved
@@ -473,9 +549,6 @@ function FooterSection() {
   )
 }
 
-// ────────────────────────────────────────────────────────────────────────────
-// ROOT PAGE
-// ────────────────────────────────────────────────────────────────────────────
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-50 font-sans cursor-default selection:bg-white selection:text-black">

@@ -3,14 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { Menu } from 'lucide-react';
 import AdminSidebar, { navigationItems } from '../components/ui/admin-sidebar';
 
-// Tab Components
 import AdminProducts from './AdminProducts';
 import AdminCollections from './AdminCollections';
+import AdminCategories from './AdminCategories';
+import AdminMaterial from './AdminMaterial';
 import AdminMessages from './AdminMessages';
 import AdminNewsletter from './AdminNewsletter';
 import AdminSettings from './AdminSettings';
 
-// UI Components
 import { DashboardSummaryCards } from '../components/ui/admin-summary-cards';
 import { TrafficChart, UserGrowthChart, SubscriberChart, ExternalClicksChart } from '../components/ui/admin-charts';
 import AdminGeographicMap from '../components/ui/admin-map';
@@ -20,7 +20,6 @@ export default function AdminDashboard() {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     const [timeRange, setTimeRange] = useState('7d');
     
-    // Sidebar state
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [activeTab, setActiveTab] = useState('home');
 
@@ -30,10 +29,8 @@ export default function AdminDashboard() {
         navigate('/login');
     };
 
-    // Dashboard Content (Home Tab)
     const renderDashboard = () => (
         <div className="space-y-8 animate-in fade-in duration-500">
-            {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 pb-6 border-b border-zinc-800 gap-4">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Admin <span className="text-zinc-500 font-light">Dashboard</span></h1>
@@ -49,16 +46,13 @@ export default function AdminDashboard() {
                 </div>
             </div>
 
-            {/* 1. Summary Cards */}
             <DashboardSummaryCards />
 
-            {/* 2. Main Charts Section */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <TrafficChart />
                 <UserGrowthChart />
             </div>
 
-            {/* 3. Secondary Charts & Geographic Map */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-1 space-y-6">
                     <SubscriberChart />
@@ -69,7 +63,6 @@ export default function AdminDashboard() {
         </div>
     );
 
-    // Display selected tab content
     const renderContent = () => {
         switch (activeTab) {
             case 'home':
@@ -78,6 +71,10 @@ export default function AdminDashboard() {
                 return <AdminProducts />;
             case 'collections':
                 return <AdminCollections />;
+            case 'categories':
+                return <AdminCategories />;
+            case 'materials':
+                return <AdminMaterial />;
             case 'messages':
                 return <AdminMessages />;
             case 'newsletter':
@@ -107,9 +104,7 @@ export default function AdminDashboard() {
                 handleLogout={handleLogout}
             />
 
-            {/* Main Content Area */}
             <main className="flex-1 flex flex-col h-screen min-w-0 bg-zinc-950 transition-all duration-300">
-                {/* Topbar for mobile and toggle button */}
                 <header className="h-16 flex items-center px-4 md:px-8 border-b border-zinc-800/50 bg-zinc-950/80 backdrop-blur-sm shrink-0">
                     <button 
                         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -122,7 +117,6 @@ export default function AdminDashboard() {
                     </div>
                 </header>
 
-                {/* Scrollable Content */}
                 <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8">
                     <div className="max-w-7xl mx-auto w-full">
                         {renderContent()}
@@ -133,4 +127,4 @@ export default function AdminDashboard() {
         </div>
     );
 }
-
+

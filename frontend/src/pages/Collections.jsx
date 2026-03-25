@@ -1,14 +1,31 @@
-import React from 'react';
-// eslint-disable-next-line no-unused-vars
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { mockCollections } from '../data/mockCollections';
+import axios from 'axios';
 import CollectionCard from '../components/ui/CollectionCard';
 import Navbar from '../components/ui/Navbar';
 
 const Collections = () => {
+  const [collections, setCollections] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCollections = async () => {
+      try {
+        const res = await axios.get('http://localhost:5000/api/collections');
+        setCollections(res.data || []);
+      } catch (error) {
+        console.error('Error fetching collections:', error);
+        setCollections([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCollections();
+  }, []);
+
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-50 font-sans cursor-default selection:bg-white selection:text-black">
-      {/* Background Noise Layer */}
       <div 
         className="fixed inset-0 pointer-events-none opacity-[0.03] mix-blend-screen z-0"
         style={{
@@ -16,13 +33,10 @@ const Collections = () => {
         }}
       />
 
-      {/* Shared Navigation Header */}
       <Navbar />
 
-      {/* Main Content */}
       <main className="relative z-10 pt-32 pb-24 px-6 md:px-12 max-w-[1600px] mx-auto">
         
-        {/* Page Header */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -43,16 +57,33 @@ const Collections = () => {
           </div>
         </motion.div>
 
-        {/* Collections Feed */}
-        <div className="flex flex-col gap-8 md:gap-16">
-          {mockCollections.map((collection, index) => (
-            <CollectionCard 
-              key={collection.collection_id} 
-              collection={collection} 
-              index={index} 
-            />
-          ))}
-        </div>
+        {loading && (
+          <div className="text-center py-16">
+            <span className="font-mono text-xs text-zinc-500 uppercase tracking-widest animate-pulse">
+              Loading collections...
+            </span>
+          </div>
+        )}
+
+        {!loading && collections.length === 0 && (
+          <div className="text-center py-16">
+            <span className="font-mono text-xs text-zinc-500 uppercase tracking-widest">
+              No collections found
+            </span>
+          </div>
+        )}
+
+        {!loading && collections.length > 0 && (
+          <div className="flex flex-col gap-8 md:gap-16">
+            {collections.map((collection, index) => (
+              <CollectionCard 
+                key={collection.collection_id} 
+                collection={collection} 
+                index={index} 
+              />
+            ))}
+          </div>
+        )}
 
       </main>
     </div>

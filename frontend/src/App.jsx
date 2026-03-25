@@ -8,6 +8,8 @@ import LandingPage from "./pages/LandingPage"
 import AdminDashboard from './pages/AdminDashboard';
 import AdminProducts from './pages/AdminProducts';
 import AdminCollections from './pages/AdminCollections';
+import AdminCategories from './pages/AdminCategories';
+import AdminMaterial from './pages/AdminMaterial';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import Collections from './pages/Collections';
@@ -47,6 +49,8 @@ function App() {
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/products" element={<AdminProducts />} />
             <Route path="/admin/collections" element={<AdminCollections />} />
+            <Route path="/admin/categories" element={<AdminCategories />} />
+            <Route path="/admin/materials" element={<AdminMaterial />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -8,27 +8,31 @@ export default function AdminProducts() {
     const [currentView, setCurrentView] = useState('list');
     const [products, setProducts] = useState([]);
     const [collections, setCollections] = useState([]);
+    const [categories, setCategories] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [loading, setLoading] = useState(true);
     const [carouselIndices, setCarouselIndices] = useState({});
+
     const [formData, setFormData] = useState({
-        name: '', collection_id: '', description: '', category: 'T-Shirt', sizes: '', status: 'Available'
+        name: '', collection_id: '', description: '', category: '', sizes: [], status: 'Available'
     });
     const [imageManager, setImageManager] = useState([]);
     const [errors, setErrors] = useState({});
-    
+
     const confirm = useConfirm();
 
     const fetchData = async () => {
         setLoading(true);
         try {
-            const [productsRes, collectionsRes] = await Promise.all([
+            const [productsRes, collectionsRes, categoriesRes] = await Promise.all([
                 axios.get('http://localhost:5000/api/products'),
-                axios.get('http://localhost:5000/api/collections')
+                axios.get('http://localhost:5000/api/collections'),
+                axios.get('http://localhost:5000/api/categories')
             ]);
             setProducts(productsRes.data);
             setCollections(collectionsRes.data);
+            setCategories(categoriesRes.data);
         } catch (error) {
             console.error("Failed to fetch data", error);
         } finally {
@@ -103,11 +107,27 @@ export default function AdminProducts() {
         if (errors[e.target.name]) setErrors(prev => ({ ...prev, [e.target.name]: null }));
     };
 
+    const handleSizeToggle = (size) => {
+        setFormData(prev => {
+            const currentSizes = Array.isArray(prev.sizes) ? prev.sizes : [];
+            if (currentSizes.includes(size)) {
+                return { ...prev, sizes: currentSizes.filter(s => s !== size) };
+            } else {
+                return { ...prev, sizes: [...currentSizes, size] };
+            }
+        });
+    };
+
     const handleSave = async (e) => {
         e.preventDefault();
+
         if (!formData.name.trim()) {
             notify.error("Nama produk wajib diisi");
             return setErrors({ name: "Nama produk wajib diisi" });
+        }
+        if (!formData.category) {
+            notify.error("Kategori wajib dipilih");
+            return setErrors({ category: "Kategori wajib dipilih" });
         }
         if (imageManager.length === 0) {
             notify.error("Minimal 1 gambar wajib diunggah/dipertahankan");
@@ -115,7 +135,13 @@ export default function AdminProducts() {
         }
 
         const formPayload = new FormData();
-        Object.keys(formData).forEach(key => formPayload.append(key, formData[key]));
+        Object.keys(formData).forEach(key => {
+            if (key === 'sizes') {
+                formPayload.append(key, Array.isArray(formData[key]) ? formData[key].join(', ') : '');
+            } else {
+                formPayload.append(key, formData[key]);
+            }
+        });
 
         const retainedImages = [];
         let coverIdentifier = '';
@@ -132,7 +158,7 @@ export default function AdminProducts() {
         const token = localStorage.getItem('token');
         try {
             const loadingToastId = notify.loading(currentView === 'create' ? 'Membuat produk...' : 'Menyimpan perubahan...');
-            
+
             if (currentView === 'create') {
                 await axios.post('http://localhost:5000/api/products', formPayload, { headers: { 'Authorization': `Bearer ${token}` } });
                 notify.update(loadingToastId, { render: 'Produk berhasil dibuat!', type: 'success', isLoading: false, autoClose: 3000 });
@@ -150,9 +176,14 @@ export default function AdminProducts() {
 
     const handleEdit = (product) => {
         setSelectedProduct(product);
+
+        const parsedSizes = product.sizes && typeof product.sizes === 'string'
+            ? product.sizes.split(',').map(s => s.trim()).filter(Boolean)
+            : [];
+
         setFormData({
             name: product.name, collection_id: product.collection_id || '', description: product.description || '',
-            category: product.category, sizes: product.sizes || '', status: product.status
+            category: product.category || '', sizes: parsedSizes, status: product.status || 'Available'
         });
 
         if (product.images && product.images.length > 0) {
@@ -193,7 +224,7 @@ export default function AdminProducts() {
     };
 
     const openCreateForm = () => {
-        setFormData({ name: '', collection_id: '', description: '', category: 'T-Shirt', sizes: '', status: 'Available' });
+        setFormData({ name: '', collection_id: '', description: '', category: '', sizes: [], status: 'Available' });
         setImageManager([]); setErrors({}); setCurrentView('create');
     };
 
@@ -220,7 +251,11 @@ export default function AdminProducts() {
                 {loading ? (
                     <div className="flex justify-center py-20"><Loader2 className="animate-spin text-rose-500" size={32} /></div>
                 ) : filteredProducts.length === 0 ? (
-                    <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-12 text-center text-zinc-500">Kosong.</div>
+                    <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-12 text-center">
+                        <ShoppingBag size={48} className="text-zinc-700 mx-auto mb-4" />
+                        <h3 className="text-lg font-medium text-zinc-300">Tidak ada produk ditemukan</h3>
+                        <p className="text-zinc-500 mt-1">Coba gunakan kata kunci pencarian yang lain atau tambah produk baru.</p>
+                    </div>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         {filteredProducts.map(product => {
@@ -273,11 +308,11 @@ export default function AdminProducts() {
     }
 
     return (
-        <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in duration-500 slide-in-from-bottom-4">
-            <div className="flex items-center gap-4 mb-8">
+        <div className="space-y-6 animate-in fade-in duration-500">
+            <div className="flex items-center gap-4">
                 <button onClick={() => setCurrentView('list')} className="p-2 bg-zinc-900 border border-zinc-800 rounded-md text-zinc-400 hover:text-white transition-colors"><ArrowLeft size={18} /></button>
                 <div>
-                    <h2 className="text-xl font-bold text-zinc-50">{currentView === 'create' ? 'Tambah Produk Baru' : 'Edit Data Produk'}</h2>
+                    <h2 className="text-2xl font-bold text-zinc-50 flex items-center gap-2"><ShoppingBag className="text-rose-500" /> {currentView === 'create' ? 'Tambah Produk Baru' : 'Edit Data Produk'}</h2>
                     <p className="text-sm text-zinc-400 mt-1">Atur foto, jadikan cover, dan lengkapi rincian.</p>
                 </div>
             </div>
@@ -299,9 +334,67 @@ export default function AdminProducts() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="space-y-2"><label className="text-sm font-medium text-zinc-300">Kategori</label><select name="category" value={formData.category} onChange={handleInputChange} className="w-full bg-zinc-950 border border-zinc-800 rounded-md py-2 px-4 text-zinc-100"><option value="T-Shirt">T-Shirt</option><option value="Hoodie">Hoodie</option></select></div>
-                    <div className="space-y-2"><label className="text-sm font-medium text-zinc-300">Ukuran</label><input type="text" name="sizes" value={formData.sizes} onChange={handleInputChange} className="w-full bg-zinc-950 border border-zinc-800 rounded-md py-2 px-4 text-zinc-100" /></div>
-                    <div className="space-y-2"><label className="text-sm font-medium text-zinc-300">Status</label><select name="status" value={formData.status} onChange={handleInputChange} className="w-full bg-zinc-950 border border-zinc-800 rounded-md py-2 px-4 text-zinc-100"><option value="Available">Available</option><option value="Sold Out">Sold Out</option></select></div>
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-zinc-300">Kategori <span className="text-rose-500">*</span></label>
+                        <select
+                            name="category"
+                            value={formData.category}
+                            onChange={handleInputChange}
+                            className={`w-full bg-zinc-950 border rounded-md py-2 px-4 text-zinc-100 ${errors.category ? 'border-red-500' : 'border-zinc-800'}`}
+                        >
+                            <option value="">-- Pilih Kategori --</option>
+                            {categories.length > 0 ? (
+                                categories.map((cat, index) => {
+                                    const catName = cat.name || cat.nama || cat.category_name || cat.category || (typeof cat === 'string' ? cat : 'Unknown');
+                                    const catId = cat.id || cat.category_id || `cat-${index}`;
+
+                                    return (
+                                        <option key={catId} value={catName}>
+                                            {catName}
+                                        </option>
+                                    );
+                                })
+                            ) : (
+                                <option value="" disabled>Tidak ada kategori</option>
+                            )}
+                        </select>
+                        {errors.category && <p className="text-xs text-red-500">{errors.category}</p>}
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-zinc-300">Ukuran (Bisa pilih lebih dari 1)</label>
+                        <div className="flex flex-wrap gap-2 pt-1">
+                            {['S', 'M', 'L', 'XL', 'XXL'].map(size => {
+                                const isSelected = Array.isArray(formData.sizes) && formData.sizes.includes(size);
+                                return (
+                                    <button
+                                        key={size}
+                                        type="button"
+                                        onClick={() => handleSizeToggle(size)}
+                                        className={`px-3 py-1.5 rounded-md text-sm font-medium border transition-all duration-200 ${isSelected
+                                                ? 'bg-rose-500/20 border-rose-500 text-rose-500'
+                                                : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:border-zinc-600'
+                                            }`}
+                                    >
+                                        {size}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-zinc-300">Status</label>
+                        <select
+                            name="status"
+                            value={formData.status}
+                            onChange={handleInputChange}
+                            className="w-full bg-zinc-950 border border-zinc-800 rounded-md py-2 px-4 text-zinc-100"
+                        >
+                            <option value="Available">Available</option>
+                            <option value="Sold Out">Sold Out</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div className="space-y-2 pt-4">
