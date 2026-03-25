@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion';
 import { mockProducts } from '../data/mockProducts';
 import ProductCard from '../components/ui/ProductCard';

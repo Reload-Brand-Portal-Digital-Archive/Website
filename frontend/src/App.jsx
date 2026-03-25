@@ -15,6 +15,7 @@ import CollectionDetail from './pages/CollectionDetail';
 import Shop from './pages/Shop';
 import ShopDetail from './pages/ShopDetail';
 import ProtectedRoute from './components/ProtectedRoute';
+import NotFound from './pages/NotFound';
 
 function App() {
   return (
@@ -47,6 +48,7 @@ function App() {
             <Route path="/admin/products" element={<AdminProducts />} />
             <Route path="/admin/collections" element={<AdminCollections />} />
           </Route>
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </ConfirmDialogProvider>
     </BrowserRouter>

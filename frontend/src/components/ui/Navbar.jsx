@@ -4,6 +4,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/s
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { useNavigate, Link, useLocation } from "react-router-dom"
+import reloadLogoTransparent from "../../assets/reload_logo_transparent.png"
 
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false)
@@ -39,8 +40,8 @@ const Navbar = () => {
         isScrolledOrNotHome ? "bg-zinc-950/80 backdrop-blur-md" : "bg-transparent mix-blend-difference"
       }`}
     >
-      <Link to="/" className="font-['Outfit'] font-bold text-xl md:text-2xl tracking-widest leading-none pointer-events-auto hover:opacity-80 transition-opacity">
-        RELOAD
+      <Link to="/" className="pointer-events-auto hover:opacity-80 transition-opacity flex items-center">
+        <img src={reloadLogoTransparent} alt="RELOAD" className="h-5 md:h-6 w-auto object-contain" />
       </Link>
 
       {/* Desktop Centered Links */}
@@ -99,8 +100,8 @@ const Navbar = () => {
           </SheetTrigger>
           <SheetContent side="right" className="bg-zinc-950 border-zinc-800 text-zinc-50 p-6 z-[100]">
             <SheetTitle className="sr-only">Mobile Menu</SheetTitle>
-            <div className="font-['Outfit'] font-bold text-2xl tracking-widest leading-none mt-4 mb-12">
-              RELOAD
+            <div className="mt-4 mb-12">
+              <img src={reloadLogoTransparent} alt="RELOAD" className="h-6 w-auto object-contain" />
             </div>
             
             <div className="flex flex-col gap-8 mt-12 text-sm uppercase tracking-widest font-sans">
