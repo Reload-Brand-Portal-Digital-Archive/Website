@@ -1,10 +1,14 @@
 import React from 'react';
-// eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight } from 'lucide-react';
 
 const CollectionCard = ({ collection, index }) => {
+  const getImageUrl = (filename) => {
+    if (!filename) return '';
+    return filename.startsWith('http') ? filename : `http://localhost:5000/uploads/${filename}`;
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -12,24 +16,20 @@ const CollectionCard = ({ collection, index }) => {
       transition={{ duration: 0.6, delay: 0.1 * index, ease: [0.22, 1, 0.36, 1] }}
       className="group relative block w-full aspect-[4/5] md:aspect-[16/9] overflow-hidden bg-zinc-900 border border-white/5"
     >
-      <Link to={`/collections/${collection.slug}`} className="absolute inset-0 z-10">
+      <Link to={`/collections/${collection.slug || collection.collection_id}`} className="absolute inset-0 z-10">
         <span className="sr-only">View {collection.name}</span>
       </Link>
-      
-      {/* Background Image with Hover Scale */}
+
       <motion.div
         className="absolute inset-0 w-full h-full bg-cover bg-center"
-        style={{ backgroundImage: `url(${collection.cover_image})` }}
+        style={{ backgroundImage: `url(${getImageUrl(collection.cover_image)})` }}
         whileHover={{ scale: 1.05 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
       />
-      
-      {/* Gradient Overlay for Text Readability */}
+
       <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/40 to-transparent opacity-80 group-hover:opacity-70 transition-opacity duration-500" />
 
-      {/* Content */}
       <div className="absolute inset-0 p-6 md:p-10 flex flex-col justify-between pointer-events-none">
-        {/* Top Header */}
         <div className="flex justify-between items-start">
           <div className="px-3 py-1 border border-white/20 bg-black/40 backdrop-blur-md font-mono text-xs tracking-widest text-zinc-300 uppercase">
             ARCHIVE // {collection.year}
@@ -39,7 +39,6 @@ const CollectionCard = ({ collection, index }) => {
           </div>
         </div>
 
-        {/* Bottom Details */}
         <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500 ease-out">
           <h2 className="font-sans text-3xl md:text-5xl font-bold uppercase tracking-tight text-white mb-3">
             {collection.name}

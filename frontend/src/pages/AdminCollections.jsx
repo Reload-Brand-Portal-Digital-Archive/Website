@@ -5,14 +5,12 @@ import { notify } from '../lib/toast';
 import { useConfirm } from '../lib/confirm-dialog';
 
 export default function AdminCollections() {
-    // Current view: 'list', 'create', 'edit'
     const [currentView, setCurrentView] = useState('list');
     const [collections, setCollections] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCollection, setSelectedCollection] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    // Form state
     const [formData, setFormData] = useState({
         name: '',
         description: '',
@@ -21,10 +19,19 @@ export default function AdminCollections() {
     });
 
     const [errors, setErrors] = useState({});
-    
+
     const confirm = useConfirm();
 
-    // Fetch collections from backend
+    const getImageUrl = (imageSource) => {
+        if (!imageSource) return null;
+
+        if (imageSource instanceof File) {
+            return URL.createObjectURL(imageSource);
+        }
+
+        return `http://localhost:5000/uploads/${imageSource}`;
+    };
+
     const fetchCollections = async () => {
         setLoading(true);
         try {
@@ -41,12 +48,10 @@ export default function AdminCollections() {
         fetchCollections();
     }, []);
 
-    // Filtered lists
-    const filteredCollections = collections.filter(c => 
+    const filteredCollections = collections.filter(c =>
         c.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    // Handle Input Constraints
     const handleInputChange = (e) => {
         const { name, value, files } = e.target;
 
@@ -90,13 +95,13 @@ export default function AdminCollections() {
         if (!formData.year) newErrors.year = "Tahun wajib diisi";
         if (!formData.cover_image) newErrors.cover_image = "File cover image wajib diisi";
         if (formData.name && formData.name.length < 3) newErrors.name = "Nama terlalu pendek";
-        
+
         setErrors(newErrors);
-        
+
         if (Object.keys(newErrors).length > 0) {
             Object.values(newErrors).forEach(error => notify.error(error));
         }
-        
+
         return Object.keys(newErrors).length === 0;
     };
 
@@ -105,21 +110,20 @@ export default function AdminCollections() {
         if (!validateForm()) return;
 
         const slug = formData.name.toLowerCase().replace(/\s+/g, '-');
-        
+
         const formPayload = new FormData();
         formPayload.append('name', formData.name);
         formPayload.append('slug', slug);
         formPayload.append('description', formData.description);
         formPayload.append('year', formData.year);
-        
-        // cover_image could be a File (if new upload) or string (if unchanged during edit)
+
         if (formData.cover_image instanceof File || typeof formData.cover_image === 'string') {
             formPayload.append('cover_image', formData.cover_image);
         }
 
         try {
             const loadingToastId = notify.loading(currentView === 'create' ? 'Membuat koleksi...' : 'Menyimpan perubahan...');
-            
+
             if (currentView === 'create') {
                 await axios.post('http://localhost:5000/api/collections', formPayload, {
                     headers: { 'Content-Type': 'multipart/form-data' }
@@ -131,8 +135,7 @@ export default function AdminCollections() {
                 });
                 notify.update(loadingToastId, { render: 'Koleksi berhasil diperbarui!', type: 'success', isLoading: false, autoClose: 3000 });
             }
-            
-            // Reload data and go back to list
+
             await fetchCollections();
             setCurrentView('list');
             setSelectedCollection(null);
@@ -154,7 +157,7 @@ export default function AdminCollections() {
     };
 
     const handleDelete = async (id, e) => {
-        e.stopPropagation(); // prevent triggering card click
+        e.stopPropagation();
         const confirmed = await confirm({
             title: 'Hapus Koleksi',
             description: 'Apakah Anda yakin ingin menghapus koleksi ini? Tindakan ini tidak dapat dikembalikan',
@@ -181,11 +184,9 @@ export default function AdminCollections() {
         setCurrentView('create');
     };
 
-    // --- RENDER GRID LIST ---
     if (currentView === 'list') {
         return (
             <div className="space-y-6 animate-in fade-in duration-500">
-                {/* Header & Controls */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
                         <h2 className="text-2xl font-bold text-zinc-50 flex items-center gap-2">
@@ -198,7 +199,7 @@ export default function AdminCollections() {
                     <div className="flex items-center gap-3 w-full sm:w-auto">
                         <div className="relative flex-1 sm:w-64">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
-                            <input 
+                            <input
                                 type="text"
                                 placeholder="Cari koleksi..."
                                 value={searchQuery}
@@ -206,7 +207,7 @@ export default function AdminCollections() {
                                 className="w-full bg-zinc-900 border border-zinc-800 rounded-md py-2 pl-9 pr-4 text-sm text-zinc-100 focus:outline-none focus:border-rose-500 transition-colors"
                             />
                         </div>
-                        <button 
+                        <button
                             onClick={openCreateForm}
                             className="bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors shrink-0"
                         >
@@ -216,7 +217,6 @@ export default function AdminCollections() {
                     </div>
                 </div>
 
-                {/* Grid View */}
                 {filteredCollections.length === 0 ? (
                     <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-12 text-center">
                         <Layers size={48} className="text-zinc-700 mx-auto mb-4" />
@@ -226,44 +226,36 @@ export default function AdminCollections() {
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         {filteredCollections.map(collection => (
-                            <div 
+                            <div
                                 key={collection.collection_id}
                                 onClick={() => handleEdit(collection)}
                                 className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden group cursor-pointer hover:border-zinc-600 transition-all hover:shadow-lg hover:-translate-y-1"
                             >
-                                {/* Image area */}
                                 <div className="aspect-video bg-zinc-950 relative overflow-hidden flex items-center justify-center border-b border-zinc-800 group-hover:opacity-90 transition-opacity">
                                     {collection.cover_image ? (
-                                        <img 
-                                            src={`/src/assets/collections/${collection.cover_image}`} 
-                                            alt={collection.name} 
+                                        <img
+                                            src={getImageUrl(collection.cover_image)}
+                                            alt={collection.name}
                                             className="object-cover w-full h-full"
                                             onError={(e) => {
                                                 e.target.onerror = null;
-                                                e.target.src = '/src/assets/fallback-image.jpg'; // or hide it
-                                                e.target.style.display = 'none';
+                                                e.target.src = 'https://placehold.co/600x400/18181b/a1a1aa?text=Image+Error';
                                             }}
                                         />
                                     ) : (
                                         <ImageIcon className="text-zinc-800" size={48} />
                                     )}
+
                                     <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button 
+                                        <button
                                             onClick={(e) => handleDelete(collection.collection_id, e)}
                                             className="p-1.5 bg-red-500/90 text-white rounded hover:bg-red-600 transition-colors"
-                                            title="Hapus"
                                         >
                                             <Trash2 size={14} />
                                         </button>
                                     </div>
-                                    <div className="absolute inset-0 flex items-center justify-center p-4 text-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <span className="text-xs text-zinc-300 break-all bg-zinc-900/80 px-2 py-1 rounded backdrop-blur-sm">
-                                            src/assets/collections/{collection.cover_image}
-                                        </span>
-                                    </div>
                                 </div>
 
-                                {/* Card Body */}
                                 <div className="p-4">
                                     <div className="flex justify-between items-start mb-2">
                                         <h3 className="text-lg font-semibold text-zinc-100 group-hover:text-rose-400 transition-colors line-clamp-1">{collection.name}</h3>
@@ -279,18 +271,18 @@ export default function AdminCollections() {
         );
     }
 
-    // --- RENDER FORM (CREATE/EDIT) ---
     return (
-        <div className="max-w-2xl mx-auto space-y-6 animate-in fade-in duration-500 slide-in-from-bottom-4">
-            <div className="flex items-center gap-4 mb-8">
-                <button 
+        <div className="space-y-6 animate-in fade-in duration-500">
+            <div className="flex items-center gap-4">
+                <button
                     onClick={() => setCurrentView('list')}
                     className="p-2 bg-zinc-900 border border-zinc-800 rounded-md text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
                 >
                     <ArrowLeft size={18} />
                 </button>
                 <div>
-                    <h2 className="text-xl font-bold text-zinc-50">
+                    <h2 className="text-2xl font-bold text-zinc-50 flex items-center gap-2">
+                        <Layers className="text-rose-500" />
                         {currentView === 'create' ? 'Tambah Koleksi Baru' : 'Edit Data Koleksi'}
                     </h2>
                     <p className="text-sm text-zinc-400 mt-1">Formulir pengaturan rincian koleksi dan covernya.</p>
@@ -298,11 +290,10 @@ export default function AdminCollections() {
             </div>
 
             <form onSubmit={handleSave} className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 space-y-6">
-                
-                {/* Form Group: Name */}
+
                 <div className="space-y-2">
                     <label className="text-sm font-medium text-zinc-300">Nama Koleksi <span className="text-rose-500">*</span></label>
-                    <input 
+                    <input
                         type="text"
                         name="name"
                         value={formData.name}
@@ -318,10 +309,9 @@ export default function AdminCollections() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    {/* Form Group: Year */}
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-zinc-300">Tahun Koleksi <span className="text-rose-500">*</span></label>
-                        <input 
+                        <input
                             type="text"
                             name="year"
                             value={formData.year}
@@ -336,10 +326,19 @@ export default function AdminCollections() {
                         )}
                     </div>
 
-                    {/* Form Group: Cover Image File */}
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-zinc-300">File Cover Image <span className="text-rose-500">*</span></label>
-                        <input 
+
+                        {formData.cover_image && (
+                            <div className="mb-3 relative w-full aspect-video rounded-md overflow-hidden border border-zinc-800">
+                                <img
+                                    src={getImageUrl(formData.cover_image)}
+                                    className="w-full h-full object-cover"
+                                    alt="Preview"
+                                />
+                            </div>
+                        )}
+                        <input
                             type="file"
                             name="cover_image"
                             accept="image/jpeg, image/png, image/webp, image/gif"
@@ -360,10 +359,9 @@ export default function AdminCollections() {
                     </div>
                 </div>
 
-                {/* Form Group: Description */}
                 <div className="space-y-2">
                     <label className="text-sm font-medium text-zinc-300">Deskripsi Singkat</label>
-                    <textarea 
+                    <textarea
                         name="description"
                         value={formData.description}
                         onChange={handleInputChange}
@@ -375,14 +373,14 @@ export default function AdminCollections() {
                 </div>
 
                 <div className="pt-4 flex items-center justify-end gap-3 border-t border-zinc-800">
-                    <button 
+                    <button
                         type="button"
                         onClick={() => setCurrentView('list')}
                         className="px-4 py-2 bg-zinc-800 text-zinc-300 font-medium rounded-md hover:bg-zinc-700 transition-colors"
                     >
                         Batal
                     </button>
-                    <button 
+                    <button
                         type="submit"
                         className="px-4 py-2 bg-rose-500 text-white font-medium rounded-md hover:bg-rose-600 transition-colors shadow-lg shadow-rose-500/20"
                     >
