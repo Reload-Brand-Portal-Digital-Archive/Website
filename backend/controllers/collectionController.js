@@ -1,4 +1,6 @@
 const db = require('../config/database');
+const fs = require('fs');
+const path = require('path');
 
 exports.getAllCollections = async (req, res) => {
     try {
@@ -122,6 +124,13 @@ exports.updateCollection = async (req, res) => {
             [name, slug, description, parseInt(year), cover_image, id]
         );
 
+        if (req.file && existing[0].cover_image && existing[0].cover_image !== cover_image) {
+            const oldPath = path.join(__dirname, '..', 'uploads', existing[0].cover_image);
+            if (fs.existsSync(oldPath)) {
+                fs.unlinkSync(oldPath);
+            }
+        }
+
         const [updatedData] = await db.query('SELECT * FROM collections WHERE collection_id = ?', [id]);
         res.json({ message: 'Koleksi berhasil diperbarui', data: updatedData[0] });
     } catch (error) {
@@ -139,7 +148,17 @@ exports.deleteCollection = async (req, res) => {
             return res.status(404).json({ message: 'Koleksi tidak ditemukan' });
         }
 
+        const coverImage = existing[0].cover_image;
+
         await db.query('DELETE FROM collections WHERE collection_id = ?', [id]);
+        
+        if (coverImage) {
+            const filePath = path.join(__dirname, '..', 'uploads', coverImage);
+            if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+            }
+        }
+
         res.json({ message: 'Koleksi berhasil dihapus' });
     } catch (error) {
         console.error("Error deleting collection:", error);
