@@ -259,7 +259,9 @@ export default function AdminProducts() {
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         {filteredProducts.map(product => {
-                            const cIndex = carouselIndices[product.product_id] || 0;
+                            const rawIndex = carouselIndices[product.product_id] || 0;
+                            const maxIndex = product.images ? Math.max(0, product.images.length - 1) : 0;
+                            const cIndex = rawIndex > maxIndex ? 0 : rawIndex;
                             const hasMultipleImages = product.images && product.images.length > 1;
 
                             return (
