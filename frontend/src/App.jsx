@@ -1,6 +1,8 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { useEffect } from 'react';
+import { trackPageView } from './utils/tracker';
 import { ConfirmDialogProvider } from './lib/confirm-dialog';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -19,9 +21,20 @@ import ShopDetail from './pages/ShopDetail';
 import ProtectedRoute from './components/ProtectedRoute';
 import NotFound from './pages/NotFound';
 
+function RouteTracker() {
+  const location = useLocation();
+
+  useEffect(() => {
+    trackPageView(location.pathname + location.search);
+  }, [location]);
+
+  return null;
+}
+
 function App() {
   return (
     <BrowserRouter>
+      <RouteTracker />
       <ConfirmDialogProvider>
         <ToastContainer
           position="top-right"
