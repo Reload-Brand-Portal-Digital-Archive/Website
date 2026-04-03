@@ -13,6 +13,7 @@ import AdminMaterial from './AdminMaterial';
 import AdminMessages from './AdminMessages';
 import AdminNewsletter from './AdminNewsletter';
 import AdminSettings from './AdminSettings';
+import AdminEndorsements from './AdminEndorsements';
 
 import { DashboardSummaryCards } from '../components/ui/admin-summary-cards';
 import { TrafficChart, UserGrowthChart, SubscriberChart, ExternalClicksChart } from '../components/ui/admin-charts';
@@ -170,6 +171,8 @@ export default function AdminDashboard() {
                 return <AdminCategories />;
             case 'materials':
                 return <AdminMaterial />;
+            case 'endorsements':
+                return <AdminEndorsements />;
             case 'messages':
                 return <AdminMessages />;
             case 'newsletter':

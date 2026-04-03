@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator"
 import { Input } from "@/components/ui/input"
 import Navbar from "../components/ui/Navbar"
 import SplashScreen from "../components/ui/SplashScreen"
+import EndorsementCarousel from "../components/ui/EndorsementCarousel"
 
 const staggerContainer = {
   hidden: {},
@@ -557,6 +558,7 @@ export default function LandingPage() {
       <HeroSection />
       <CurrentDropSection />
       <MaterialIntegritySection />
+      <EndorsementCarousel />
       <ShopCTASection />
       <NewsletterSection />
       <FooterSection />
