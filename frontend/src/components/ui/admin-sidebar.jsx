@@ -1,7 +1,7 @@
 import React from 'react';
 import { 
     LayoutDashboard, ShoppingBag, Layers, 
-    MessageSquare, Mail, Settings, Users, LogOut, X, Tag, Palette
+    MessageSquare, Mail, Settings, Users, LogOut, X, Tag, Palette, Award
 } from 'lucide-react';
 
 export const navigationItems = [
@@ -10,6 +10,7 @@ export const navigationItems = [
     { id: 'collections', label: 'Koleksi', icon: Layers },
     { id: 'categories', label: 'Kategori', icon: Tag },
     { id: 'materials', label: 'Material', icon: Palette },
+    { id: 'endorsements', label: 'Endorsement', icon: Award },
     { id: 'messages', label: 'Pesan', icon: MessageSquare },
     { id: 'newsletter', label: 'Newsletter', icon: Mail },
     { id: 'settings', label: 'Pengaturan', icon: Settings },

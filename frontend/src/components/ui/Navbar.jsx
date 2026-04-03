@@ -87,14 +87,8 @@ const Navbar = () => {
         </Button>
 
         <Sheet>
-          <SheetTrigger asChild>
-            <div
-              role="button"
-              tabIndex={0}
-              className="md:hidden p-2 text-zinc-50 hover:text-zinc-300 transition-colors pointer-events-auto cursor-pointer flex items-center justify-center"
-            >
-              <Menu className="w-6 h-6" strokeWidth={1.5} />
-            </div>
+          <SheetTrigger className="md:hidden p-2 text-zinc-50 hover:text-zinc-300 transition-colors pointer-events-auto cursor-pointer flex items-center justify-center bg-transparent border-none">
+            <Menu className="w-6 h-6" strokeWidth={1.5} />
           </SheetTrigger>
           <SheetContent side="right" className="bg-zinc-950 border-zinc-800 text-zinc-50 p-6 z-[100]">
             <SheetTitle className="sr-only">Mobile Menu</SheetTitle>
