@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Menu } from 'lucide-react';
+import { Menu, RefreshCw } from 'lucide-react';
+import axios from 'axios';
+import { toast } from 'react-toastify';
 import AdminSidebar, { navigationItems } from '../components/ui/admin-sidebar';
 
 import AdminProducts from './AdminProducts';
@@ -13,7 +15,7 @@ import AdminSettings from './AdminSettings';
 
 import { DashboardSummaryCards } from '../components/ui/admin-summary-cards';
 import { TrafficChart, UserGrowthChart, SubscriberChart, ExternalClicksChart } from '../components/ui/admin-charts';
-import AdminGeographicMap from '../components/ui/admin-map';
+import AdminGeographicMap from '../components/ui/AdminGeographicMapV2';
 
 export default function AdminDashboard() {
     const navigate = useNavigate();
@@ -22,6 +24,27 @@ export default function AdminDashboard() {
     
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [activeTab, setActiveTab] = useState('home');
+    
+    // Sinkronisasi E-Commerce state
+    const [isSyncing, setIsSyncing] = useState(false);
+    const [mapRefreshTrigger, setMapRefreshTrigger] = useState(0);
+
+    const handleSyncEcommerce = async () => {
+        setIsSyncing(true);
+        toast.info("Memulai sinkronisasi data dengan E-Commerce...");
+        try {
+            const response = await axios.post('http://localhost:5000/api/settings/sync-ecommerce');
+            if (response.data.success) {
+                toast.success("Sinkronisasi E-Commerce berhasil! Peta diperbarui.");
+                setMapRefreshTrigger(prev => prev + 1);
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error("Terjadi kesalahan saat memproses data E-Commerce dari dummy text mining.");
+        } finally {
+            setIsSyncing(false);
+        }
+    };
 
     const handleLogout = () => {
         localStorage.removeItem('token');
@@ -38,6 +61,15 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="flex items-center gap-4">
+                    <button 
+                        onClick={handleSyncEcommerce} 
+                        disabled={isSyncing}
+                        className="flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 text-xs rounded-md transition-colors disabled:opacity-50"
+                    >
+                        <RefreshCw size={14} className={isSyncing ? "animate-spin" : ""} />
+                        <span>{isSyncing ? "Menyelaraskan..." : "Sinkronisasi E-Commerce"}</span>
+                    </button>
+                    
                     <div className="bg-zinc-900 border border-zinc-800 rounded-md p-1 flex">
                         <button onClick={() => setTimeRange('today')} className={`px-3 py-1 text-xs rounded-sm transition-colors ${timeRange === 'today' ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-zinc-200'}`}>Hari ini</button>
                         <button onClick={() => setTimeRange('7d')} className={`px-3 py-1 text-xs rounded-sm transition-colors ${timeRange === '7d' ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-zinc-200'}`}>7 Hari</button>
@@ -58,7 +90,9 @@ export default function AdminDashboard() {
                     <SubscriberChart />
                     <ExternalClicksChart />
                 </div>
-                <AdminGeographicMap />
+                <div className="lg:col-span-2">
+                    <AdminGeographicMap refreshTrigger={mapRefreshTrigger} />
+                </div>
             </div>
         </div>
     );
@@ -127,4 +161,3 @@ export default function AdminDashboard() {
         </div>
     );
 }
-
