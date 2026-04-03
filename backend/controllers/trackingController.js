@@ -4,15 +4,29 @@ const db = require('../config/database');
  * recordPageView - Records a user visit to a specific page
  */
 exports.recordPageView = async (req, res) => {
-    const { url } = req.body;
+    const { url, client_id } = req.body;
     const ip_address = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
     const user_agent = req.headers['user-agent'];
     const user_id = req.user ? req.user.id : null;
 
+    const trackerId = client_id || ip_address; // Fallback ke IP jika browser blokir client_id
+
     try {
+        // Pengecekan: Apakah Client ID ini sudah tercatat dalam 24 jam terakhir?
+        const [existing] = await db.query(
+            'SELECT 1 FROM page_views WHERE client_id = ? AND created_at >= NOW() - INTERVAL 1 DAY LIMIT 1',
+            [trackerId]
+        );
+
+        // Jika data ada (belum 24 jam), abaikan penyimpanan baru dan anggap valid
+        if (existing.length > 0) {
+            return res.status(200).json({ success: true, message: 'View already recorded within 24 hours' });
+        }
+
+        // Jika tidak ada data atau sudah melewati 24 jam, simpan ke database
         await db.query(
-            'INSERT INTO page_views (user_id, url, ip_address, user_agent) VALUES (?, ?, ?, ?)',
-            [user_id, url, ip_address, user_agent]
+            'INSERT INTO page_views (user_id, url, client_id, ip_address, user_agent) VALUES (?, ?, ?, ?, ?)',
+            [user_id, url, trackerId, ip_address, user_agent]
         );
         res.status(200).json({ success: true, message: 'Page view recorded' });
     } catch (error) {
@@ -26,14 +40,17 @@ exports.recordPageView = async (req, res) => {
  */
 exports.recordLinkClick = async (req, res) => {
     const { platform } = req.params; // shopee or tiktok
+    const { client_id } = req.body;
     const ip_address = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
     const user_id = req.user ? req.user.id : null;
+
+    const trackerId = client_id || ip_address; // Fallback ke IP jika cookie terblokir
 
     try {
         // 1. Record the click
         await db.query(
-            'INSERT INTO link_clicks (user_id, platform, ip_address) VALUES (?, ?, ?)',
-            [user_id, platform, ip_address]
+            'INSERT INTO link_clicks (user_id, platform, client_id, ip_address) VALUES (?, ?, ?, ?)',
+            [user_id, platform, trackerId, ip_address]
         );
 
         // 2. Fetch the target URL from site_settings
@@ -105,25 +122,25 @@ exports.getTrackingStats = async (req, res) => {
             ORDER BY date ASC
         `, dateParams);
 
-        // User Growth (Monthly registrations - within date range)
+        // User Growth (Daily registrations - excluding admin, within date range)
         const [userGrowth] = await db.query(`
-            SELECT DATE_FORMAT(created_at, '%Y-%m') as month, COUNT(*) as count 
+            SELECT DATE(created_at) as date, COUNT(*) as count 
             FROM users 
-            WHERE ${dateCondition}
-            GROUP BY month 
-            ORDER BY month ASC
+            WHERE ${dateCondition} AND role != 'admin'
+            GROUP BY DATE(created_at)
+            ORDER BY date ASC
         `, dateParams);
 
         // Latest Activities (Combined)
         const [latestViews] = await db.query(`
-            SELECT 'page_view' as type, url as identifier, ip_address, created_at 
+            SELECT 'page_view' as type, url as identifier, client_id as ip_address, created_at 
             FROM page_views 
             ORDER BY created_at DESC 
             LIMIT 5
         `);
 
         const [latestClicks] = await db.query(`
-            SELECT 'link_click' as type, platform as identifier, ip_address, created_at 
+            SELECT 'link_click' as type, platform as identifier, client_id as ip_address, created_at 
             FROM link_clicks 
             ORDER BY created_at DESC 
             LIMIT 5
