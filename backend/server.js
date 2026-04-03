@@ -15,12 +15,14 @@ const collectionRoutes = require('./routes/collectionRoutes');
 const productRoutes = require('./routes/productRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
 const materialRoutes = require('./routes/materialRoutes');
+const endorsementRoutes = require('./routes/endorsementRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/collections', collectionRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/materials', materialRoutes);
+app.use('/api/endorsements', endorsementRoutes);
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
