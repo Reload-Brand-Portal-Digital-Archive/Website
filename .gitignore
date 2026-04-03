@@ -9,3 +9,6 @@ frontend/src/assets/collections/*
 # Ignore uploaded product images but keep the directory tracked
 backend/uploads/*
 !backend/uploads/.gitkeep
+
+frontend/package.json
+frontend/package-lock.json

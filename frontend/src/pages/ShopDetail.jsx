@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import axios from 'axios';
 import Navbar from '../components/ui/Navbar';
 import ProductGallery from '../components/ui/ProductGallery';
+import { trackLinkClick } from '../utils/tracker';
 import { ArrowLeft, ShoppingBag, Loader2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 
@@ -148,7 +149,7 @@ const ShopDetail = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Button
                     disabled={isSoldOut}
-                    onClick={() => window.open(product.shopee_url || 'https://shopee.co.id', '_blank')}
+                    onClick={() => trackLinkClick('shopee')}
                     className="bg-transparent border border-orange-600/50 text-orange-500 hover:bg-orange-600 hover:text-white hover:border-orange-600 rounded-none h-14 font-mono text-xs uppercase tracking-widest transition-all w-full flex items-center gap-2 disabled:opacity-50"
                   >
                     <ShoppingBag className="w-4 h-4" />
@@ -156,7 +157,7 @@ const ShopDetail = () => {
                   </Button>
                   <Button
                     disabled={isSoldOut}
-                    onClick={() => window.open(product.tiktok_url || 'https://tiktok.com', '_blank')}
+                    onClick={() => trackLinkClick('tiktok')}
                     className="bg-transparent border border-emerald-600/50 text-emerald-500 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 rounded-none h-14 font-mono text-xs uppercase tracking-widest transition-all w-full flex items-center gap-2 disabled:opacity-50"
                   >
                     <ShoppingBag className="w-4 h-4" />

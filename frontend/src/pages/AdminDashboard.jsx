@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Menu } from 'lucide-react';
+import { Menu, RefreshCw, CalendarDays } from 'lucide-react';
+import axios from 'axios';
+import { toast } from 'react-toastify';
 import AdminSidebar, { navigationItems } from '../components/ui/admin-sidebar';
+import DateRangePickerModal from '../components/ui/DateRangePickerModal';
 
 import AdminProducts from './AdminProducts';
 import AdminCollections from './AdminCollections';
@@ -13,15 +16,59 @@ import AdminSettings from './AdminSettings';
 
 import { DashboardSummaryCards } from '../components/ui/admin-summary-cards';
 import { TrafficChart, UserGrowthChart, SubscriberChart, ExternalClicksChart } from '../components/ui/admin-charts';
-import AdminGeographicMap from '../components/ui/admin-map';
+import AdminGeographicMap from '../components/ui/AdminGeographicMapV2';
+import RecentActivityLog from '../components/ui/RecentActivityLog';
 
 export default function AdminDashboard() {
     const navigate = useNavigate();
     const user = JSON.parse(localStorage.getItem('user') || '{}');
-    const [timeRange, setTimeRange] = useState('7d');
+    const [preset, setPreset] = useState('7d');
+    const [customStart, setCustomStart] = useState('');
+    const [customEnd, setCustomEnd] = useState('');
+    const [isPickerOpen, setIsPickerOpen] = useState(false);
+
+    // Hitung dateRange berdasarkan preset atau custom
+    const getDateRange = () => {
+        const today = new Date();
+        const fmt = (d) => d.toISOString().split('T')[0];
+        if (preset === 'today') {
+            return { startDate: fmt(today), endDate: fmt(today) };
+        } else if (preset === '7d') {
+            const s = new Date(today); s.setDate(s.getDate() - 6);
+            return { startDate: fmt(s), endDate: fmt(today) };
+        } else if (preset === '30d') {
+            const s = new Date(today); s.setDate(s.getDate() - 29);
+            return { startDate: fmt(s), endDate: fmt(today) };
+        } else if (preset === 'custom' && customStart && customEnd) {
+            return { startDate: customStart, endDate: customEnd };
+        }
+        return {};
+    };
+    const dateRange = getDateRange();
     
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [activeTab, setActiveTab] = useState('home');
+    
+    // Sinkronisasi E-Commerce state
+    const [isSyncing, setIsSyncing] = useState(false);
+    const [mapRefreshTrigger, setMapRefreshTrigger] = useState(0);
+
+    const handleSyncEcommerce = async () => {
+        setIsSyncing(true);
+        toast.info("Memulai sinkronisasi data dengan E-Commerce...");
+        try {
+            const response = await axios.post('http://localhost:5000/api/settings/sync-ecommerce');
+            if (response.data.success) {
+                toast.success("Sinkronisasi E-Commerce berhasil! Peta diperbarui.");
+                setMapRefreshTrigger(prev => prev + 1);
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error("Terjadi kesalahan saat memproses data E-Commerce dari dummy text mining.");
+        } finally {
+            setIsSyncing(false);
+        }
+    };
 
     const handleLogout = () => {
         localStorage.removeItem('token');
@@ -37,29 +84,77 @@ export default function AdminDashboard() {
                     <p className="text-zinc-400 text-sm mt-1">Ringkasan statistik performa website RELOAD.</p>
                 </div>
 
-                <div className="flex items-center gap-4">
+                <div className="flex flex-wrap items-center gap-3">
+                    <button 
+                        onClick={handleSyncEcommerce} 
+                        disabled={isSyncing}
+                        className="flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 text-xs rounded-md transition-colors disabled:opacity-50"
+                    >
+                        <RefreshCw size={14} className={isSyncing ? "animate-spin" : ""} />
+                        <span>{isSyncing ? "Menyelaraskan..." : "Sinkronisasi E-Commerce"}</span>
+                    </button>
+                    
+                    {/* Preset buttons */}
                     <div className="bg-zinc-900 border border-zinc-800 rounded-md p-1 flex">
-                        <button onClick={() => setTimeRange('today')} className={`px-3 py-1 text-xs rounded-sm transition-colors ${timeRange === 'today' ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-zinc-200'}`}>Hari ini</button>
-                        <button onClick={() => setTimeRange('7d')} className={`px-3 py-1 text-xs rounded-sm transition-colors ${timeRange === '7d' ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-zinc-200'}`}>7 Hari</button>
-                        <button onClick={() => setTimeRange('30d')} className={`px-3 py-1 text-xs rounded-sm transition-colors ${timeRange === '30d' ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-zinc-200'}`}>30 Hari</button>
+                        {[['today', 'Hari ini'], ['7d', '7 Hari'], ['30d', '30 Hari']].map(([key, label]) => (
+                            <button
+                                key={key}
+                                onClick={() => { setPreset(key); setIsPickerOpen(false); }}
+                                className={`px-3 py-1 text-xs rounded-sm transition-colors ${
+                                    preset === key && !isPickerOpen ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-zinc-200'
+                                }`}
+                            >
+                                {label}
+                            </button>
+                        ))}
+                        <button
+                            onClick={() => setIsPickerOpen(true)}
+                            className={`px-3 py-1 text-xs rounded-sm transition-all flex items-center gap-1.5 ${
+                                preset === 'custom' ? 'bg-rose-500/20 text-rose-400' : 'text-zinc-400 hover:text-zinc-200'
+                            }`}
+                        >
+                            <CalendarDays size={12} />
+                            {preset === 'custom' && customStart && customEnd
+                                ? `${customStart} — ${customEnd}`
+                                : 'Pilih Tanggal'
+                            }
+                        </button>
                     </div>
                 </div>
             </div>
 
-            <DashboardSummaryCards />
+            {/* Date Range Modal */}
+            {isPickerOpen && (
+                <DateRangePickerModal
+                    initialStart={customStart}
+                    initialEnd={customEnd}
+                    onApply={({ startDate, endDate }) => {
+                        setCustomStart(startDate);
+                        setCustomEnd(endDate);
+                        setPreset('custom');
+                    }}
+                    onClose={() => setIsPickerOpen(false)}
+                />
+            )}
+
+            <DashboardSummaryCards dateRange={dateRange} />
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <TrafficChart />
-                <UserGrowthChart />
+                <TrafficChart dateRange={dateRange} />
+                <UserGrowthChart dateRange={dateRange} />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-1 space-y-6">
                     <SubscriberChart />
-                    <ExternalClicksChart />
+                    <ExternalClicksChart dateRange={dateRange} />
                 </div>
-                <AdminGeographicMap />
+                <div className="lg:col-span-2">
+                    <AdminGeographicMap refreshTrigger={mapRefreshTrigger} />
+                </div>
             </div>
+
+            <RecentActivityLog />
         </div>
     );
 
@@ -127,4 +222,3 @@ export default function AdminDashboard() {
         </div>
     );
 }
-
