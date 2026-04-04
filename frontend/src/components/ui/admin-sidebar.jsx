@@ -11,7 +11,7 @@ export const navigationItems = [
     { id: 'categories', label: 'Kategori', icon: Tag },
     { id: 'materials', label: 'Material', icon: Palette },
     { id: 'endorsements', label: 'Endorsement', icon: Award },
-    { id: 'messages', label: 'Pesan', icon: MessageSquare },
+    { id: 'messages', label: 'Pesanan Grosir', icon: MessageSquare },
     { id: 'newsletter', label: 'Newsletter', icon: Mail },
     { id: 'settings', label: 'Pengaturan', icon: Settings },
 ];
