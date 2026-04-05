@@ -75,14 +75,14 @@ exports.getProductBySlug = async (req, res) => {
 };
 
 exports.createProduct = async (req, res) => {
-    const { collection_id, name, description, category, sizes, status, cover_identifier } = req.body;
+    const { collection_id, name, description, category, sizes, status, cover_identifier, shopee_link, tiktok_link } = req.body;
     if (!name) return res.status(400).json({ message: 'Nama produk wajib diisi!' });
     const slug = generateSlug(name);
 
     try {
         const [result] = await db.query(
-            'INSERT INTO products (collection_id, name, slug, description, category, sizes, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [collection_id || null, name, slug, description, category, sizes, status || 'Available']
+            'INSERT INTO products (collection_id, name, slug, description, category, sizes, status, shopee_link, tiktok_link) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [collection_id || null, name, slug, description, category, sizes, status || 'Available', shopee_link || null, tiktok_link || null]
         );
         const newProductId = result.insertId;
 
@@ -103,15 +103,15 @@ exports.createProduct = async (req, res) => {
 
 exports.updateProduct = async (req, res) => {
     const productId = req.params.id;
-    const { collection_id, name, description, category, sizes, status, cover_identifier } = req.body;
+    const { collection_id, name, description, category, sizes, status, cover_identifier, shopee_link, tiktok_link } = req.body;
     let retainedImages = req.body.retained_images ? JSON.parse(req.body.retained_images) : [];
 
     if (!name) return res.status(400).json({ message: 'Nama produk wajib diisi!' });
     const slug = generateSlug(name);
 
     try {
-        await db.query('UPDATE products SET collection_id = ?, name = ?, slug = ?, description = ?, category = ?, sizes = ?, status = ? WHERE product_id = ?',
-            [collection_id || null, name, slug, description, category, sizes, status, productId]);
+        await db.query('UPDATE products SET collection_id = ?, name = ?, slug = ?, description = ?, category = ?, sizes = ?, status = ?, shopee_link = ?, tiktok_link = ? WHERE product_id = ?',
+            [collection_id || null, name, slug, description, category, sizes, status, shopee_link || null, tiktok_link || null, productId]);
 
         const [oldImages] = await db.query('SELECT image_path FROM product_images WHERE product_id = ?', [productId]);
         oldImages.forEach((img) => {
