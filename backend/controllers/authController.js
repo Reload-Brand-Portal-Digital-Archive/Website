@@ -54,7 +54,7 @@ exports.login = async (req, res) => {
         res.json({
             message: 'Login successful!',
             token: token,
-            user: { id: user.user_id, name: user.name, email: user.email, role: user.role }
+            user: { id: user.user_id, name: user.name, email: user.email, role: user.role, google_id: user.google_id || null }
         });
     } catch (error) {
         console.error(error);
@@ -95,7 +95,7 @@ exports.googleLogin = async (req, res) => {
         res.json({
             message: 'Google Login berhasil!',
             token: jwtToken,
-            user: { id: user.user_id || user.id, name: user.name, email: user.email, role: user.role }
+            user: { id: user.user_id || user.id, name: user.name, email: user.email, role: user.role, google_id: user.google_id || null }
         });
     } catch (error) {
         console.error('Google Auth Error:', error);
@@ -134,11 +134,44 @@ exports.forgotPassword = async (req, res) => {
             to: user.email,
             subject: '[RELOAD DISTRO] Permintaan Reset Password',
             html: `
-                <h3>Halo, ${user.name}!</h3>
-                <p>Kami menerima permintaan untuk mereset password akun RELOAD Anda.</p>
-                <p>Silakan klik link di bawah ini untuk membuat password baru (berlaku selama 15 menit):</p>
-                <a href="${resetLink}" target="_blank" style="background-color: #dc2626; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 10px;">Reset Password</a>
-                <p style="margin-top: 20px; color: #666; font-size: 12px;">Jika Anda tidak merasa meminta reset password, abaikan email ini.</p>
+                <div style="background-color: #000000; padding: 40px 20px; font-family: 'Courier New', Consolas, monospace;">
+                    <div style="max-width: 520px; margin: 0 auto; border: 1px solid #1a1a1a; padding: 0;">
+                        <!-- Header -->
+                        <div style="background-color: #0a0a0a; border-bottom: 1px solid #1a1a1a; padding: 20px 24px;">
+                            <span style="color: #ef4444; font-size: 11px; letter-spacing: 0.25em; text-transform: uppercase;">[ RELOAD DISTRO // SECURITY ]</span>
+                        </div>
+
+                        <!-- Body -->
+                        <div style="padding: 32px 24px;">
+                            <div style="margin-bottom: 28px;">
+                                <span style="color: #eab308; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; display: block; margin-bottom: 8px;">> PASSWORD WARNING</span>
+                                <h1 style="color: #fafafa; font-size: 20px; margin: 0; text-transform: uppercase; letter-spacing: 0.08em; font-weight: bold;">Reset Password</h1>
+                            </div>
+
+                            <p style="color: #71717a; font-size: 12px; line-height: 1.6; margin: 0 0 24px 0;">
+                                Halo, <span style="color: #d4d4d8;">${user.name}</span>. Kami menerima permintaan untuk mereset password akun RELOAD Anda.
+                            </p>
+                            
+                            <p style="color: #71717a; font-size: 12px; line-height: 1.6; margin: 0 0 24px 0;">
+                                Silakan klik tombol di bawah ini untuk membuat password baru (berlaku selama 15 menit):
+                            </p>
+
+                            <!-- Action Button -->
+                            <div style="margin-bottom: 32px;">
+                                <a href="${resetLink}" target="_blank" style="display: inline-block; background-color: #0a0a0a; border: 1px solid #ef4444; color: #ef4444; padding: 12px 24px; text-decoration: none; font-size: 13px; font-weight: bold; letter-spacing: 0.15em; text-transform: uppercase;">[ RESET PASSWORD ]</a>
+                            </div>
+
+                            <p style="color: #3f3f46; font-size: 11px; line-height: 1.5; margin: 0;">
+                                Jika Anda tidak merasa meminta reset password, abaikan email ini.
+                            </p>
+                        </div>
+
+                        <!-- Footer -->
+                        <div style="background-color: #0a0a0a; border-top: 1px solid #1a1a1a; padding: 16px 24px; text-align: center;">
+                            <span style="color: #27272a; font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase;">© ${new Date().getFullYear()} RELOAD DISTRO // ALL RIGHTS RESERVED</span>
+                        </div>
+                    </div>
+                </div>
             `
         };
 
