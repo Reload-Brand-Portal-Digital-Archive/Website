@@ -54,7 +54,12 @@ const Navbar = () => {
         >
           Shop
         </Link>
-        <button className="text-zinc-400 hover:text-zinc-300 transition-colors">Contact</button>
+        <Link
+          to="/wholesale"
+          className={`hover:text-zinc-300 transition-colors ${location.pathname.startsWith('/wholesale') ? 'text-white border-b border-white/30 pb-1' : 'text-zinc-400'}`}
+        >
+          Wholesale
+        </Link>
         <button className="text-zinc-400 hover:text-zinc-300 transition-colors">About</button>
       </div>
 
@@ -103,7 +108,9 @@ const Navbar = () => {
               <Link to="/shop" className={`text-left hover:text-zinc-300 transition-colors ${location.pathname.startsWith('/shop') ? 'text-white' : 'text-zinc-400'}`}>
                 Shop
               </Link>
-              <button className="text-left text-zinc-400 hover:text-zinc-300 transition-colors">Contact</button>
+              <Link to="/wholesale" className={`text-left hover:text-zinc-300 transition-colors ${location.pathname.startsWith('/wholesale') ? 'text-white' : 'text-zinc-400'}`}>
+                Wholesale
+              </Link>
               <button className="text-left text-zinc-400 hover:text-zinc-300 transition-colors">About</button>
               <Separator className="bg-zinc-800 my-4" />
               {user ? (

@@ -27,7 +27,7 @@ const fadeIn = {
 
 function HeroSection() {
   return (
-    <header className="relative w-full min-h-[100dvh] bg-zinc-950 overflow-hidden pt-16">
+    <header className="relative w-full min-h-[100dvh] bg-zinc-950 overflow-hidden pt-21">
       <div
         className="absolute inset-0 z-0 pointer-events-none opacity-[0.035] mix-blend-screen"
         style={{
