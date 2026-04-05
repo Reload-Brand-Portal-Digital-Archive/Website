@@ -74,6 +74,12 @@ const Navbar = () => {
                 Admin Panel
               </Link>
             )}
+            <Link
+              to="/profile"
+              className={`text-xs tracking-widest uppercase transition-colors font-mono ${location.pathname === '/profile' ? 'text-white' : 'text-zinc-400 hover:text-zinc-200'}`}
+            >
+              [ Profile ]
+            </Link>
             <Button onClick={handleLogout} variant="ghost" className="text-zinc-400 hover:text-red-500 hover:bg-transparent transition-colors uppercase tracking-widest text-xs">
               [ Logout ]
             </Button>
@@ -118,6 +124,7 @@ const Navbar = () => {
                   {user.role === 'admin' && (
                     <Link to="/admin/dashboard" className="block w-full text-left py-2 text-zinc-400 hover:text-white transition-colors">Admin Panel</Link>
                   )}
+                  <Link to="/profile" className={`block w-full text-left py-2 transition-colors ${location.pathname === '/profile' ? 'text-white' : 'text-zinc-400 hover:text-white'}`}>Profile</Link>
                   <button onClick={handleLogout} className="block w-full text-left py-2 text-red-500 hover:text-red-400 transition-colors">Logout</button>
                 </>
               ) : (
