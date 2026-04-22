@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingBag, Plus, Search, Trash2, ArrowLeft, Image as ImageIcon, Loader2, Star, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ShoppingBag, Plus, Search, Trash2, ArrowLeft, Image as ImageIcon, Loader2, Star, X, ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
 import axios from 'axios';
 import { notify } from '../lib/toast';
 import { useConfirm } from '../lib/confirm-dialog';
@@ -15,7 +15,8 @@ export default function AdminProducts() {
     const [carouselIndices, setCarouselIndices] = useState({});
 
     const [formData, setFormData] = useState({
-        name: '', collection_id: '', description: '', category: '', sizes: [], status: 'Available'
+        name: '', collection_id: '', description: '', category: '', sizes: [], status: 'Available',
+        shopee_link: '', tiktok_link: ''
     });
     const [imageManager, setImageManager] = useState([]);
     const [errors, setErrors] = useState({});
@@ -183,7 +184,8 @@ export default function AdminProducts() {
 
         setFormData({
             name: product.name, collection_id: product.collection_id || '', description: product.description || '',
-            category: product.category || '', sizes: parsedSizes, status: product.status || 'Available'
+            category: product.category || '', sizes: parsedSizes, status: product.status || 'Available',
+            shopee_link: product.shopee_link || '', tiktok_link: product.tiktok_link || ''
         });
 
         if (product.images && product.images.length > 0) {
@@ -224,7 +226,7 @@ export default function AdminProducts() {
     };
 
     const openCreateForm = () => {
-        setFormData({ name: '', collection_id: '', description: '', category: '', sizes: [], status: 'Available' });
+        setFormData({ name: '', collection_id: '', description: '', category: '', sizes: [], status: 'Available', shopee_link: '', tiktok_link: '' });
         setImageManager([]); setErrors({}); setCurrentView('create');
     };
 
@@ -409,6 +411,35 @@ export default function AdminProducts() {
                         className="w-full bg-zinc-950 border border-zinc-800 rounded-md py-2 px-4 text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-rose-500 transition-colors resize-none"
                         placeholder="Tuliskan deskripsi detail bahan, cutting, panduan ukuran, dll..."
                     />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-zinc-300 flex items-center gap-2">
+                            <ExternalLink size={14} className="text-orange-500" /> Link Shopee
+                        </label>
+                        <input
+                            type="text"
+                            name="shopee_link"
+                            value={formData.shopee_link}
+                            onChange={handleInputChange}
+                            placeholder="https://shopee.co.id/..."
+                            className="w-full bg-zinc-950 border border-zinc-800 rounded-md py-2 px-4 text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-orange-500 transition-colors"
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-zinc-300 flex items-center gap-2">
+                            <ExternalLink size={14} className="text-emerald-500" /> Link Tik Tok Shop
+                        </label>
+                        <input
+                            type="text"
+                            name="tiktok_link"
+                            value={formData.tiktok_link}
+                            onChange={handleInputChange}
+                            placeholder="https://www.tiktok.com/..."
+                            className="w-full bg-zinc-950 border border-zinc-800 rounded-md py-2 px-4 text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-emerald-500 transition-colors"
+                        />
+                    </div>
                 </div>
 
                 <div className="space-y-4 pt-4 border-t border-zinc-800">

@@ -20,6 +20,7 @@ import Shop from './pages/Shop';
 import ShopDetail from './pages/ShopDetail';
 import Wholesale from './pages/Wholesale';
 import ProtectedRoute from './components/ProtectedRoute';
+import UserProfile from './pages/UserProfile';
 import NotFound from './pages/NotFound';
 
 function RouteTracker() {
@@ -60,6 +61,9 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password/:id/:token" element={<ResetPassword />} />
           <Route path="/wholesale" element={<Wholesale />} />
+          <Route element={<ProtectedRoute requireAdmin={false} />}>
+            <Route path="/profile" element={<UserProfile />} />
+          </Route>
           <Route element={<ProtectedRoute requireAdmin={true} />}>
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/products" element={<AdminProducts />} />

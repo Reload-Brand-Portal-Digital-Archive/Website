@@ -4,8 +4,7 @@ import { motion } from 'framer-motion';
 import axios from 'axios';
 import Navbar from '../components/ui/Navbar';
 import ProductGallery from '../components/ui/ProductGallery';
-import { trackLinkClick } from '../utils/tracker';
-import { ArrowLeft, ShoppingBag, Loader2 } from 'lucide-react';
+import { ArrowLeft, ShoppingBag, Loader2, XCircle } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 
 const ShopDetail = () => {
@@ -58,6 +57,22 @@ const ShopDetail = () => {
   }
 
   const isSoldOut = product.status === 'Sold Out';
+  const hasShopeeLink = !!product.shopee_link;
+  const hasTiktokLink = !!product.tiktok_link;
+
+  const handleExternalClick = async (platformName, targetUrl) => {
+    try {
+      const clientId = localStorage.getItem('reload_client_id') || document.cookie.split('; ').find(r => r.startsWith('client_id='))?.split('=')[1] || 'anonymous';
+      await axios.post('http://localhost:5000/api/track/click/' + platformName, {
+        client_id: clientId
+      });
+    } catch (err) {
+      console.error('Click tracking failed:', err);
+    } finally {
+      const formattedUrl = targetUrl.match(/^https?:\/\//i) ? targetUrl : `https://${targetUrl}`;
+      window.open(formattedUrl, '_blank', 'noopener,noreferrer');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-50 font-sans cursor-default selection:bg-white selection:text-black">
@@ -148,20 +163,20 @@ const ShopDetail = () => {
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Button
-                    disabled={isSoldOut}
-                    onClick={() => trackLinkClick('shopee')}
-                    className="bg-transparent border border-orange-600/50 text-orange-500 hover:bg-orange-600 hover:text-white hover:border-orange-600 rounded-none h-14 font-mono text-xs uppercase tracking-widest transition-all w-full flex items-center gap-2 disabled:opacity-50"
+                    disabled={isSoldOut || !hasShopeeLink}
+                    onClick={() => handleExternalClick('shopee', product.shopee_link)}
+                    className="bg-transparent border border-orange-600/50 text-orange-500 hover:bg-orange-600 hover:text-white hover:border-orange-600 rounded-none h-14 font-mono text-xs uppercase tracking-widest transition-all w-full flex items-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed"
                   >
-                    <ShoppingBag className="w-4 h-4" />
-                    Shopee
+                    {hasShopeeLink ? <ShoppingBag className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                    {hasShopeeLink ? 'Shopee' : 'Shopee — No Link'}
                   </Button>
                   <Button
-                    disabled={isSoldOut}
-                    onClick={() => trackLinkClick('tiktok')}
-                    className="bg-transparent border border-emerald-600/50 text-emerald-500 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 rounded-none h-14 font-mono text-xs uppercase tracking-widest transition-all w-full flex items-center gap-2 disabled:opacity-50"
+                    disabled={isSoldOut || !hasTiktokLink}
+                    onClick={() => handleExternalClick('tiktok', product.tiktok_link)}
+                    className="bg-transparent border border-emerald-600/50 text-emerald-500 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 rounded-none h-14 font-mono text-xs uppercase tracking-widest transition-all w-full flex items-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed"
                   >
-                    <ShoppingBag className="w-4 h-4" />
-                    TikTok Shop
+                    {hasTiktokLink ? <ShoppingBag className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                    {hasTiktokLink ? 'TikTok Shop' : 'TikTok — No Link'}
                   </Button>
                 </div>
                 {isSoldOut && (
