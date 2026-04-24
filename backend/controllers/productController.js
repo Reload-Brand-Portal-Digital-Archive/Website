@@ -162,3 +162,83 @@ exports.deleteProduct = async (req, res) => {
         res.status(500).json({ message: 'Gagal menghapus produk' });
     }
 };
+
+exports.exportProducts = async (req, res) => {
+    const archiver = require('archiver');
+    const ExcelJS = require('exceljs');
+    
+    try {
+        const query = `
+            SELECT 
+                p.*, 
+                c.name AS collection_name,
+                (
+                    SELECT GROUP_CONCAT(image_path ORDER BY is_primary DESC, sort_order ASC SEPARATOR ',') 
+                    FROM product_images 
+                    WHERE product_id = p.product_id
+                ) AS all_images
+            FROM products p
+            LEFT JOIN collections c ON p.collection_id = c.collection_id
+            ORDER BY p.created_at DESC
+        `;
+        const [products] = await db.query(query);
+
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Products');
+        worksheet.columns = [
+            { header: 'Name', key: 'name', width: 30 },
+            { header: 'Collection', key: 'collection', width: 20 },
+            { header: 'Category', key: 'category', width: 20 },
+            { header: 'Description', key: 'description', width: 40 },
+            { header: 'Status', key: 'status', width: 15 },
+            { header: 'Sizes', key: 'sizes', width: 20 },
+            { header: 'Shopee', key: 'shopee', width: 30 },
+            { header: 'TikTok', key: 'tiktok', width: 30 }
+        ];
+
+        res.setHeader('Content-Type', 'application/zip');
+        res.setHeader('Content-Disposition', 'attachment; filename="products_export.zip"');
+        const archive = archiver('zip', { zlib: { level: 9 } });
+
+        archive.on('error', (err) => { throw err; });
+        archive.pipe(res);
+
+        for (const product of products) {
+            worksheet.addRow({
+                name: product.name || '',
+                collection: product.collection_name || '',
+                category: product.category || '',
+                description: product.description || '',
+                status: product.status || 'Available',
+                sizes: product.sizes || '',
+                shopee: product.shopee_link || '',
+                tiktok: product.tiktok_link || ''
+            });
+
+            if (product.all_images) {
+                const images = product.all_images.split(',');
+                const folderName = (product.name || 'product').replace(/[^a-zA-Z0-9_\- ]/g, '').trim() || 'product';
+                
+                images.forEach((img, idx) => {
+                    const filePath = path.join(__dirname, '..', img);
+                    if (fs.existsSync(filePath)) {
+                        const ext = path.extname(img) || '.jpg';
+                        const imageName = `${folderName}_${idx + 1}${ext}`;
+                        archive.file(filePath, { name: `${folderName}/${imageName}` });
+                    }
+                });
+            }
+        }
+
+        const excelBuffer = await workbook.xlsx.writeBuffer();
+        archive.append(excelBuffer, { name: 'products.xlsx' });
+
+        await archive.finalize();
+
+    } catch (error) {
+        console.error('Export Error:', error);
+        if (!res.headersSent) {
+            res.status(500).json({ message: 'Gagal mengekspor produk' });
+        }
+    }
+};

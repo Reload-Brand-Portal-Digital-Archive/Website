@@ -16,7 +16,7 @@ export default function AdminMaterials() {
     const fetchMaterials = async () => {
         setLoading(true);
         try {
-            const res = await axios.get('http://localhost:5000/api/materials');
+            const res = await axios.get(import.meta.env.VITE_API_URL + '/api/materials');
             setMaterials(res.data);
         } catch (error) { notify.error("Gagal memuat material"); }
         finally { setLoading(false); }
@@ -35,7 +35,7 @@ export default function AdminMaterials() {
     const handleEdit = (material) => {
         setSelectedMaterial(material);
         setFormData({ title: material.title, description: material.description, image: null });
-        setPreview(`http://localhost:5000${material.image_path}`);
+        setPreview(`${import.meta.env.VITE_API_URL}${material.image_path}`);
         setCurrentView('form');
     };
 
@@ -62,11 +62,11 @@ export default function AdminMaterials() {
             const loadingToastId = notify.loading(selectedMaterial === null ? 'Menambah material...' : 'Menyimpan perubahan...');
             let res;
             if (selectedMaterial === null) {
-                res = await axios.post('http://localhost:5000/api/materials', payload, {
+                res = await axios.post(import.meta.env.VITE_API_URL + '/api/materials', payload, {
                     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
                 });
             } else {
-                res = await axios.put(`http://localhost:5000/api/materials/${selectedMaterial.id}`, payload, {
+                res = await axios.put(`${import.meta.env.VITE_API_URL}/api/materials/${selectedMaterial.id}`, payload, {
                     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
                 });
             }
@@ -90,7 +90,7 @@ export default function AdminMaterials() {
             try {
                 const token = localStorage.getItem('token');
                 const loadingToastId = notify.loading('Menghapus material...');
-                const res = await axios.delete(`http://localhost:5000/api/materials/${id}`, {
+                const res = await axios.delete(`${import.meta.env.VITE_API_URL}/api/materials/${id}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setMaterials(res.data.data);
@@ -137,7 +137,7 @@ export default function AdminMaterials() {
                                 materials.map((mat, i) => (
                                     <div key={mat.id} className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden group hover:border-zinc-600 transition-colors">
                                         <div className="aspect-[4/3] bg-zinc-950 relative border-b border-zinc-800">
-                                            <img src={`http://localhost:5000${mat.image_path}`} alt={mat.title} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
+                                            <img src={`${import.meta.env.VITE_API_URL}${mat.image_path}`} alt={mat.title} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
                                             <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                 <button onClick={() => handleEdit(mat)} className="bg-blue-500/90 text-white p-2 rounded-md hover:bg-blue-600 transition-colors" title="Edit Material"><Edit2 size={16} /></button>
                                                 <button onClick={() => handleDelete(mat.id, mat.title)} className="bg-red-500/90 text-white p-2 rounded-md hover:bg-red-600 transition-colors" title="Hapus Material"><Trash2 size={16} /></button>
@@ -177,9 +177,18 @@ export default function AdminMaterials() {
                         </div>
                         <div className="flex flex-col gap-4">
                             <label className="text-sm text-zinc-400 mb-1 block">Upload Foto</label>
-                            <label className="flex-1 border-2 border-dashed border-zinc-700 bg-zinc-950 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-zinc-500 transition-colors overflow-hidden relative">
+                            <label 
+                                className="flex-1 border-2 border-dashed border-zinc-700 bg-zinc-950 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-zinc-500 transition-colors overflow-hidden relative"
+                                onDragOver={e => e.preventDefault()}
+                                onDrop={e => {
+                                    e.preventDefault();
+                                    if(e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                                        handleFile({ target: { files: e.dataTransfer.files } });
+                                    }
+                                }}
+                            >
                                 {preview ? <img src={preview} alt="Preview" className="absolute inset-0 w-full h-full object-cover opacity-60" /> : <ImageIcon size={32} className="text-zinc-600 mb-2" />}
-                                <span className="text-xs text-zinc-400 z-10 bg-zinc-900/80 px-2 py-1 rounded">Pilih Gambar</span>
+                                <span className="text-xs text-zinc-400 z-10 bg-zinc-900/80 px-2 py-1 rounded">Drag & Drop atau Klik</span>
                                 <input type="file" onChange={handleFile} accept="image/*" className="hidden" />
                             </label>
                             <div className="flex gap-2">

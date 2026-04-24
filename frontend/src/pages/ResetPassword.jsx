@@ -31,7 +31,7 @@ export default function ResetPassword() {
 
         try {
             const loadingToastId = notify.loading('Memperbarui password...');
-            const response = await axios.post(`http://localhost:5000/api/auth/reset-password/${id}/${token}`, {
+            const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/reset-password/${id}/${token}`, {
                 newPassword: password
             });
             setMessage(response.data.message);

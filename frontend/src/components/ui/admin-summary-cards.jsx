@@ -40,7 +40,7 @@ export const DashboardSummaryCards = ({ dateRange = {} }) => {
                 const params = {};
                 if (dateRange.startDate) params.startDate = dateRange.startDate;
                 if (dateRange.endDate) params.endDate = dateRange.endDate;
-                const response = await axios.get('http://localhost:5000/api/track/stats', {
+                const response = await axios.get(import.meta.env.VITE_API_URL + '/api/track/stats', {
                     headers: { 'Authorization': `Bearer ${token}` },
                     params
                 });

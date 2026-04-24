@@ -22,7 +22,7 @@ const ShopDetail = () => {
     const fetchProduct = async () => {
       setLoading(true);
       try {
-        const res = await axios.get(`http://localhost:5000/api/products/${slug}`);
+        const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/products/${slug}`);
         setProduct(res.data);
       } catch (error) {
         console.error("Gagal mengambil data produk:", error);
@@ -63,7 +63,7 @@ const ShopDetail = () => {
   const handleExternalClick = async (platformName, targetUrl) => {
     try {
       const clientId = localStorage.getItem('reload_client_id') || document.cookie.split('; ').find(r => r.startsWith('client_id='))?.split('=')[1] || 'anonymous';
-      await axios.post('http://localhost:5000/api/track/click/' + platformName, {
+      await axios.post(import.meta.env.VITE_API_URL + '/api/track/click/' + platformName, {
         client_id: clientId
       });
     } catch (err) {

@@ -16,7 +16,7 @@ export default function AdminEndorsements() {
     const fetchEndorsements = async () => {
         setLoading(true);
         try {
-            const res = await axios.get('http://localhost:5000/api/endorsements');
+            const res = await axios.get(import.meta.env.VITE_API_URL + '/api/endorsements');
             setEndorsements(res.data);
         } catch (error) { notify.error("Gagal memuat data endorsement"); }
         finally { setLoading(false); }
@@ -39,7 +39,7 @@ export default function AdminEndorsements() {
             image: null,
             is_active: endorsement.is_active === true || endorsement.is_active === 'true'
         });
-        setPreview(`http://localhost:5000${endorsement.image_path}`);
+        setPreview(`${import.meta.env.VITE_API_URL}${endorsement.image_path}`);
         setCurrentView('form');
     };
 
@@ -65,11 +65,11 @@ export default function AdminEndorsements() {
             const loadingToastId = notify.loading(selectedEndorsement === null ? 'Menambah endorsement...' : 'Menyimpan perubahan...');
             let res;
             if (selectedEndorsement === null) {
-                res = await axios.post('http://localhost:5000/api/endorsements', payload, {
+                res = await axios.post(import.meta.env.VITE_API_URL + '/api/endorsements', payload, {
                     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
                 });
             } else {
-                res = await axios.put(`http://localhost:5000/api/endorsements/${selectedEndorsement.id}`, payload, {
+                res = await axios.put(`${import.meta.env.VITE_API_URL}/api/endorsements/${selectedEndorsement.id}`, payload, {
                     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
                 });
             }
@@ -93,7 +93,7 @@ export default function AdminEndorsements() {
             try {
                 const token = localStorage.getItem('token');
                 const loadingToastId = notify.loading('Menghapus endorsement...');
-                const res = await axios.delete(`http://localhost:5000/api/endorsements/${id}`, {
+                const res = await axios.delete(`${import.meta.env.VITE_API_URL}/api/endorsements/${id}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setEndorsements(res.data.data);
@@ -114,7 +114,7 @@ export default function AdminEndorsements() {
 
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.put(`http://localhost:5000/api/endorsements/${endorsement.id}`, payload, {
+            const res = await axios.put(`${import.meta.env.VITE_API_URL}/api/endorsements/${endorsement.id}`, payload, {
                 headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
             });
             setEndorsements(res.data.data);
@@ -158,7 +158,7 @@ export default function AdminEndorsements() {
                                     return (
                                         <div key={item.id} className={`bg-zinc-900 border rounded-lg overflow-hidden group hover:border-zinc-600 transition-colors ${isActive ? 'border-zinc-800' : 'border-zinc-800/50 opacity-60'}`}>
                                             <div className="aspect-square bg-zinc-950 relative border-b border-zinc-800">
-                                                <img src={`http://localhost:5000${item.image_path}`} alt={item.name} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
+                                                <img src={`${import.meta.env.VITE_API_URL}${item.image_path}`} alt={item.name} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
                                                 <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                     <button onClick={() => handleEdit(item)} className="bg-blue-500/90 text-white p-2 rounded-md hover:bg-blue-600 transition-colors" title="Edit"><Edit2 size={14} /></button>
                                                     <button onClick={() => handleDelete(item.id, item.name)} className="bg-red-500/90 text-white p-2 rounded-md hover:bg-red-600 transition-colors" title="Hapus"><Trash2 size={14} /></button>
@@ -216,9 +216,18 @@ export default function AdminEndorsements() {
                         </div>
                         <div className="flex flex-col gap-4">
                             <label className="text-sm text-zinc-400 mb-1 block">Upload Foto</label>
-                            <label className="flex-1 border-2 border-dashed border-zinc-700 bg-zinc-950 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-zinc-500 transition-colors overflow-hidden relative min-h-[180px]">
+                            <label 
+                                className="flex-1 border-2 border-dashed border-zinc-700 bg-zinc-950 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-zinc-500 transition-colors overflow-hidden relative min-h-[180px]"
+                                onDragOver={e => e.preventDefault()}
+                                onDrop={e => {
+                                    e.preventDefault();
+                                    if(e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                                        handleFile({ target: { files: e.dataTransfer.files } });
+                                    }
+                                }}
+                            >
                                 {preview ? <img src={preview} alt="Preview" className="absolute inset-0 w-full h-full object-cover opacity-60" /> : <ImageIcon size={32} className="text-zinc-600 mb-2" />}
-                                <span className="text-xs text-zinc-400 z-10 bg-zinc-900/80 px-2 py-1 rounded">Pilih Gambar</span>
+                                <span className="text-xs text-zinc-400 z-10 bg-zinc-900/80 px-2 py-1 rounded">Drag & Drop atau Klik</span>
                                 <input type="file" onChange={handleFile} accept="image/*" className="hidden" />
                             </label>
                             <div className="flex gap-2">

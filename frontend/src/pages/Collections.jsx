@@ -11,7 +11,7 @@ const Collections = () => {
   useEffect(() => {
     const fetchCollections = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/collections');
+        const res = await axios.get(import.meta.env.VITE_API_URL + '/api/collections');
         setCollections(res.data || []);
       } catch (error) {
         console.error('Error fetching collections:', error);

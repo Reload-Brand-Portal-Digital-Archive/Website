@@ -12,7 +12,7 @@ async function fetchStats(dateRange = {}) {
     const params = {};
     if (dateRange.startDate) params.startDate = dateRange.startDate;
     if (dateRange.endDate) params.endDate = dateRange.endDate;
-    const res = await axios.get('http://localhost:5000/api/track/stats', {
+    const res = await axios.get(import.meta.env.VITE_API_URL + '/api/track/stats', {
         headers: { 'Authorization': `Bearer ${token}` },
         params
     });

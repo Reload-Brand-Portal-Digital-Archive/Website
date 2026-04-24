@@ -14,8 +14,8 @@ const Shop = () => {
     const fetchData = async () => {
       try {
         const [productsRes, categoriesRes] = await Promise.all([
-          axios.get('http://localhost:5000/api/products'),
-          axios.get('http://localhost:5000/api/categories')
+          axios.get(import.meta.env.VITE_API_URL + '/api/products'),
+          axios.get(import.meta.env.VITE_API_URL + '/api/categories')
         ]);
         
         const allProducts = productsRes.data || [];

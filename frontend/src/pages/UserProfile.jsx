@@ -6,7 +6,7 @@ import { User, Package, ChevronDown, ChevronRight, Eye, EyeOff, Terminal, ArrowR
 import { notify } from '../lib/toast';
 import Navbar from '../components/ui/Navbar';
 
-const API = 'http://localhost:5000';
+const API = import.meta.env.VITE_API_URL;
 
 const containerVariants = {
     hidden: { opacity: 0 },

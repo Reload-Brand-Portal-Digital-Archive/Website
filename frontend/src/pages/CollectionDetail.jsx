@@ -17,7 +17,7 @@ const CollectionDetail = () => {
         setLoading(true);
         window.scrollTo(0, 0);
 
-        const response = await axios.get(`http://localhost:5000/api/collections/slug/${slug}`);
+        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/collections/slug/${slug}`);
 
         setCollection(response.data.collection);
         setProducts(response.data.products);
@@ -61,7 +61,7 @@ const CollectionDetail = () => {
 
   const getImageUrl = (filename) => {
     if (!filename) return '';
-    return filename.startsWith('http') ? filename : `http://localhost:5000/uploads/${filename}`;
+    return filename.startsWith('http') ? filename : `${import.meta.env.VITE_API_URL}/uploads/${filename}`;
   };
 
   return (

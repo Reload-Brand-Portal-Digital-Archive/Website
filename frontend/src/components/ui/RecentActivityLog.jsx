@@ -14,7 +14,7 @@ export default function RecentActivityLog() {
     const fetchData = useCallback(async () => {
         const token = localStorage.getItem('token');
         try {
-            const response = await axios.get('http://localhost:5000/api/track/stats', {
+            const response = await axios.get(import.meta.env.VITE_API_URL + '/api/track/stats', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.data.success) {

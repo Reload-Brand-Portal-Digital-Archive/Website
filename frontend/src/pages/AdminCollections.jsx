@@ -29,13 +29,13 @@ export default function AdminCollections() {
             return URL.createObjectURL(imageSource);
         }
 
-        return `http://localhost:5000/uploads/${imageSource}`;
+        return `${import.meta.env.VITE_API_URL}/uploads/${imageSource}`;
     };
 
     const fetchCollections = async () => {
         setLoading(true);
         try {
-            const response = await axios.get('http://localhost:5000/api/collections');
+            const response = await axios.get(import.meta.env.VITE_API_URL + '/api/collections');
             setCollections(response.data);
         } catch (error) {
             console.error("Failed to fetch collections", error);
@@ -125,12 +125,12 @@ export default function AdminCollections() {
             const loadingToastId = notify.loading(currentView === 'create' ? 'Membuat koleksi...' : 'Menyimpan perubahan...');
 
             if (currentView === 'create') {
-                await axios.post('http://localhost:5000/api/collections', formPayload, {
+                await axios.post(import.meta.env.VITE_API_URL + '/api/collections', formPayload, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
                 notify.update(loadingToastId, { render: 'Koleksi berhasil dibuat!', type: 'success', isLoading: false, autoClose: 3000 });
             } else if (currentView === 'edit') {
-                await axios.put(`http://localhost:5000/api/collections/${selectedCollection.collection_id}`, formPayload, {
+                await axios.put(`${import.meta.env.VITE_API_URL}/api/collections/${selectedCollection.collection_id}`, formPayload, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
                 notify.update(loadingToastId, { render: 'Koleksi berhasil diperbarui!', type: 'success', isLoading: false, autoClose: 3000 });
@@ -168,7 +168,7 @@ export default function AdminCollections() {
         if (confirmed) {
             try {
                 const loadingToastId = notify.loading('Menghapus koleksi...');
-                await axios.delete(`http://localhost:5000/api/collections/${id}`);
+                await axios.delete(`${import.meta.env.VITE_API_URL}/api/collections/${id}`);
                 setCollections(collections.filter(c => c.collection_id !== id));
                 notify.update(loadingToastId, { render: 'Koleksi berhasil dihapus!', type: 'success', isLoading: false, autoClose: 3000 });
             } catch (error) {
@@ -338,21 +338,40 @@ export default function AdminCollections() {
                                 />
                             </div>
                         )}
-                        <input
-                            type="file"
-                            name="cover_image"
-                            accept="image/jpeg, image/png, image/webp, image/gif"
-                            onChange={handleInputChange}
-                            className={`w-full bg-zinc-950 border ${errors.cover_image ? 'border-red-500' : 'border-zinc-800'} rounded-md py-[5px] px-3 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-rose-500 transition-colors file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-rose-500 file:text-white hover:file:bg-rose-600`}
-                        />
+                        <label
+                            className={`flex flex-col items-center justify-center w-full ${!formData.cover_image ? 'aspect-video' : 'py-4'} border-2 border-dashed ${errors.cover_image ? 'border-red-500' : 'border-zinc-700 hover:border-rose-500'} bg-zinc-950/50 rounded-md cursor-pointer transition-colors`}
+                            onDragOver={e => e.preventDefault()}
+                            onDrop={e => {
+                                e.preventDefault();
+                                if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                                    handleInputChange({ target: { name: 'cover_image', files: e.dataTransfer.files } });
+                                }
+                            }}
+                        >
+                            {!formData.cover_image ? (
+                                <>
+                                    <ImageIcon size={32} className="text-zinc-600 mb-2" />
+                                    <span className="text-sm text-zinc-400">Drag & Drop file di sini, atau klik</span>
+                                </>
+                            ) : (
+                                <span className="text-sm font-medium text-rose-500">Ganti Gambar (Drag & Drop / Klik)</span>
+                            )}
+                            <input
+                                type="file"
+                                name="cover_image"
+                                accept="image/jpeg, image/png, image/webp, image/gif"
+                                onChange={handleInputChange}
+                                className="hidden"
+                            />
+                        </label>
                         {errors.cover_image ? (
                             <p className="text-xs text-red-500">{errors.cover_image}</p>
                         ) : (
                             <div className="text-xs text-zinc-500">
                                 {typeof formData.cover_image === 'string' && formData.cover_image ? (
-                                    <span>Gambar saat ini: {formData.cover_image} (Upload file baru untuk menggantinya)</span>
+                                    <span>Gambar saat ini: {formData.cover_image}</span>
                                 ) : (
-                                    <span>Pilih gambar dari komputer (Otomatis tersimpan ke src/assets/collections/)</span>
+                                    <span>Otomatis tersimpan ke src/assets/collections/</span>
                                 )}
                             </div>
                         )}
