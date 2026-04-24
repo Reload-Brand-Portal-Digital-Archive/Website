@@ -38,7 +38,7 @@ export default function Wholesale() {
 
     const fetchProducts = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/products');
+        const res = await axios.get(import.meta.env.VITE_API_URL + '/api/products');
         setProducts(res.data || []);
       } catch (err) {
         console.error("Failed to fetch products:", err);
@@ -96,7 +96,7 @@ export default function Wholesale() {
     };
     
     try {
-        const res = await axios.post('http://localhost:5000/api/wholesale', payload);
+        const res = await axios.post(import.meta.env.VITE_API_URL + '/api/wholesale', payload);
         if (res.data.order_id) {
             toast.success('Wholesale order submitted successfully! We will review it soon.');
             setSelectedItems([]);
@@ -112,7 +112,7 @@ export default function Wholesale() {
 
   const getImageUrl = (url) => {
     if (!url) return 'https://placehold.co/400x500/18181b/a1a1aa?text=No+Image';
-    return url.startsWith('http') ? url : `http://localhost:5000${url}`;
+    return url.startsWith('http') ? url : `${import.meta.env.VITE_API_URL}${url}`;
   };
 
   const parseSizes = (sizesStr) => {

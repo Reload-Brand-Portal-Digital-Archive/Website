@@ -17,7 +17,7 @@ export default function EndorsementCarousel() {
     useEffect(() => {
         const fetchEndorsements = async () => {
             try {
-                const res = await axios.get("http://localhost:5000/api/endorsements");
+                const res = await axios.get(import.meta.env.VITE_API_URL + "/api/endorsements");
                 const data = Array.isArray(res.data) ? res.data : [];
                 const active = data.filter(
                     (item) => item.is_active === true || item.is_active === "true"
@@ -140,7 +140,7 @@ export default function EndorsementCarousel() {
                                 >
                                     <div className="relative w-28 h-28 md:w-32 md:h-32 rounded-full overflow-hidden border-2 border-zinc-800 group-hover:border-zinc-600 transition-colors">
                                         <img
-                                            src={`http://localhost:5000${item.image_path}`}
+                                            src={`${import.meta.env.VITE_API_URL}${item.image_path}`}
                                             alt={item.name}
                                             className="w-full h-full object-cover"
                                             loading="lazy"

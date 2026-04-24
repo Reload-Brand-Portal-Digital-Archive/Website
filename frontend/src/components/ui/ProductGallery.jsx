@@ -15,7 +15,7 @@ const ProductGallery = ({ images, isSoldOut, productName }) => {
 
    const getImageUrl = (url) => {
       if (!url) return '';
-      return url.startsWith('http') ? url : `http://localhost:5000${url}`;
+      return url.startsWith('http') ? url : `${import.meta.env.VITE_API_URL}${url}`;
    };
 
    const handleNext = () => {

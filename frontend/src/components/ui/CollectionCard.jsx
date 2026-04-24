@@ -6,7 +6,7 @@ import { ArrowUpRight } from 'lucide-react';
 const CollectionCard = ({ collection, index }) => {
   const getImageUrl = (filename) => {
     if (!filename) return '';
-    return filename.startsWith('http') ? filename : `http://localhost:5000/uploads/${filename}`;
+    return filename.startsWith('http') ? filename : `${import.meta.env.VITE_API_URL}/uploads/${filename}`;
   };
 
   return (

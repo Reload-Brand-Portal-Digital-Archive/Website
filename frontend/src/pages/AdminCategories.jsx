@@ -15,7 +15,7 @@ export default function AdminCategories() {
     const fetchCategories = async () => {
         setLoading(true);
         try {
-            const res = await axios.get('http://localhost:5000/api/categories');
+            const res = await axios.get(import.meta.env.VITE_API_URL + '/api/categories');
             setCategories(res.data);
         } catch (error) {
             notify.error("Gagal mengambil data kategori");
@@ -32,7 +32,7 @@ export default function AdminCategories() {
 
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.post('http://localhost:5000/api/categories',
+            const res = await axios.post(import.meta.env.VITE_API_URL + '/api/categories',
                 { name: newCategory },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -55,7 +55,7 @@ export default function AdminCategories() {
 
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.put(`http://localhost:5000/api/categories/${encodeURIComponent(editingCategory)}`,
+            const res = await axios.put(`${import.meta.env.VITE_API_URL}/api/categories/${encodeURIComponent(editingCategory)}`,
                 { name: editValue },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -80,7 +80,7 @@ export default function AdminCategories() {
             try {
                 const token = localStorage.getItem('token');
                 const loadingToastId = notify.loading('Menghapus kategori...');
-                const res = await axios.delete(`http://localhost:5000/api/categories/${encodeURIComponent(categoryName)}`, {
+                const res = await axios.delete(`${import.meta.env.VITE_API_URL}/api/categories/${encodeURIComponent(categoryName)}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setCategories(res.data.data);

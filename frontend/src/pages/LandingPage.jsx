@@ -121,8 +121,8 @@ function CurrentDropSection() {
     const fetchCurrentDrop = async () => {
       try {
         const [productsRes, collectionsRes] = await Promise.all([
-          axios.get('http://localhost:5000/api/products'),
-          axios.get('http://localhost:5000/api/collections')
+          axios.get(import.meta.env.VITE_API_URL + '/api/products'),
+          axios.get(import.meta.env.VITE_API_URL + '/api/collections')
         ]);
 
         const products = (productsRes.data || []).map(p => ({
@@ -223,13 +223,13 @@ function CurrentDropSection() {
                   <div className="w-full aspect-[4/3] bg-zinc-800 border border-dashed border-zinc-700 border-r-0 md:border-r md:border-solid md:border-zinc-800 flex flex-col items-center justify-center gap-2 overflow-hidden">
                     {item.type === 'product' && item.primary_image ? (
                       <img
-                        src={`http://localhost:5000${item.primary_image}`}
+                        src={`${import.meta.env.VITE_API_URL}${item.primary_image}`}
                         alt={item.display_name}
                         className="w-full h-full object-cover"
                       />
                     ) : item.type === 'collection' && item.cover_image ? (
                       <img
-                        src={`http://localhost:5000/uploads/${item.cover_image}`}
+                        src={`${import.meta.env.VITE_API_URL}/uploads/${item.cover_image}`}
                         alt={item.display_name}
                         className="w-full h-full object-cover"
                       />
@@ -289,7 +289,7 @@ function MaterialIntegritySection() {
   useEffect(() => {
     const fetchMaterials = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/materials');
+        const res = await axios.get(import.meta.env.VITE_API_URL + '/api/materials');
         setMaterials((res.data || []).slice(0, 3));
       } catch (error) {
         console.error('Error fetching materials:', error);
@@ -353,7 +353,7 @@ function MaterialIntegritySection() {
               <div className="w-full aspect-[4/3] bg-zinc-800 border border-dashed border-zinc-700 flex flex-col items-center justify-center gap-2 overflow-hidden">
                 {item.image_path ? (
                   <img
-                    src={`http://localhost:5000${item.image_path}`}
+                    src={`${import.meta.env.VITE_API_URL}${item.image_path}`}
                     alt={item.title || item.description}
                     className="w-full h-full object-cover"
                   />

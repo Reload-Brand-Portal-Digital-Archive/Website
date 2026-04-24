@@ -38,7 +38,7 @@ export default function AdminGeographicMapV2({ refreshTrigger }) {
             try {
                 setIsLoading(true);
                 setError(null);
-                const response = await axios.get('http://localhost:5000/api/settings/ecommerce-hub');
+                const response = await axios.get(import.meta.env.VITE_API_URL + '/api/settings/ecommerce-hub');
                 if (response.data.success && response.data.data) {
                     setHubData(response.data.data);
                 } else {

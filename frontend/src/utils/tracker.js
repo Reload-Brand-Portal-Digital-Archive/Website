@@ -38,7 +38,7 @@ export const trackPageView = async (url) => {
         const token = localStorage.getItem('token');
         const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
 
-        await axios.post('http://localhost:5000/api/track/pageview', 
+        await axios.post(import.meta.env.VITE_API_URL + '/api/track/pageview', 
             { url, client_id: getClientId() }, 
             { headers }
         );
@@ -56,7 +56,7 @@ export const trackLinkClick = async (platform) => {
         const token = localStorage.getItem('token');
         const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
 
-        const response = await axios.post(`http://localhost:5000/api/track/click/${platform}`, 
+        const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/track/click/${platform}`, 
             { client_id: getClientId() }, 
             { headers }
         );

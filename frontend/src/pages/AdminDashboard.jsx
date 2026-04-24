@@ -58,7 +58,7 @@ export default function AdminDashboard() {
         setIsSyncing(true);
         toast.info("Memulai sinkronisasi data dengan E-Commerce...");
         try {
-            const response = await axios.post('http://localhost:5000/api/settings/sync-ecommerce');
+            const response = await axios.post(import.meta.env.VITE_API_URL + '/api/settings/sync-ecommerce');
             if (response.data.success) {
                 toast.success("Sinkronisasi E-Commerce berhasil! Peta diperbarui.");
                 setMapRefreshTrigger(prev => prev + 1);

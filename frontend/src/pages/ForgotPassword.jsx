@@ -20,7 +20,7 @@ export default function ForgotPassword() {
 
         try {
             const loadingToastId = notify.loading('Mengirim email pemulihan...');
-            const response = await axios.post('http://localhost:5000/api/auth/forgot-password', { email });
+            const response = await axios.post(import.meta.env.VITE_API_URL + '/api/auth/forgot-password', { email });
             setMessage(response.data.message);
             notify.update(loadingToastId, { render: 'Email pemulihan berhasil dikirim! Periksa inbox Anda', type: 'success', isLoading: false, autoClose: 4000 });
         } catch (err) {

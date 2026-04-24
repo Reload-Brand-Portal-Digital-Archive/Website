@@ -23,7 +23,7 @@ export default function Register() {
         setLoading(true);
 
         try {
-            await axios.post('http://localhost:5000/api/auth/register', formData);
+            await axios.post(import.meta.env.VITE_API_URL + '/api/auth/register', formData);
             notify.success('Registration successful! Redirecting to login...');
             setTimeout(() => navigate('/login'), 1500);
         } catch (err) {
@@ -37,7 +37,7 @@ export default function Register() {
 
     const handleGoogleSuccess = async (credentialResponse) => {
         try {
-            const response = await axios.post('http://localhost:5000/api/auth/google', {
+            const response = await axios.post(import.meta.env.VITE_API_URL + '/api/auth/google', {
                 token: credentialResponse.credential
             });
 

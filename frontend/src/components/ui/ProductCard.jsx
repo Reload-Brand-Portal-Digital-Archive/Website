@@ -7,7 +7,7 @@ const ProductCard = ({ product, index }) => {
 
   const getImageUrl = (url) => {
     if (!url) return 'https://placehold.co/400x500/18181b/a1a1aa?text=No+Image';
-    return url.startsWith('http') ? url : `http://localhost:5000${url}`;
+    return url.startsWith('http') ? url : `${import.meta.env.VITE_API_URL}${url}`;
   };
 
   const displayImage = product.primary_image || (product.images && product.images.length > 0 ? product.images[0] : null);
