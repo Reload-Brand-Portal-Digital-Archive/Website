@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { motion } from 'framer-motion';
-import { User, Package, ChevronDown, ChevronRight, Eye, EyeOff, Terminal, ArrowRight } from 'lucide-react';
+import { User, Package, ChevronDown, ChevronRight, Eye, EyeOff, Terminal, ArrowRight, Mail } from 'lucide-react';
 import { notify } from '../lib/toast';
 import Navbar from '../components/ui/Navbar';
 
@@ -49,6 +49,8 @@ export default function UserProfile() {
     const [loadingOrders, setLoadingOrders] = useState(false);
     const [ordersLoaded, setOrdersLoaded] = useState(false);
     const [expandedOrder, setExpandedOrder] = useState(null);
+    const [isSubscribed, setIsSubscribed] = useState(false);
+    const [loadingNewsletter, setLoadingNewsletter] = useState(true);
 
     const isGoogleUser = !!user.google_id;
 
@@ -56,7 +58,48 @@ export default function UserProfile() {
         if (activeTab === 'orders' && !ordersLoaded) {
             fetchOrders();
         }
+        if (activeTab === 'account') {
+            fetchNewsletterStatus();
+        }
     }, [activeTab]);
+
+    const fetchNewsletterStatus = async () => {
+        setLoadingNewsletter(true);
+        try {
+            const res = await axios.get(`${API}/api/newsletter/status`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setIsSubscribed(res.data.isSubscribed);
+        } catch (err) {
+            console.error('Error fetching newsletter status:', err);
+        } finally {
+            setLoadingNewsletter(false);
+        }
+    };
+
+    const handleNewsletterToggle = async () => {
+        if (loadingNewsletter) return;
+        setLoadingNewsletter(true);
+        try {
+            if (isSubscribed) {
+                await axios.delete(`${API}/api/newsletter/unsubscribe-auth`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                setIsSubscribed(false);
+                notify.success('Unsubscribed from newsletter');
+            } else {
+                await axios.post(`${API}/api/newsletter/subscribe`, { email }, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                setIsSubscribed(true);
+                notify.success('Subscribed to newsletter');
+            }
+        } catch (error) {
+            notify.error('Failed to update newsletter preferences');
+        } finally {
+            setLoadingNewsletter(false);
+        }
+    };
 
     const fetchOrders = async () => {
         setLoadingOrders(true);
@@ -212,6 +255,36 @@ export default function UserProfile() {
                                             className="bg-zinc-950/50 border border-zinc-800/50 h-11 px-4 text-sm text-zinc-500 font-mono cursor-not-allowed"
                                         />
                                     </div>
+                                </div>
+                            </motion.div>
+
+                            <motion.div variants={itemVariants} className="bg-zinc-900/50 border border-zinc-800 p-6 md:p-8">
+                                <div className="flex items-center gap-2 mb-6 border-b border-zinc-800 pb-4">
+                                    <Mail className="w-4 h-4 text-rose-500" />
+                                    <h2 className="font-mono text-xs tracking-[0.2em] text-zinc-400 uppercase">Newsletter Preferences</h2>
+                                </div>
+
+                                <div className="flex items-center justify-between gap-4 p-4 border border-zinc-800 bg-zinc-950/50">
+                                    <div className="flex-1">
+                                        <h3 className="font-mono text-[11px] uppercase tracking-widest text-zinc-300 mb-1">Underground Intelligence</h3>
+                                        <p className="text-[10px] font-mono text-zinc-500">Receive exclusive drops and secret access codes.</p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={handleNewsletterToggle}
+                                        disabled={loadingNewsletter}
+                                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full border-2 border-transparent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 disabled:opacity-50 disabled:cursor-not-allowed ${
+                                            isSubscribed ? 'bg-emerald-500' : 'bg-zinc-700'
+                                        }`}
+                                    >
+                                        <span className="sr-only">Toggle newsletter</span>
+                                        <span
+                                            aria-hidden="true"
+                                            className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                                isSubscribed ? 'translate-x-2.5' : '-translate-x-2.5'
+                                            }`}
+                                        />
+                                    </button>
                                 </div>
                             </motion.div>
 

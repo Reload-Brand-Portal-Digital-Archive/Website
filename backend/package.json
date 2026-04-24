@@ -21,7 +21,9 @@
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.1.1",
     "mysql2": "^3.18.2",
-    "nodemailer": "^8.0.2"
+    "nodemailer": "^8.0.2",
+    "pdfkit": "^0.18.0",
+    "pdfkit-table": "^0.1.99"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"

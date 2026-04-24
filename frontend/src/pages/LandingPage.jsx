@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input"
 import Navbar from "../components/ui/Navbar"
 import SplashScreen from "../components/ui/SplashScreen"
 import EndorsementCarousel from "../components/ui/EndorsementCarousel"
+import NewsletterSignup from "../components/NewsletterSignup"
 
 const staggerContainer = {
   hidden: {},
@@ -125,7 +126,8 @@ function CurrentDropSection() {
           axios.get(import.meta.env.VITE_API_URL + '/api/collections')
         ]);
 
-        const products = (productsRes.data || []).map(p => ({
+        const productsData = Array.isArray(productsRes.data) ? productsRes.data : [];
+        const products = productsData.map(p => ({
           ...p,
           type: 'product',
           display_name: p.name,
@@ -134,7 +136,8 @@ function CurrentDropSection() {
           created_at: p.created_at
         }));
 
-        const collections = (collectionsRes.data || []).map(c => ({
+        const collectionsData = Array.isArray(collectionsRes.data) ? collectionsRes.data : [];
+        const collections = collectionsData.map(c => ({
           ...c,
           type: 'collection',
           display_name: c.name,
@@ -290,7 +293,8 @@ function MaterialIntegritySection() {
     const fetchMaterials = async () => {
       try {
         const res = await axios.get(import.meta.env.VITE_API_URL + '/api/materials');
-        setMaterials((res.data || []).slice(0, 3));
+        const data = Array.isArray(res.data) ? res.data : [];
+        setMaterials(data.slice(0, 3));
       } catch (error) {
         console.error('Error fetching materials:', error);
         setMaterials([]);
@@ -339,17 +343,19 @@ function MaterialIntegritySection() {
           </span>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-0">
-          {displayMaterials.map((item, i) => (
-            <motion.div
-              key={item.id || i}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.3 }}
-              transition={{ duration: 0.7, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
-              className={`py-8 md:py-0 flex flex-col gap-8 ${i > 0 ? "md:border-l border-t md:border-t-0 border-zinc-800 md:pl-12" : ""
-                } ${i < displayMaterials.length - 1 ? "md:pr-12" : ""}`}
-            >
+        <div className="-mx-4 md:-mx-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-0">
+            {displayMaterials.map((item, i) => (
+              <motion.div
+                key={item.id || i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.3 }}
+                transition={{ duration: 0.7, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
+                className={`py-8 md:py-0 flex flex-col gap-8 px-4 md:px-8 ${
+                  i > 0 ? "md:border-l border-t md:border-t-0 border-zinc-800" : ""
+                }`}
+              >
               <div className="w-full aspect-[4/3] bg-zinc-800 border border-dashed border-zinc-700 flex flex-col items-center justify-center gap-2 overflow-hidden">
                 {item.image_path ? (
                   <img
@@ -380,6 +386,7 @@ function MaterialIntegritySection() {
               </div>
             </motion.div>
           ))}
+          </div>
         </div>
       </div>
     </section>
@@ -437,53 +444,7 @@ function ShopCTASection() {
   )
 }
 
-function NewsletterSection() {
-  const [email, setEmail] = useState("")
 
-  return (
-    <section className="w-full px-6 md:px-12 py-32 md:py-48 max-w-[1600px] mx-auto text-zinc-50 font-sans">
-      <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, amount: 0.3 }}
-        transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
-        className="flex flex-col md:flex-row md:items-end justify-between gap-16"
-      >
-        <div className="max-w-lg">
-          <span className="font-mono text-xs tracking-[0.3em] text-zinc-500 uppercase block mb-4">
-            [ NEWSLETTER ]
-          </span>
-          <h2 className="text-3xl md:text-5xl font-black leading-none tracking-tighter uppercase mb-2">
-            Sign up for{" "}
-            <span className="text-zinc-600">updates.</span>
-          </h2>
-        </div>
-
-        <form className="w-full md:max-w-md" onSubmit={e => e.preventDefault()}>
-          <div className="bg-zinc-800 border border-zinc-700 p-4 flex items-center gap-2 focus-within:border-zinc-500 transition-colors">
-            <Input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="Enter your email"
-              className="w-full bg-transparent border-0 text-zinc-50 font-mono text-sm uppercase placeholder:text-zinc-500 focus-visible:ring-0 focus-visible:ring-offset-0 px-0 rounded-none h-auto py-1"
-            />
-            <Button
-              type="submit"
-              variant="ghost"
-              className="text-xs font-mono tracking-[0.2em] text-zinc-400 hover:text-zinc-50 hover:bg-transparent uppercase px-0 h-auto whitespace-nowrap shrink-0"
-            >
-              Sign Up
-            </Button>
-          </div>
-          <p className="mt-3 font-mono text-[10px] text-zinc-600 uppercase tracking-widest">
-            Get drop updates. Unsubscribe anytime.
-          </p>
-        </form>
-      </motion.div>
-    </section>
-  )
-}
 
 function FooterSection() {
   return (
@@ -560,7 +521,7 @@ export default function LandingPage() {
       <MaterialIntegritySection />
       <EndorsementCarousel />
       <ShopCTASection />
-      <NewsletterSection />
+      <NewsletterSignup />
       <FooterSection />
     </div>
   )
