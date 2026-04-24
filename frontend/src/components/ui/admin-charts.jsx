@@ -143,7 +143,7 @@ export const UserGrowthChart = ({ dateRange = {} }) => {
     }, [dateRange.startDate, dateRange.endDate]);
 
     return (
-        <ChartWrapper title="User Growth" subtitle="Resgistrasi Harian" loading={loading}>
+        <ChartWrapper title="User Growth" subtitle="Registrasi Harian" loading={loading}>
             <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={data}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#3f3f46" vertical={false} />
@@ -157,15 +157,45 @@ export const UserGrowthChart = ({ dateRange = {} }) => {
     );
 };
 
-/** Subscriber Chart — placeholder */
-export const SubscriberChart = () => (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
-        <h3 className="text-base font-medium text-zinc-100 mb-4">Subscriber Trend</h3>
-        <div className="h-48 w-full flex items-center justify-center">
-            <p className="text-xs text-zinc-600 font-mono">Data newsletter belum tersedia</p>
-        </div>
-    </div>
-);
+export const SubscriberChart = ({ dateRange = {} }) => {
+    const [data, setData] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        setLoading(true);
+        fetchStats(dateRange).then(stats => {
+            const allDates = resolveDateRangeObj(dateRange);
+            const dailyMap = {};
+            (stats?.subscriber_growth || []).forEach(row => {
+                const d = new Date(row.date);
+                dailyMap[toLocalDateStr(d)] = Number(row.count);
+            });
+
+            const formatted = allDates.map(dateObj => {
+                const dateKey = toLocalDateStr(dateObj);
+                return {
+                    name: dateObj.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric' }),
+                    subscribers: dailyMap[dateKey] || 0
+                };
+            });
+            setData(formatted);
+        }).catch(console.error).finally(() => setLoading(false));
+    }, [dateRange.startDate, dateRange.endDate]);
+
+    return (
+        <ChartWrapper title="Subscriber Trend" subtitle="Newsletter Harian" loading={loading}>
+            <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={data}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#3f3f46" vertical={false} />
+                    <XAxis dataKey="name" stroke="#a1a1aa" fontSize={12} tickLine={false} axisLine={false} />
+                    <YAxis stroke="#a1a1aa" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
+                    <Tooltip contentStyle={{ backgroundColor: '#18181b', borderColor: '#3f3f46', color: '#f4f4f5' }} />
+                    <Area type="monotone" dataKey="subscribers" stroke="#10b981" fill="#10b981" fillOpacity={0.2} strokeWidth={3} activeDot={{ r: 6, fill: '#10b981', stroke: '#18181b', strokeWidth: 2 }} />
+                </AreaChart>
+            </ResponsiveContainer>
+        </ChartWrapper>
+    );
+};
 
 /** External Clicks — Shopee vs TikTok per hari (sesuai date range) */
 export const ExternalClicksChart = ({ dateRange = {} }) => {

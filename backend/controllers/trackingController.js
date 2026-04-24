@@ -131,6 +131,14 @@ exports.getTrackingStats = async (req, res) => {
             ORDER BY date ASC
         `, dateParams);
 
+        const [subscriberGrowth] = await db.query(`
+            SELECT DATE(created_at) as date, COUNT(*) as count 
+            FROM newsletter_subscribers 
+            WHERE ${dateCondition}
+            GROUP BY DATE(created_at)
+            ORDER BY date ASC
+        `, dateParams);
+
         // Latest Activities (Combined)
         const [latestViews] = await db.query(`
             SELECT 'page_view' as type, url as identifier, client_id as ip_address, created_at 
@@ -154,6 +162,7 @@ exports.getTrackingStats = async (req, res) => {
                 daily_visits: dailyVisits,
                 daily_clicks: dailyClicks,
                 user_growth: userGrowth,
+                subscriber_growth: subscriberGrowth,
                 latest_activities: [...latestViews, ...latestClicks].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
             }
         });

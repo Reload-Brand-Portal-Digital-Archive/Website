@@ -5,7 +5,7 @@ const upload = require('../middlewares/uploadMiddleware');
 const { verifyToken, isAdmin } = require('../middlewares/authMiddleware');
 
 router.get('/', productController.getAllProducts);
-router.get('/export', verifyToken, isAdmin, productController.exportProducts);
+router.get('/export/:format', verifyToken, isAdmin, productController.exportProducts);
 router.get('/:slug', productController.getProductBySlug);
 router.post('/', verifyToken, isAdmin, upload.array('images', 5), productController.createProduct);
 router.put('/:id', verifyToken, isAdmin, upload.array('images', 5), productController.updateProduct);

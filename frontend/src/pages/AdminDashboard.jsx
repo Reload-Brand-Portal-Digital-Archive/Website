@@ -147,7 +147,7 @@ export default function AdminDashboard() {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-1 space-y-6">
-                    <SubscriberChart />
+                    <SubscriberChart dateRange={dateRange} />
                     <ExternalClicksChart dateRange={dateRange} />
                 </div>
                 <div className="lg:col-span-2">

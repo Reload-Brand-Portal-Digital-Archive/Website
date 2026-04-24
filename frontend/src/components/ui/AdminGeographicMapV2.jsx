@@ -126,7 +126,7 @@ export default function AdminGeographicMapV2({ refreshTrigger }) {
 
     if (isLoading) {
         return (
-            <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 flex items-center justify-center min-h-[662px]">
+            <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 flex items-center justify-center h-full min-h-[400px]">
                 <div className="text-center">
                     <Loader2 className="animate-spin text-rose-500 mx-auto mb-4" size={40} />
                     <p className="text-zinc-400 font-medium">Loading Map Data...</p>
@@ -137,7 +137,7 @@ export default function AdminGeographicMapV2({ refreshTrigger }) {
 
     if (error) {
         return (
-            <div className="bg-zinc-900 border border-zinc-500 rounded-lg p-6 flex items-center justify-center min-h-[662px]">
+            <div className="bg-zinc-900 border border-zinc-500 rounded-lg p-6 flex items-center justify-center h-full min-h-[400px]">
                 <div className="text-center">
                     <AlertTriangle size={40} className="text-rose-500 mx-auto mb-4" />
                     <p className="text-zinc-400">{error}</p>
@@ -147,7 +147,7 @@ export default function AdminGeographicMapV2({ refreshTrigger }) {
     }
 
     return (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 flex flex-col relative h-[662px] animate-in fade-in duration-700">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 flex flex-col relative h-full min-h-[400px] animate-in fade-in duration-700">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                 <div>
                     <h3 className="text-xl font-bold text-zinc-100 flex items-center gap-2">

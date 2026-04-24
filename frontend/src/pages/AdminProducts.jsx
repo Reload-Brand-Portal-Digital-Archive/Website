@@ -420,10 +420,10 @@ export default function AdminProducts() {
     };
 
 
-    const handleExport = async () => {
+    const handleExport = async (format) => {
         try {
-            const loadingToastId = notify.loading('Menyiapkan file export...');
-            const response = await axios.get(import.meta.env.VITE_API_URL + '/api/products/export', {
+            const loadingToastId = notify.loading(`Menyiapkan file export ${format.toUpperCase()}...`);
+            const response = await axios.get(import.meta.env.VITE_API_URL + `/api/products/export/${format}`, {
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
                 responseType: 'blob'
             });
@@ -431,12 +431,13 @@ export default function AdminProducts() {
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', 'products_export.zip');
+            const extension = format === 'excel' ? 'zip' : format;
+            link.setAttribute('download', `products_export_${new Date().toISOString().split('T')[0]}.${extension}`);
             document.body.appendChild(link);
             link.click();
             link.parentNode.removeChild(link);
             
-            notify.update(loadingToastId, { render: 'Berhasil mengekspor produk!', type: 'success', isLoading: false, autoClose: 3000 });
+            notify.update(loadingToastId, { render: `Berhasil mengekspor produk ke ${format.toUpperCase()}!`, type: 'success', isLoading: false, autoClose: 3000 });
         } catch (error) {
             notify.error("Gagal mengekspor produk. Pastikan server berjalan dan library terinstall.");
         }
@@ -758,9 +759,17 @@ export default function AdminProducts() {
                             <input type="text" placeholder="Cari produk..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
                                 className="w-full bg-zinc-900 border border-zinc-800 rounded-md py-2 pl-9 pr-4 text-sm text-zinc-100 focus:border-rose-500 transition-colors" />
                         </div>
-                        <button onClick={handleExport} disabled={products.length === 0} className={`px-3 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors shrink-0 ${products.length === 0 ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700' : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/20'}`}>
-                            <FileDown size={16} /><span className="hidden sm:inline">Export</span>
-                        </button>
+                        <div className="flex items-center gap-2">
+                            <button onClick={() => handleExport('csv')} disabled={products.length === 0} className={`px-3 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors shrink-0 ${products.length === 0 ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700' : 'bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 border border-blue-500/20'}`}>
+                                <FileDown size={16} /><span className="hidden sm:inline">CSV</span>
+                            </button>
+                            <button onClick={() => handleExport('excel')} disabled={products.length === 0} className={`px-3 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors shrink-0 ${products.length === 0 ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700' : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/20'}`}>
+                                <FileDown size={16} /><span className="hidden sm:inline">Excel</span>
+                            </button>
+                            <button onClick={() => handleExport('pdf')} disabled={products.length === 0} className={`px-3 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors shrink-0 ${products.length === 0 ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700' : 'bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/20'}`}>
+                                <FileDown size={16} /><span className="hidden sm:inline">PDF</span>
+                            </button>
+                        </div>
                         <button onClick={openImportView} className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/20 px-3 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors shrink-0">
                             <Upload size={16} /><span className="hidden sm:inline">Import</span>
                         </button>
@@ -907,17 +916,20 @@ export default function AdminProducts() {
                         </div>
                     </div>
 
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-zinc-300">Status</label>
-                        <select
-                            name="status"
-                            value={formData.status}
-                            onChange={handleInputChange}
-                            className="w-full bg-zinc-950 border border-zinc-800 rounded-md py-2 px-4 text-zinc-100"
-                        >
-                            <option value="Available">Available</option>
-                            <option value="Sold Out">Sold Out</option>
-                        </select>
+                    <div className="space-y-3">
+                        <label className="text-sm font-medium text-zinc-300">Status Produk</label>
+                        <div className="flex items-center gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setFormData(prev => ({ ...prev, status: prev.status === 'Available' ? 'Sold Out' : 'Available' }))}
+                                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none ${formData.status === 'Available' ? 'bg-zinc-100' : 'bg-red-500'}`}
+                            >
+                                <span className={`inline-block h-4 w-4 transform rounded-full bg-zinc-900 transition duration-200 ease-in-out ${formData.status === 'Available' ? 'translate-x-6' : 'translate-x-1'}`} />
+                            </button>
+                            <span className={`text-sm font-bold tracking-wider uppercase ${formData.status === 'Available' ? 'text-zinc-100' : 'text-red-500'}`}>
+                                {formData.status}
+                            </span>
+                        </div>
                     </div>
                 </div>
 
