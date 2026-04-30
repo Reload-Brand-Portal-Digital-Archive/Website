@@ -1,8 +1,8 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { X, ChevronLeft, ChevronRight, CalendarDays, Check } from 'lucide-react';
 
-const MONTHS = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
-const DAYS = ['Min','Sen','Sel','Rab','Kam','Jum','Sab'];
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
 function fmt(d) { return d.toISOString().split('T')[0]; }
 function parseDate(s) { return s ? new Date(s + 'T00:00:00') : null; }
@@ -19,11 +19,11 @@ function addMonths(year, month, delta) {
 }
 
 const PRESETS = [
-    { label: 'Hari ini', fn: () => { const t = new Date(); const s = fmt(t); return { startDate: s, endDate: s }; } },
-    { label: '7 Hari', fn: () => { const t = new Date(); const s = new Date(t); s.setDate(t.getDate() - 6); return { startDate: fmt(s), endDate: fmt(t) }; } },
-    { label: '30 Hari', fn: () => { const t = new Date(); const s = new Date(t); s.setDate(t.getDate() - 29); return { startDate: fmt(s), endDate: fmt(t) }; } },
-    { label: 'Bulan ini', fn: () => { const t = new Date(); const s = new Date(t.getFullYear(), t.getMonth(), 1); return { startDate: fmt(s), endDate: fmt(t) }; } },
-    { label: 'Bulan lalu', fn: () => { const t = new Date(); const s = new Date(t.getFullYear(), t.getMonth() - 1, 1); const e = new Date(t.getFullYear(), t.getMonth(), 0); return { startDate: fmt(s), endDate: fmt(e) }; } },
+    { label: 'Today', fn: () => { const t = new Date(); const s = fmt(t); return { startDate: s, endDate: s }; } },
+    { label: '7 Days', fn: () => { const t = new Date(); const s = new Date(t); s.setDate(t.getDate() - 6); return { startDate: fmt(s), endDate: fmt(t) }; } },
+    { label: '30 Days', fn: () => { const t = new Date(); const s = new Date(t); s.setDate(t.getDate() - 29); return { startDate: fmt(s), endDate: fmt(t) }; } },
+    { label: 'This Month', fn: () => { const t = new Date(); const s = new Date(t.getFullYear(), t.getMonth(), 1); return { startDate: fmt(s), endDate: fmt(t) }; } },
+    { label: 'Last Month', fn: () => { const t = new Date(); const s = new Date(t.getFullYear(), t.getMonth() - 1, 1); const e = new Date(t.getFullYear(), t.getMonth(), 0); return { startDate: fmt(s), endDate: fmt(e) }; } },
 ];
 
 function MonthGrid({ year, month, startDate, endDate, hoverDate, onDayClick, onDayHover }) {
@@ -153,7 +153,7 @@ export default function DateRangePickerModal({ onApply, onClose, initialStart = 
     const prevMonth = () => { const r = addMonths(leftYear, leftMonth, -1); setLeftYear(r.year); setLeftMonth(r.month); };
     const nextMonth = () => { const r = addMonths(leftYear, leftMonth, 1); setLeftYear(r.year); setLeftMonth(r.month); };
 
-    const formatDisplay = (s) => s ? parseDate(s)?.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+    const formatDisplay = (s) => s ? parseDate(s)?.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
     return (
         <div
@@ -169,7 +169,7 @@ export default function DateRangePickerModal({ onApply, onClose, initialStart = 
                 <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800">
                     <div className="flex items-center gap-2">
                         <CalendarDays size={18} className="text-rose-500" />
-                        <h2 className="text-base font-semibold text-zinc-100">Pilih Rentang Tanggal</h2>
+                        <h2 className="text-base font-semibold text-zinc-100">Select Date Range</h2>
                     </div>
                     <button onClick={onClose} className="text-zinc-500 hover:text-white transition-colors p-1 rounded-md hover:bg-zinc-800">
                         <X size={18} />
@@ -179,7 +179,7 @@ export default function DateRangePickerModal({ onApply, onClose, initialStart = 
                 <div className="flex">
                     {/* Presets sidebar */}
                     <div className="w-44 border-r border-zinc-800 p-4 flex flex-col gap-1 shrink-0">
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600 mb-2">Cepat Pilih</p>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600 mb-2">Quick Select</p>
                         {PRESETS.map(p => (
                             <button
                                 key={p.label}
@@ -196,19 +196,19 @@ export default function DateRangePickerModal({ onApply, onClose, initialStart = 
                         {/* Selected range display */}
                         <div className="flex items-center gap-3 mb-6">
                             <div className={`flex-1 px-4 py-2.5 rounded-lg border text-sm transition-all ${step === 'start' ? 'border-rose-500 bg-rose-500/10 text-rose-300' : 'border-zinc-700 bg-zinc-800/50 text-zinc-300'}`}>
-                                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 block mb-0.5">Dari</span>
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 block mb-0.5">From</span>
                                 {formatDisplay(startDate)}
                             </div>
                             <ChevronRight size={16} className="text-zinc-600 shrink-0" />
                             <div className={`flex-1 px-4 py-2.5 rounded-lg border text-sm transition-all ${step === 'end' && startDate ? 'border-rose-500 bg-rose-500/10 text-rose-300' : 'border-zinc-700 bg-zinc-800/50 text-zinc-300'}`}>
-                                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 block mb-0.5">Sampai</span>
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 block mb-0.5">To</span>
                                 {formatDisplay(endDate)}
                             </div>
                         </div>
 
                         {/* Step hint */}
                         <p className="text-[11px] text-zinc-600 mb-4 font-mono">
-                            {step === 'start' ? '↗ Pilih tanggal mulai' : (startDate ? '↗ Sekarang pilih tanggal akhir' : '')}
+                            {step === 'start' ? '↗ Select a start date' : (startDate ? '↗ Now select an end date' : '')}
                         </p>
 
                         {/* Dual calendar */}
@@ -257,7 +257,7 @@ export default function DateRangePickerModal({ onApply, onClose, initialStart = 
                     </button>
                     <div className="flex items-center gap-3">
                         <button onClick={onClose} className="px-4 py-2 text-sm text-zinc-400 hover:text-white border border-zinc-700 rounded-lg transition-all hover:bg-zinc-800">
-                            Batal
+                            Cancel
                         </button>
                         <button
                             onClick={handleApply}
@@ -265,7 +265,7 @@ export default function DateRangePickerModal({ onApply, onClose, initialStart = 
                             className="px-5 py-2 text-sm font-medium bg-rose-500 hover:bg-rose-600 text-white rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg shadow-rose-500/20"
                         >
                             <Check size={14} />
-                            Terapkan
+                            Apply
                         </button>
                     </div>
                 </div>

@@ -18,7 +18,7 @@ export default function AdminMaterials() {
         try {
             const res = await axios.get(import.meta.env.VITE_API_URL + '/api/materials');
             setMaterials(res.data);
-        } catch (error) { notify.error("Gagal memuat material"); }
+        } catch { notify.error("Failed to load materials"); }
         finally { setLoading(false); }
     };
 
@@ -48,9 +48,9 @@ export default function AdminMaterials() {
 
     const handleAdd = async (e) => {
         e.preventDefault();
-        if (selectedMaterial === null && materials.length >= 3) return notify.warning("Maksimal 3 Material! Hapus yang lama dulu");
-        if (!formData.title) return notify.error("Judul wajib!");
-        if (selectedMaterial === null && !formData.image) return notify.error("Gambar wajib!");
+        if (selectedMaterial === null && materials.length >= 3) return notify.warning("Maximum 3 materials! Please delete an existing one first.");
+        if (!formData.title) return notify.error("Title is required!");
+        if (selectedMaterial === null && !formData.image) return notify.error("An image is required!");
 
         const payload = new FormData();
         payload.append('title', formData.title);
@@ -59,7 +59,7 @@ export default function AdminMaterials() {
 
         try {
             const token = localStorage.getItem('token');
-            const loadingToastId = notify.loading(selectedMaterial === null ? 'Menambah material...' : 'Menyimpan perubahan...');
+            const loadingToastId = notify.loading(selectedMaterial === null ? 'Adding material...' : 'Saving changes...');
             let res;
             if (selectedMaterial === null) {
                 res = await axios.post(import.meta.env.VITE_API_URL + '/api/materials', payload, {
@@ -70,34 +70,34 @@ export default function AdminMaterials() {
                     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
                 });
             }
-            notify.update(loadingToastId, { render: res.data.message || (selectedMaterial ? "Material berhasil diperbarui!" : "Material berhasil ditambahkan!"), type: 'success', isLoading: false, autoClose: 3000 });
+            notify.update(loadingToastId, { render: res.data.message || (selectedMaterial ? "Material updated successfully!" : "Material added successfully!"), type: 'success', isLoading: false, autoClose: 3000 });
             setMaterials(res.data.data);
             handleCancelEdit();
         } catch (error) {
-            notify.error(error.response?.data?.message || (selectedMaterial ? "Gagal memperbarui material" : "Gagal menambah material"));
+            notify.error(error.response?.data?.message || (selectedMaterial ? "Failed to update material" : "Failed to add material"));
         }
     };
 
     const handleDelete = async (id, title) => {
         const confirmed = await confirm({
-            title: 'Hapus Material',
-            description: `Yakin ingin menghapus material "${title}" dari Landing Page? Tindakan ini tidak dapat dikembalikan!`,
-            confirmText: 'Hapus',
-            cancelText: 'Batal',
+            title: 'Delete Material',
+            description: `Are you sure you want to delete the material "${title}" from the Landing Page? This action cannot be undone!`,
+            confirmText: 'Delete',
+            cancelText: 'Cancel',
         });
 
         if (confirmed) {
             try {
                 const token = localStorage.getItem('token');
-                const loadingToastId = notify.loading('Menghapus material...');
+                const loadingToastId = notify.loading('Deleting material...');
                 const res = await axios.delete(`${import.meta.env.VITE_API_URL}/api/materials/${id}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setMaterials(res.data.data);
                 if (selectedMaterial?.id === id) handleCancelEdit();
-                notify.update(loadingToastId, { render: res.data.message || 'Material berhasil dihapus!', type: 'success', isLoading: false, autoClose: 3000 });
+                notify.update(loadingToastId, { render: res.data.message || 'Material deleted successfully!', type: 'success', isLoading: false, autoClose: 3000 });
             } catch (error) { 
-                const errorMessage = error.response?.data?.message || "Gagal menghapus material";
+                const errorMessage = error.response?.data?.message || "Failed to delete material";
                 notify.error(errorMessage);
             }
         }
@@ -112,11 +112,11 @@ export default function AdminMaterials() {
                             <h2 className="text-2xl font-bold text-zinc-50 flex items-center gap-2">
                                 <Palette className="text-rose-500" /> Landing Page Materials
                             </h2>
-                            <p className="text-sm text-zinc-400 mt-1">Atur 3 fitur andalan / material produk yang akan disorot di halaman depan.</p>
+                            <p className="text-sm text-zinc-400 mt-1">Manage up to 3 product highlights to be featured on the landing page.</p>
                         </div>
                         {materials.length < 3 && (
                             <button onClick={() => { setCurrentView('form'); setSelectedMaterial(null); setFormData({ title: '', description: '', image: null }); setPreview(null); }} className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-md font-medium flex items-center gap-2 transition-colors">
-                                <Plus size={18} /> Tambah Material
+                                <Plus size={18} /> Add Material
                             </button>
                         )}
                     </div>
@@ -130,8 +130,8 @@ export default function AdminMaterials() {
                             {materials.length === 0 ? (
                                 <div className="col-span-full bg-zinc-900 border border-zinc-800 rounded-lg p-12 text-center">
                                     <Palette size={48} className="text-zinc-700 mx-auto mb-4" />
-                                    <h3 className="text-lg font-medium text-zinc-300">Tidak ada material ditemukan</h3>
-                                    <p className="text-zinc-500 mt-1">Coba gunakan kata kunci pencarian yang lain atau tambah material baru.</p>
+                                    <h3 className="text-lg font-medium text-zinc-300">No materials found</h3>
+                                    <p className="text-zinc-500 mt-1">Add your first material to feature on the landing page.</p>
                                 </div>
                             ) : (
                                 materials.map((mat, i) => (
@@ -140,7 +140,7 @@ export default function AdminMaterials() {
                                             <img src={`${import.meta.env.VITE_API_URL}${mat.image_path}`} alt={mat.title} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
                                             <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                 <button onClick={() => handleEdit(mat)} className="bg-blue-500/90 text-white p-2 rounded-md hover:bg-blue-600 transition-colors" title="Edit Material"><Edit2 size={16} /></button>
-                                                <button onClick={() => handleDelete(mat.id, mat.title)} className="bg-red-500/90 text-white p-2 rounded-md hover:bg-red-600 transition-colors" title="Hapus Material"><Trash2 size={16} /></button>
+                                                <button onClick={() => handleDelete(mat.id, mat.title)} className="bg-red-500/90 text-white p-2 rounded-md hover:bg-red-600 transition-colors" title="Delete Material"><Trash2 size={16} /></button>
                                             </div>
                                             <span className="absolute top-2 left-2 bg-zinc-100 text-zinc-900 text-xs font-bold px-2 py-1 rounded">Slot {i + 1}</span>
                                         </div>
@@ -159,24 +159,24 @@ export default function AdminMaterials() {
                     <div className="flex items-center gap-4">
                         <button onClick={handleCancelEdit} className="p-2 bg-zinc-900 border border-zinc-800 rounded-md text-zinc-400 hover:text-white transition-colors"><ArrowLeft size={18} /></button>
                         <div>
-                            <h2 className="text-2xl font-bold text-zinc-50 flex items-center gap-2"><Palette className="text-rose-500" /> {selectedMaterial ? 'Edit Material' : 'Tambah Material Baru'}</h2>
-                            <p className="text-sm text-zinc-400 mt-1">Atur fitur andalan produk untuk halaman depan.</p>
+                            <h2 className="text-2xl font-bold text-zinc-50 flex items-center gap-2"><Palette className="text-rose-500" /> {selectedMaterial ? 'Edit Material' : 'Add New Material'}</h2>
+                            <p className="text-sm text-zinc-400 mt-1">Manage product highlights for the landing page.</p>
                         </div>
                     </div>
 
                     <form onSubmit={handleAdd} className="bg-zinc-900 border border-zinc-800 p-6 rounded-lg grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="col-span-2 space-y-4">
                             <div>
-                                <label className="text-sm text-zinc-400 mb-1 block">Judul Highlight</label>
-                                <input type="text" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} placeholder="Ex: Premium Fabric" className="w-full bg-zinc-950 border border-zinc-800 rounded-md py-2 px-4 text-zinc-100 focus:outline-none focus:border-rose-500 transition-colors" />
+                                <label className="text-sm text-zinc-400 mb-1 block">Highlight Title</label>
+                                <input type="text" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} placeholder="Example: Premium Fabric" className="w-full bg-zinc-950 border border-zinc-800 rounded-md py-2 px-4 text-zinc-100 focus:outline-none focus:border-rose-500 transition-colors" />
                             </div>
                             <div>
-                                <label className="text-sm text-zinc-400 mb-1 block">Deskripsi Pendek</label>
+                                <label className="text-sm text-zinc-400 mb-1 block">Short Description</label>
                                 <textarea value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} rows="3" className="w-full bg-zinc-950 border border-zinc-800 rounded-md py-2 px-4 text-zinc-100 focus:outline-none focus:border-rose-500 transition-colors" />
                             </div>
                         </div>
                         <div className="flex flex-col gap-4">
-                            <label className="text-sm text-zinc-400 mb-1 block">Upload Foto</label>
+                            <label className="text-sm text-zinc-400 mb-1 block">Upload Photo</label>
                             <label 
                                 className="flex-1 border-2 border-dashed border-zinc-700 bg-zinc-950 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-zinc-500 transition-colors overflow-hidden relative"
                                 onDragOver={e => e.preventDefault()}
@@ -188,12 +188,12 @@ export default function AdminMaterials() {
                                 }}
                             >
                                 {preview ? <img src={preview} alt="Preview" className="absolute inset-0 w-full h-full object-cover opacity-60" /> : <ImageIcon size={32} className="text-zinc-600 mb-2" />}
-                                <span className="text-xs text-zinc-400 z-10 bg-zinc-900/80 px-2 py-1 rounded">Drag & Drop atau Klik</span>
+                                <span className="text-xs text-zinc-400 z-10 bg-zinc-900/80 px-2 py-1 rounded">Drag & Drop or Click</span>
                                 <input type="file" onChange={handleFile} accept="image/*" className="hidden" />
                             </label>
                             <div className="flex gap-2">
-                                <button type="submit" className="flex-1 bg-rose-500 hover:bg-rose-600 text-white py-2 rounded-md font-medium flex items-center justify-center gap-2 transition-colors"><Plus size={18} /> {selectedMaterial ? 'Update' : 'Simpan'}</button>
-                                <button type="button" onClick={handleCancelEdit} className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 py-2 rounded-md font-medium flex items-center justify-center gap-2 transition-colors"><X size={18} /> Batal</button>
+                                <button type="submit" className="flex-1 bg-rose-500 hover:bg-rose-600 text-white py-2 rounded-md font-medium flex items-center justify-center gap-2 transition-colors"><Plus size={18} /> {selectedMaterial ? 'Update' : 'Save'}</button>
+                                <button type="button" onClick={handleCancelEdit} className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 py-2 rounded-md font-medium flex items-center justify-center gap-2 transition-colors"><X size={18} /> Cancel</button>
                             </div>
                         </div>
                     </form>

@@ -28,7 +28,7 @@ export default function AdminDashboard() {
     const [customEnd, setCustomEnd] = useState('');
     const [isPickerOpen, setIsPickerOpen] = useState(false);
 
-    // Hitung dateRange berdasarkan preset atau custom
+    // Calculate dateRange based on preset or custom range
     const getDateRange = () => {
         const today = new Date();
         const fmt = (d) => d.toISOString().split('T')[0];
@@ -50,22 +50,22 @@ export default function AdminDashboard() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [activeTab, setActiveTab] = useState('home');
     
-    // Sinkronisasi E-Commerce state
+    // E-Commerce sync state
     const [isSyncing, setIsSyncing] = useState(false);
     const [mapRefreshTrigger, setMapRefreshTrigger] = useState(0);
 
     const handleSyncEcommerce = async () => {
         setIsSyncing(true);
-        toast.info("Memulai sinkronisasi data dengan E-Commerce...");
+        toast.info("Starting E-Commerce data sync...");
         try {
             const response = await axios.post(import.meta.env.VITE_API_URL + '/api/settings/sync-ecommerce');
             if (response.data.success) {
-                toast.success("Sinkronisasi E-Commerce berhasil! Peta diperbarui.");
+                toast.success("E-Commerce sync successful! Map updated.");
                 setMapRefreshTrigger(prev => prev + 1);
             }
         } catch (error) {
             console.error(error);
-            toast.error("Terjadi kesalahan saat memproses data E-Commerce dari dummy text mining.");
+            toast.error("An error occurred while processing E-Commerce data.");
         } finally {
             setIsSyncing(false);
         }
@@ -82,7 +82,7 @@ export default function AdminDashboard() {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 pb-6 border-b border-zinc-800 gap-4">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Admin <span className="text-zinc-500 font-light">Dashboard</span></h1>
-                    <p className="text-zinc-400 text-sm mt-1">Ringkasan statistik performa website RELOAD.</p>
+                    <p className="text-zinc-400 text-sm mt-1">RELOAD website performance summary.</p>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3">
@@ -92,12 +92,12 @@ export default function AdminDashboard() {
                         className="flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 text-xs rounded-md transition-colors disabled:opacity-50"
                     >
                         <RefreshCw size={14} className={isSyncing ? "animate-spin" : ""} />
-                        <span>{isSyncing ? "Menyelaraskan..." : "Sinkronisasi E-Commerce"}</span>
+                        <span>{isSyncing ? "Syncing..." : "Sync E-Commerce"}</span>
                     </button>
                     
                     {/* Preset buttons */}
                     <div className="bg-zinc-900 border border-zinc-800 rounded-md p-1 flex">
-                        {[['today', 'Hari ini'], ['7d', '7 Hari'], ['30d', '30 Hari']].map(([key, label]) => (
+                        {[['today', 'Today'], ['7d', '7 Days'], ['30d', '30 Days']].map(([key, label]) => (
                             <button
                                 key={key}
                                 onClick={() => { setPreset(key); setIsPickerOpen(false); }}
@@ -117,7 +117,7 @@ export default function AdminDashboard() {
                             <CalendarDays size={12} />
                             {preset === 'custom' && customStart && customEnd
                                 ? `${customStart} — ${customEnd}`
-                                : 'Pilih Tanggal'
+                                : 'Select Date'
                             }
                         </button>
                     </div>
@@ -183,7 +183,7 @@ export default function AdminDashboard() {
                 return (
                     <div className="flex items-center justify-center h-[70vh] animate-in fade-in duration-500">
                         <div className="text-center">
-                            <h2 className="text-2xl font-semibold mb-2 capitalize">Halaman Belum Tersedia</h2>
+                            <h2 className="text-2xl font-semibold mb-2 capitalize">Page Not Available</h2>
                         </div>
                     </div>
                 );

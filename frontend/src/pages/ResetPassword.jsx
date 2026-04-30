@@ -30,12 +30,12 @@ export default function ResetPassword() {
         setLoading(true);
 
         try {
-            const loadingToastId = notify.loading('Memperbarui password...');
+            const loadingToastId = notify.loading('Updating password...');
             const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/reset-password/${id}/${token}`, {
                 newPassword: password
             });
             setMessage(response.data.message);
-            notify.update(loadingToastId, { render: 'Password berhasil diperbarui! Mengarahkan ke login...', type: 'success', isLoading: false, autoClose: 2000 });
+            notify.update(loadingToastId, { render: 'Password updated successfully! Redirecting to login...', type: 'success', isLoading: false, autoClose: 2000 });
             setTimeout(() => navigate('/login'), 2500);
         } catch (err) {
             const errorMessage = err.response?.data?.message || 'Invalid or expired payload link';

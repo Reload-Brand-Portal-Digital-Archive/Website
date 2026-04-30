@@ -22,6 +22,7 @@ import Wholesale from './pages/Wholesale';
 import ProtectedRoute from './components/ProtectedRoute';
 import UserProfile from './pages/UserProfile';
 import NotFound from './pages/NotFound';
+import About from './pages/About';
 import Unsubscribe from './pages/Unsubscribe';
 
 function RouteTracker() {
@@ -62,6 +63,7 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password/:id/:token" element={<ResetPassword />} />
           <Route path="/wholesale" element={<Wholesale />} />
+          <Route path="/about" element={<About />} />
           <Route path="/unsubscribe" element={<Unsubscribe />} />
           <Route element={<ProtectedRoute requireAdmin={false} />}>
             <Route path="/profile" element={<UserProfile />} />

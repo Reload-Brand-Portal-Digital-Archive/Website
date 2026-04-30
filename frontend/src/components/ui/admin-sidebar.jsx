@@ -6,14 +6,14 @@ import {
 
 export const navigationItems = [
     { id: 'home', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'products', label: 'Produk', icon: ShoppingBag },
-    { id: 'collections', label: 'Koleksi', icon: Layers },
-    { id: 'categories', label: 'Kategori', icon: Tag },
+    { id: 'products', label: 'Product', icon: ShoppingBag },
+    { id: 'collections', label: 'Collection', icon: Layers },
+    { id: 'categories', label: 'Category', icon: Tag },
     { id: 'materials', label: 'Material', icon: Palette },
     { id: 'endorsements', label: 'Endorsement', icon: Award },
-    { id: 'messages', label: 'Pesanan Grosir', icon: MessageSquare },
+    { id: 'messages', label: 'Wholesale Order', icon: MessageSquare },
     { id: 'newsletter', label: 'Newsletter', icon: Mail },
-    { id: 'settings', label: 'Pengaturan', icon: Settings },
+    { id: 'settings', label: 'Setting', icon: Settings },
 ];
 
 export default function AdminSidebar({
