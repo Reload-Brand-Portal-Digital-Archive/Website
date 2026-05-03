@@ -168,7 +168,7 @@ export default function AdminDashboard() {
                 </div>
             </div>
 
-            <RecentActivityLog />
+            <RecentActivityLog dateRange={dateRange} />
         </div>
     );
 
