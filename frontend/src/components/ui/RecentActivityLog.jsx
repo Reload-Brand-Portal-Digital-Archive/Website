@@ -7,15 +7,19 @@ const PLATFORM_STYLE = {
     tiktok: { label: 'TikTok Shop', color: 'text-pink-400 bg-pink-500/10' },
 };
 
-export default function RecentActivityLog() {
+export default function RecentActivityLog({ dateRange = {} }) {
     const [clicks, setClicks] = useState([]);
     const [loading, setLoading] = useState(true);
 
     const fetchData = useCallback(async () => {
         const token = localStorage.getItem('token');
         try {
+            const params = {};
+            if (dateRange.startDate) params.startDate = dateRange.startDate;
+            if (dateRange.endDate) params.endDate = dateRange.endDate;
             const response = await axios.get(import.meta.env.VITE_API_URL + '/api/track/stats', {
-                headers: { 'Authorization': `Bearer ${token}` }
+                headers: { 'Authorization': `Bearer ${token}` },
+                params
             });
             if (response.data.success) {
                 // Hanya tampilkan link_click (klik ke Shopee/TikTok)
@@ -28,7 +32,7 @@ export default function RecentActivityLog() {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [dateRange.startDate, dateRange.endDate]);
 
     useEffect(() => {
         fetchData();

@@ -10,4 +10,9 @@ router.get('/ecommerce-hub', settingsController.getEcommerceHubData);
 // @desc    Sync data with TikTok and Shopee dummy endpoints
 router.post('/sync-ecommerce', settingsController.syncEcommerce);
 
+// @route   POST /api/settings/upload-report
+// @desc    Handle manual upload of TikTok/Shopee reports
+router.post('/upload-report', settingsController.uploadReport);
+router.delete('/clear-ecommerce', settingsController.clearEcommerceData);
+
 module.exports = router;

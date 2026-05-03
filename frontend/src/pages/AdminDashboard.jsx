@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Menu, RefreshCw, CalendarDays } from 'lucide-react';
 import axios from 'axios';
@@ -19,6 +19,7 @@ import { DashboardSummaryCards } from '../components/ui/admin-summary-cards';
 import { TrafficChart, UserGrowthChart, SubscriberChart, ExternalClicksChart } from '../components/ui/admin-charts';
 import AdminGeographicMap from '../components/ui/AdminGeographicMapV2';
 import RecentActivityLog from '../components/ui/RecentActivityLog';
+import SyncEcommerceModal from '../components/ui/SyncEcommerceModal';
 
 export default function AdminDashboard() {
     const navigate = useNavigate();
@@ -51,8 +52,14 @@ export default function AdminDashboard() {
     const [activeTab, setActiveTab] = useState('home');
     
     // Sinkronisasi E-Commerce state
+    const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
     const [mapRefreshTrigger, setMapRefreshTrigger] = useState(0);
+    
+    // Auto-open sync modal on mount
+    useEffect(() => {
+        setIsSyncModalOpen(true);
+    }, []);
 
     const handleSyncEcommerce = async () => {
         setIsSyncing(true);
@@ -87,13 +94,19 @@ export default function AdminDashboard() {
 
                 <div className="flex flex-wrap items-center gap-3">
                     <button 
-                        onClick={handleSyncEcommerce} 
+                        onClick={() => setIsSyncModalOpen(true)} 
                         disabled={isSyncing}
-                        className="flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 text-xs rounded-md transition-colors disabled:opacity-50"
+                        className="flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 text-xs rounded-md transition-colors disabled:opacity-50 shadow-lg shadow-rose-900/20"
                     >
                         <RefreshCw size={14} className={isSyncing ? "animate-spin" : ""} />
                         <span>{isSyncing ? "Menyelaraskan..." : "Sinkronisasi E-Commerce"}</span>
                     </button>
+
+                    <SyncEcommerceModal 
+                        isOpen={isSyncModalOpen} 
+                        onClose={() => setIsSyncModalOpen(false)}
+                        onSyncComplete={() => setMapRefreshTrigger(prev => prev + 1)}
+                    />
                     
                     {/* Preset buttons */}
                     <div className="bg-zinc-900 border border-zinc-800 rounded-md p-1 flex">
@@ -155,7 +168,7 @@ export default function AdminDashboard() {
                 </div>
             </div>
 
-            <RecentActivityLog />
+            <RecentActivityLog dateRange={dateRange} />
         </div>
     );
 
