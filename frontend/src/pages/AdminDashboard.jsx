@@ -12,7 +12,7 @@ import AdminCategories from './AdminCategories';
 import AdminMaterial from './AdminMaterial';
 import AdminMessages from './AdminMessages';
 import AdminNewsletter from './AdminNewsletter';
-import AdminSettings from './AdminSettings';
+import SystemSettings from './SystemSettings';
 import AdminEndorsements from './AdminEndorsements';
 
 import { DashboardSummaryCards } from '../components/ui/admin-summary-cards';
@@ -191,7 +191,7 @@ export default function AdminDashboard() {
             case 'newsletter':
                 return <AdminNewsletter />;
             case 'settings':
-                return <AdminSettings />;
+                return <SystemSettings />;
             default:
                 return (
                     <div className="flex items-center justify-center h-[70vh] animate-in fade-in duration-500">
