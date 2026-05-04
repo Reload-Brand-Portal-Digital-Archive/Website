@@ -18,7 +18,7 @@ export default function Wholesale() {
     name: '',
     email: '',
     phone: '',
-    inquiry_type: 'Pembelian Grosir',
+    inquiry_type: 'Bulk Purchase',
     address: '',
     message: ''
   });
@@ -38,8 +38,9 @@ export default function Wholesale() {
 
     const fetchProducts = async () => {
       try {
-        const res = await axios.get(import.meta.env.VITE_API_URL + '/api/products');
-        setProducts(res.data || []);
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        const res = await axios.get(apiUrl + '/api/products');
+        setProducts(Array.isArray(res.data) ? res.data : (res.data?.products || []));
       } catch (err) {
         console.error("Failed to fetch products:", err);
       }
@@ -96,7 +97,8 @@ export default function Wholesale() {
     };
     
     try {
-        const res = await axios.post(import.meta.env.VITE_API_URL + '/api/wholesale', payload);
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        const res = await axios.post(apiUrl + '/api/wholesale', payload);
         if (res.data.order_id) {
             toast.success('Wholesale order submitted successfully! We will review it soon.');
             setSelectedItems([]);
@@ -112,7 +114,8 @@ export default function Wholesale() {
 
   const getImageUrl = (url) => {
     if (!url) return 'https://placehold.co/400x500/18181b/a1a1aa?text=No+Image';
-    return url.startsWith('http') ? url : `${import.meta.env.VITE_API_URL}${url}`;
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    return url.startsWith('http') ? url : `${apiUrl}${url}`;
   };
 
   const parseSizes = (sizesStr) => {
@@ -298,9 +301,9 @@ export default function Wholesale() {
                     <div className="flex flex-col gap-1.5">
                         <label className="text-[10px] font-mono text-zinc-500 uppercase">Inquiry Type</label>
                         <select required name="inquiry_type" value={formData.inquiry_type} onChange={handleFormChange} className="bg-zinc-950 border border-zinc-800 focus:border-zinc-600 outline-none h-10 px-3 text-xs text-zinc-200 cursor-pointer appearance-none rounded-none">
-                            <option value="Pembelian Grosir">Pembelian Grosir</option>
-                            <option value="Kolaborasi">Kolaborasi</option>
-                            <option value="Sponsor">Sponsor</option>
+                            <option value="Bulk Purchase">Bulk Purchase</option>
+                            <option value="Collaboration">Collaboration</option>
+                            <option value="Sponsorship">Sponsorship</option>
                         </select>
                     </div>
 

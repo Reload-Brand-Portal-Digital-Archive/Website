@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Package, Search, ChevronRight, X, Phone, Mail, MapPin, Inbox, Calendar, User, CalendarDays } from 'lucide-react';
 import DateRangePickerModal from '../components/ui/DateRangePickerModal';
 import axios from 'axios';
-import { toast } from 'react-toastify';
+import { notify } from '../lib/toast';
 
 export default function AdminMessages() {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
-    const [statusFilter, setStatusFilter] = useState('Semua');
+    const [statusFilter, setStatusFilter] = useState('All');
     const [preset, setPreset] = useState('all');
     const [customStart, setCustomStart] = useState('');
     const [customEnd, setCustomEnd] = useState('');
@@ -40,20 +40,30 @@ export default function AdminMessages() {
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [loadingDetails, setLoadingDetails] = useState(false);
 
+    // DB status values (must match backend) → English UI labels
+    const STATUS_LABELS = {
+        'Belum Dibaca':                       'Unread',
+        'Dibaca':                             'Read',
+        'Dalam proses penyiapan barang':      'Processing',
+        'Barang siap untuk diambil di gudang':'Ready for Pickup',
+        'Pesanan selesai':                    'Completed',
+    };
+
+    // Filter options: value = DB key, label = English display
     const statuses = [
-        "Semua",
-        "Belum Dibaca",
-        "Dibaca",
-        "Dalam proses penyiapan barang",
-        "Barang siap untuk diambil di gudang",
-        "Pesanan selesai"
+        { value: 'All',                                  label: 'All' },
+        { value: 'Belum Dibaca',                         label: 'Unread' },
+        { value: 'Dibaca',                               label: 'Read' },
+        { value: 'Dalam proses penyiapan barang',        label: 'Processing' },
+        { value: 'Barang siap untuk diambil di gudang',  label: 'Ready for Pickup' },
+        { value: 'Pesanan selesai',                      label: 'Completed' },
     ];
 
     const updatableStatuses = [
-        "Dibaca",
-        "Dalam proses penyiapan barang",
-        "Barang siap untuk diambil di gudang",
-        "Pesanan selesai"
+        { value: 'Dibaca',                               label: 'Mark as Read' },
+        { value: 'Dalam proses penyiapan barang',        label: 'Processing' },
+        { value: 'Barang siap untuk diambil di gudang',  label: 'Ready for Pickup' },
+        { value: 'Pesanan selesai',                      label: 'Completed' },
     ];
 
     useEffect(() => {
@@ -72,7 +82,7 @@ export default function AdminMessages() {
             setOrders(res.data);
         } catch (error) {
             console.error('Error fetching orders:', error);
-            toast.error('Gagal mengambil data pesanan.');
+            notify.error('Failed to fetch orders.');
         } finally {
             setLoading(false);
         }
@@ -90,7 +100,7 @@ export default function AdminMessages() {
             setOrders(prev => prev.map(o => o.order_id === orderId && o.status === 'Belum Dibaca' ? { ...o, status: 'Dibaca' } : o));
         } catch (error) {
             console.error('Error fetching details:', error);
-            toast.error('Gagal memuat detail pesanan.');
+            notify.error('Failed to load order details.');
             setIsDetailModalOpen(false);
         } finally {
             setLoadingDetails(false);
@@ -103,10 +113,10 @@ export default function AdminMessages() {
             await axios.put(`${import.meta.env.VITE_API_URL}/api/wholesale/${selectedOrder.order_id}/status`, { status: newStatus });
             setSelectedOrder({ ...selectedOrder, status: newStatus });
             setOrders(prev => prev.map(o => o.order_id === selectedOrder.order_id ? { ...o, status: newStatus } : o));
-            toast.success('Status berhasil diperbarui!');
+            notify.success('Status updated successfully!');
         } catch (error) {
             console.error('Error updating status:', error);
-            toast.error('Gagal memperbarui status.');
+            notify.error('Failed to update status.');
         }
     };
 
@@ -114,7 +124,7 @@ export default function AdminMessages() {
         const matchesSearch = 
             (order.name && order.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
             (order.order_id && order.order_id.toString().includes(searchTerm));
-        const matchesStatus = statusFilter === 'Semua' || order.status === statusFilter;
+        const matchesStatus = statusFilter === 'All' || order.status === statusFilter;
         
         let matchesDate = true;
         const { startDate, endDate } = dateRange;
@@ -154,12 +164,14 @@ export default function AdminMessages() {
         }
     };
 
+    const getStatusLabel = (status) => STATUS_LABELS[status] || status;
+
     return (
         <div className="space-y-6 animate-in fade-in duration-500 relative">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-zinc-800 pb-6">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Pesanan <span className="text-zinc-500 font-light">Grosir</span></h1>
-                    <p className="text-zinc-400 text-sm mt-1">Kelola data pemesanan grosir & B2B portal.</p>
+                    <h1 className="text-3xl font-bold tracking-tight">Wholesale <span className="text-zinc-500 font-light">Orders</span></h1>
+                    <p className="text-zinc-400 text-sm mt-1">Manage wholesale & B2B portal orders.</p>
                 </div>
             </div>
 
@@ -171,7 +183,7 @@ export default function AdminMessages() {
                         </div>
                         <input 
                             type="text"
-                            placeholder="Cari nama pemesan atau ID pesanan..."
+                            placeholder="Search by name or order ID..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="bg-transparent border-none text-sm text-zinc-200 px-3 py-2 w-full outline-none"
@@ -179,7 +191,7 @@ export default function AdminMessages() {
                     </div>
                     
                     <div className="bg-zinc-950 border border-zinc-700 rounded-md p-1 flex">
-                        {[['all', 'Semua'], ['today', 'Hari ini'], ['7d', '7 Hari'], ['30d', '30 Hari']].map(([key, label]) => (
+                        {[['all', 'All'], ['today', 'Today'], ['7d', '7 Days'], ['30d', '30 Days']].map(([key, label]) => (
                             <button
                                 key={key}
                                 onClick={() => { setPreset(key); setIsPickerOpen(false); }}
@@ -199,7 +211,7 @@ export default function AdminMessages() {
                             <CalendarDays size={12} />
                             {preset === 'custom' && customStart && customEnd
                                 ? `${customStart} — ${customEnd}`
-                                : 'Pilih'
+                                : 'Select'
                             }
                         </button>
                     </div>
@@ -213,7 +225,7 @@ export default function AdminMessages() {
                         className="bg-zinc-950 border border-zinc-700 text-zinc-200 text-sm px-3 py-2 outline-none w-full cursor-pointer"
                     >
                         {statuses.map(s => (
-                            <option key={s} value={s}>{s}</option>
+                            <option key={s.value} value={s.value}>{s.label}</option>
                         ))}
                     </select>
                 </div>
@@ -241,8 +253,8 @@ export default function AdminMessages() {
                 ) : filteredOrders.length === 0 ? (
                     <div className="p-12 flex flex-col items-center justify-center text-center">
                         <Inbox size={48} className="text-zinc-700 mb-4" />
-                        <h3 className="text-lg font-medium text-zinc-300">Belum Ada Pesanan</h3>
-                        <p className="text-sm text-zinc-500 mt-1">Data pesanan grosir tidak ditemukan berdasarkan pencarian Anda.</p>
+                        <h3 className="text-lg font-medium text-zinc-300">No Orders Yet</h3>
+                        <p className="text-sm text-zinc-500 mt-1">No wholesale order data found for your search.</p>
                     </div>
                 ) : (
                     <div className="overflow-x-auto custom-scrollbar">
@@ -250,10 +262,10 @@ export default function AdminMessages() {
                             <thead className="bg-zinc-950 text-zinc-400 border-b border-zinc-800 uppercase text-[10px] tracking-wider font-mono">
                                 <tr>
                                     <th className="px-5 py-4 font-medium">Order ID</th>
-                                    <th className="px-5 py-4 font-medium">Tanggal</th>
-                                    <th className="px-5 py-4 font-medium">Nama / Tipe Konten</th>
+                                    <th className="px-5 py-4 font-medium">Date</th>
+                                    <th className="px-5 py-4 font-medium">Name / Type</th>
                                     <th className="px-5 py-4 font-medium">Status</th>
-                                    <th className="px-5 py-4 font-medium text-right">Aksi</th>
+                                    <th className="px-5 py-4 font-medium text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-zinc-800/50">
@@ -261,7 +273,7 @@ export default function AdminMessages() {
                                     <tr key={order.order_id} className="hover:bg-zinc-800/30 transition-colors">
                                         <td className="px-5 py-4 text-zinc-200 font-mono text-xs">#{order.order_id}</td>
                                         <td className="px-5 py-4 text-zinc-400">
-                                            {new Date(order.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                            {new Date(order.created_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
                                         </td>
                                         <td className="px-5 py-4">
                                             <div className="flex flex-col">
@@ -271,7 +283,7 @@ export default function AdminMessages() {
                                         </td>
                                         <td className="px-5 py-4">
                                             <span className={`inline-flex px-2 py-1 text-[10px] uppercase font-mono tracking-widest ${getStatusStyles(order.status)}`}>
-                                                {order.status}
+                                                {getStatusLabel(order.status)}
                                             </span>
                                         </td>
                                         <td className="px-5 py-4 text-right">
@@ -312,7 +324,7 @@ export default function AdminMessages() {
                     <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
                         <div>
                             <p className="text-[11px] font-mono text-zinc-500 uppercase tracking-widest">
-                                Menampilkan <span className="font-bold text-zinc-200">{indexOfFirstOrder + 1}</span> - <span className="font-bold text-zinc-200">{Math.min(indexOfLastOrder, filteredOrders.length)}</span> dari <span className="font-bold text-zinc-200">{filteredOrders.length}</span> data
+                                Showing <span className="font-bold text-zinc-200">{indexOfFirstOrder + 1}</span> – <span className="font-bold text-zinc-200">{Math.min(indexOfLastOrder, filteredOrders.length)}</span> of <span className="font-bold text-zinc-200">{filteredOrders.length}</span> results
                             </p>
                         </div>
                         <div>
@@ -376,18 +388,18 @@ export default function AdminMessages() {
                                             <span className="font-mono text-xs tracking-[0.2em] text-zinc-500 uppercase">Order #{selectedOrder.order_id}</span>
                                             <h2 className="text-2xl font-bold uppercase tracking-tight mt-1 mb-2">{selectedOrder.name}</h2>
                                             <span className={`inline-flex px-3 py-1 text-[11px] uppercase font-mono tracking-widest ${getStatusStyles(selectedOrder.status)}`}>
-                                                {selectedOrder.status}
+                                                {getStatusLabel(selectedOrder.status)}
                                             </span>
                                         </div>
                                         <div className="flex flex-col md:items-end gap-1">
-                                            <label className="text-[10px] font-mono text-zinc-500 uppercase">Update Status Pesanan Saat Ini:</label>
+                                            <label className="text-[10px] font-mono text-zinc-500 uppercase">Update Order Status:</label>
                                             <select 
                                                 value={selectedOrder.status}
                                                 onChange={(e) => handleUpdateStatus(e.target.value)}
                                                 className="bg-zinc-900 border border-zinc-700 text-zinc-100 text-sm px-4 py-2 outline-none cursor-pointer w-full md:w-64"
                                             >
                                                 {updatableStatuses.map(s => (
-                                                    <option key={s} value={s}>{s}</option>
+                                                    <option key={s.value} value={s.value}>{s.label}</option>
                                                 ))}
                                             </select>
                                         </div>
@@ -395,7 +407,7 @@ export default function AdminMessages() {
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
                                         <div className="space-y-4">
-                                            <h3 className="text-xs font-mono uppercase text-zinc-500 border-b border-zinc-800 pb-2 mb-4">Informasi Klien</h3>
+                                            <h3 className="text-xs font-mono uppercase text-zinc-500 border-b border-zinc-800 pb-2 mb-4">Client Information</h3>
                                             
                                             <div className="flex items-start gap-3">
                                                 <Mail size={16} className="text-zinc-600 mt-0.5" />
@@ -416,31 +428,31 @@ export default function AdminMessages() {
                                             <div className="flex items-start gap-3">
                                                 <MapPin size={16} className="text-zinc-600 mt-0.5" />
                                                 <div className="min-w-0">
-                                                    <p className="text-[10px] font-mono text-zinc-500">Alamat Pengiriman</p>
+                                                    <p className="text-[10px] font-mono text-zinc-500">Shipping Address</p>
                                                     <p className="text-sm text-zinc-200 leading-relaxed whitespace-pre-wrap">{selectedOrder.address || '-'}</p>
                                                 </div>
                                             </div>
                                         </div>
                                         
                                         <div className="space-y-4">
-                                            <h3 className="text-xs font-mono uppercase text-zinc-500 border-b border-zinc-800 pb-2 mb-4">Deskripsi/Tambahan</h3>
+                                            <h3 className="text-xs font-mono uppercase text-zinc-500 border-b border-zinc-800 pb-2 mb-4">Notes / Additional Info</h3>
                                             <div className="bg-zinc-900 border border-zinc-800 p-4 h-full min-h-[120px]">
                                                 <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider block mb-2">{selectedOrder.inquiry_type}</span>
                                                 <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap">
-                                                    {selectedOrder.message ? selectedOrder.message : <span className="italic text-zinc-600">Tidak ada pesan tambahan.</span>}
+                                                    {selectedOrder.message ? selectedOrder.message : <span className="italic text-zinc-600">No additional message.</span>}
                                                 </p>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <h3 className="text-xs font-mono uppercase text-zinc-500 border-b border-zinc-800 pb-2 mb-4">Daftar Barang ({selectedOrder.items?.length || 0})</h3>
+                                    <h3 className="text-xs font-mono uppercase text-zinc-500 border-b border-zinc-800 pb-2 mb-4">Items ({selectedOrder.items?.length || 0})</h3>
                                     
                                     {selectedOrder.items && selectedOrder.items.length > 0 ? (
                                         <div className="border border-zinc-800 overflow-hidden bg-zinc-900/50">
                                             <table className="w-full text-left text-sm whitespace-nowrap">
                                                 <thead className="bg-zinc-900 border-b border-zinc-800 text-zinc-400 text-[10px] uppercase font-mono tracking-widest">
                                                     <tr>
-                                                        <th className="px-4 py-3 font-medium">Nama Produk</th>
+                                                        <th className="px-4 py-3 font-medium">Product Name</th>
                                                         <th className="px-4 py-3 font-medium">Size</th>
                                                         <th className="px-4 py-3 font-medium">Quantity</th>
                                                     </tr>
@@ -464,7 +476,7 @@ export default function AdminMessages() {
                                         </div>
                                     ) : (
                                         <div className="border border-dashed border-zinc-800 bg-zinc-900/30 p-8 text-center">
-                                            <span className="text-zinc-500 text-sm">Tidak ada items yang tersimpan.</span>
+                                            <span className="text-zinc-500 text-sm">No items recorded.</span>
                                         </div>
                                     )}
                                 </div>

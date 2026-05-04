@@ -1,19 +1,19 @@
 import React from 'react';
 import { 
     LayoutDashboard, ShoppingBag, Layers, 
-    MessageSquare, Mail, Settings, Users, LogOut, X, Tag, Palette, Award
+    MessageSquare, Mail, Settings, Users, LogOut, X, Tag, Palette, Award, ExternalLink
 } from 'lucide-react';
 
 export const navigationItems = [
     { id: 'home', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'products', label: 'Produk', icon: ShoppingBag },
-    { id: 'collections', label: 'Koleksi', icon: Layers },
-    { id: 'categories', label: 'Kategori', icon: Tag },
+    { id: 'products', label: 'Product', icon: ShoppingBag },
+    { id: 'collections', label: 'Collection', icon: Layers },
+    { id: 'categories', label: 'Category', icon: Tag },
     { id: 'materials', label: 'Material', icon: Palette },
     { id: 'endorsements', label: 'Endorsement', icon: Award },
-    { id: 'messages', label: 'Pesanan Grosir', icon: MessageSquare },
+    { id: 'messages', label: 'Wholesale Order', icon: MessageSquare },
     { id: 'newsletter', label: 'Newsletter', icon: Mail },
-    { id: 'settings', label: 'Pengaturan', icon: Settings },
+    { id: 'settings', label: 'Setting', icon: Settings },
 ];
 
 export default function AdminSidebar({
@@ -53,6 +53,23 @@ export default function AdminSidebar({
                 </div>
 
                 <div className="flex-1 overflow-y-auto overflow-x-hidden py-6 px-3 flex flex-col gap-2">
+                    {/* View Site — opens landing page in new tab */}
+                    <a
+                        href="/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="View Site"
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-md text-zinc-500 hover:bg-zinc-800 hover:text-zinc-100 transition-all duration-200 group mb-1"
+                    >
+                        <ExternalLink size={20} className="shrink-0 group-hover:text-zinc-100 transition-colors" />
+                        <span className={`font-medium whitespace-nowrap text-xs tracking-widest uppercase transition-all duration-300 ${isSidebarOpen ? "opacity-100 w-auto" : "opacity-0 w-0 md:hidden"}`}>
+                            View Site
+                        </span>
+                    </a>
+
+                    {/* Divider */}
+                    <div className={`border-t border-zinc-800 mb-2 ${isSidebarOpen ? "mx-0" : "mx-auto w-6"}`} />
+
                     {navigationItems.map((item) => {
                         const Icon = item.icon;
                         const isActive = activeTab === item.id;
@@ -115,3 +132,4 @@ export default function AdminSidebar({
         </>
     );
 }
+

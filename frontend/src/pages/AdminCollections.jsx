@@ -9,7 +9,6 @@ export default function AdminCollections() {
     const [collections, setCollections] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCollection, setSelectedCollection] = useState(null);
-    const [loading, setLoading] = useState(true);
 
     const [formData, setFormData] = useState({
         name: '',
@@ -33,14 +32,11 @@ export default function AdminCollections() {
     };
 
     const fetchCollections = async () => {
-        setLoading(true);
         try {
             const response = await axios.get(import.meta.env.VITE_API_URL + '/api/collections');
             setCollections(response.data);
         } catch (error) {
             console.error("Failed to fetch collections", error);
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -60,14 +56,14 @@ export default function AdminCollections() {
                 const file = files[0];
                 const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
                 if (!allowedTypes.includes(file.type)) {
-                    const errorMsg = "Format tidak didukung. Gunakan JPG, PNG, atau WEBP";
+                    const errorMsg = "Unsupported format. Please use JPG, PNG, or WEBP";
                     setErrors(prev => ({ ...prev, cover_image: errorMsg }));
                     notify.error(errorMsg);
                     return;
                 }
                 setFormData(prev => ({ ...prev, cover_image: file }));
                 setErrors(prev => ({ ...prev, cover_image: null }));
-                notify.success("Gambar berhasil diunggah");
+                notify.success("Image uploaded successfully");
             }
             return;
         }
@@ -91,10 +87,10 @@ export default function AdminCollections() {
 
     const validateForm = () => {
         const newErrors = {};
-        if (!formData.name.trim()) newErrors.name = "Nama koleksi wajib diisi";
-        if (!formData.year) newErrors.year = "Tahun wajib diisi";
-        if (!formData.cover_image) newErrors.cover_image = "File cover image wajib diisi";
-        if (formData.name && formData.name.length < 3) newErrors.name = "Nama terlalu pendek";
+        if (!formData.name.trim()) newErrors.name = "Collection name is required";
+        if (!formData.year) newErrors.year = "Year is required";
+        if (!formData.cover_image) newErrors.cover_image = "Cover image is required";
+        if (formData.name && formData.name.length < 3) newErrors.name = "Name is too short";
 
         setErrors(newErrors);
 
@@ -122,25 +118,25 @@ export default function AdminCollections() {
         }
 
         try {
-            const loadingToastId = notify.loading(currentView === 'create' ? 'Membuat koleksi...' : 'Menyimpan perubahan...');
+            const loadingToastId = notify.loading(currentView === 'create' ? 'Creating collection...' : 'Saving changes...');
 
             if (currentView === 'create') {
                 await axios.post(import.meta.env.VITE_API_URL + '/api/collections', formPayload, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
-                notify.update(loadingToastId, { render: 'Koleksi berhasil dibuat!', type: 'success', isLoading: false, autoClose: 3000 });
+                notify.update(loadingToastId, { render: 'Collection created successfully!', type: 'success', isLoading: false, autoClose: 3000 });
             } else if (currentView === 'edit') {
                 await axios.put(`${import.meta.env.VITE_API_URL}/api/collections/${selectedCollection.collection_id}`, formPayload, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
-                notify.update(loadingToastId, { render: 'Koleksi berhasil diperbarui!', type: 'success', isLoading: false, autoClose: 3000 });
+                notify.update(loadingToastId, { render: 'Collection updated successfully!', type: 'success', isLoading: false, autoClose: 3000 });
             }
 
             await fetchCollections();
             setCurrentView('list');
             setSelectedCollection(null);
         } catch (error) {
-            const errorMessage = error.response?.data?.message || 'Terjadi kesalahan saat menyimpan data';
+            const errorMessage = error.response?.data?.message || 'An error occurred while saving';
             notify.error(errorMessage);
         }
     };
@@ -159,20 +155,20 @@ export default function AdminCollections() {
     const handleDelete = async (id, e) => {
         e.stopPropagation();
         const confirmed = await confirm({
-            title: 'Hapus Koleksi',
-            description: 'Apakah Anda yakin ingin menghapus koleksi ini? Tindakan ini tidak dapat dikembalikan',
-            confirmText: 'Hapus',
-            cancelText: 'Batal',
+            title: 'Delete Collection',
+            description: 'Are you sure you want to delete this collection? This action cannot be undone.',
+            confirmText: 'Delete',
+            cancelText: 'Cancel',
         });
 
         if (confirmed) {
             try {
-                const loadingToastId = notify.loading('Menghapus koleksi...');
+                const loadingToastId = notify.loading('Deleting collection...');
                 await axios.delete(`${import.meta.env.VITE_API_URL}/api/collections/${id}`);
                 setCollections(collections.filter(c => c.collection_id !== id));
-                notify.update(loadingToastId, { render: 'Koleksi berhasil dihapus!', type: 'success', isLoading: false, autoClose: 3000 });
+                notify.update(loadingToastId, { render: 'Collection deleted successfully!', type: 'success', isLoading: false, autoClose: 3000 });
             } catch (error) {
-                const errorMessage = error.response?.data?.message || "Gagal menghapus koleksi";
+                const errorMessage = error.response?.data?.message || "Failed to delete collection";
                 notify.error(errorMessage);
             }
         }
@@ -191,9 +187,9 @@ export default function AdminCollections() {
                     <div>
                         <h2 className="text-2xl font-bold text-zinc-50 flex items-center gap-2">
                             <Layers className="text-rose-500" />
-                            Manajemen Koleksi
+                            Collection Management
                         </h2>
-                        <p className="text-sm text-zinc-400 mt-1">Kelola data koleksi beserta gambar sampulnya.</p>
+                        <p className="text-sm text-zinc-400 mt-1">Manage collection data and cover images.</p>
                     </div>
 
                     <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -201,7 +197,7 @@ export default function AdminCollections() {
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
                             <input
                                 type="text"
-                                placeholder="Cari koleksi..."
+                                placeholder="Search collections..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className="w-full bg-zinc-900 border border-zinc-800 rounded-md py-2 pl-9 pr-4 text-sm text-zinc-100 focus:outline-none focus:border-rose-500 transition-colors"
@@ -212,7 +208,7 @@ export default function AdminCollections() {
                             className="bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors shrink-0"
                         >
                             <Plus size={16} />
-                            <span className="hidden sm:inline">Tambah Baru</span>
+                            <span className="hidden sm:inline">Add New</span>
                         </button>
                     </div>
                 </div>
@@ -220,8 +216,8 @@ export default function AdminCollections() {
                 {filteredCollections.length === 0 ? (
                     <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-12 text-center">
                         <Layers size={48} className="text-zinc-700 mx-auto mb-4" />
-                        <h3 className="text-lg font-medium text-zinc-300">Tidak ada koleksi ditemukan</h3>
-                        <p className="text-zinc-500 mt-1">Coba gunakan kata kunci pencarian yang lain atau tambah koleksi baru.</p>
+                        <h3 className="text-lg font-medium text-zinc-300">No collections found</h3>
+                        <p className="text-zinc-500 mt-1">Try a different search term or add a new collection.</p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -261,7 +257,7 @@ export default function AdminCollections() {
                                         <h3 className="text-lg font-semibold text-zinc-100 group-hover:text-rose-400 transition-colors line-clamp-1">{collection.name}</h3>
                                         <span className="px-2 py-0.5 bg-zinc-800 text-zinc-300 text-xs rounded-full font-medium">{collection.year}</span>
                                     </div>
-                                    <p className="text-sm text-zinc-500 line-clamp-2">{collection.description || 'Tidak ada deskripsi.'}</p>
+                                    <p className="text-sm text-zinc-500 line-clamp-2">{collection.description || 'No description.'}</p>
                                 </div>
                             </div>
                         ))}
@@ -283,46 +279,46 @@ export default function AdminCollections() {
                 <div>
                     <h2 className="text-2xl font-bold text-zinc-50 flex items-center gap-2">
                         <Layers className="text-rose-500" />
-                        {currentView === 'create' ? 'Tambah Koleksi Baru' : 'Edit Data Koleksi'}
+                        {currentView === 'create' ? 'Add New Collection' : 'Edit Collection'}
                     </h2>
-                    <p className="text-sm text-zinc-400 mt-1">Formulir pengaturan rincian koleksi dan covernya.</p>
+                    <p className="text-sm text-zinc-400 mt-1">Fill in the details for this collection and its cover image.</p>
                 </div>
             </div>
 
             <form onSubmit={handleSave} className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 space-y-6">
 
                 <div className="space-y-2">
-                    <label className="text-sm font-medium text-zinc-300">Nama Koleksi <span className="text-rose-500">*</span></label>
+                    <label className="text-sm font-medium text-zinc-300">Collection Name <span className="text-rose-500">*</span></label>
                     <input
                         type="text"
                         name="name"
                         value={formData.name}
                         onChange={handleInputChange}
                         className={`w-full bg-zinc-950 border ${errors.name ? 'border-red-500' : 'border-zinc-800'} rounded-md py-2 px-4 text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-rose-500 transition-colors`}
-                        placeholder="Contoh: Summer Vibes"
+                        placeholder="Example: Summer Vibes"
                     />
                     {errors.name ? (
                         <p className="text-xs text-red-500">{errors.name}</p>
                     ) : (
-                        <p className="text-xs text-zinc-500">Hanya karakter alfabet A-Z dan a-z yang diizinkan (tanpa angka/simbol khusus).</p>
+                        <p className="text-xs text-zinc-500">Only alphabetic characters A-Z and a-z are allowed (no numbers or special characters).</p>
                     )}
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-zinc-300">Tahun Koleksi <span className="text-rose-500">*</span></label>
+                        <label className="text-sm font-medium text-zinc-300">Collection Year <span className="text-rose-500">*</span></label>
                         <input
                             type="text"
                             name="year"
                             value={formData.year}
                             onChange={handleInputChange}
                             className={`w-full bg-zinc-950 border ${errors.year ? 'border-red-500' : 'border-zinc-800'} rounded-md py-2 px-4 text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-rose-500 transition-colors`}
-                            placeholder="Contoh: 2024"
+                            placeholder="Example: 2024"
                         />
                         {errors.year ? (
                             <p className="text-xs text-red-500">{errors.year}</p>
                         ) : (
-                            <p className="text-xs text-zinc-500">Hanya angka (0-9).</p>
+                            <p className="text-xs text-zinc-500">Numbers only (0-9).</p>
                         )}
                     </div>
 
@@ -351,10 +347,10 @@ export default function AdminCollections() {
                             {!formData.cover_image ? (
                                 <>
                                     <ImageIcon size={32} className="text-zinc-600 mb-2" />
-                                    <span className="text-sm text-zinc-400">Drag & Drop file di sini, atau klik</span>
+                                    <span className="text-sm text-zinc-400">Drag & Drop file here, or click</span>
                                 </>
                             ) : (
-                                <span className="text-sm font-medium text-rose-500">Ganti Gambar (Drag & Drop / Klik)</span>
+                                <span className="text-sm font-medium text-rose-500">Change Image (Drag & Drop / Click)</span>
                             )}
                             <input
                                 type="file"
@@ -369,9 +365,9 @@ export default function AdminCollections() {
                         ) : (
                             <div className="text-xs text-zinc-500">
                                 {typeof formData.cover_image === 'string' && formData.cover_image ? (
-                                    <span>Gambar saat ini: {formData.cover_image}</span>
+                                    <span>Current image: {formData.cover_image}</span>
                                 ) : (
-                                    <span>Otomatis tersimpan ke src/assets/collections/</span>
+                                    <span>Automatically saved</span>
                                 )}
                             </div>
                         )}
@@ -379,16 +375,16 @@ export default function AdminCollections() {
                 </div>
 
                 <div className="space-y-2">
-                    <label className="text-sm font-medium text-zinc-300">Deskripsi Singkat</label>
+                    <label className="text-sm font-medium text-zinc-300">Short Description</label>
                     <textarea
                         name="description"
                         value={formData.description}
                         onChange={handleInputChange}
                         rows={4}
                         className="w-full bg-zinc-950 border border-zinc-800 rounded-md py-2 px-4 text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-rose-500 transition-colors resize-none"
-                        placeholder="Tuliskan deskripsi singkat mengenai koleksi ini..."
+                        placeholder="Write a short description of this collection..."
                     />
-                    <p className="text-xs text-zinc-500">Gunakan alfabet latin dan angka, tanpa karakter khusus selain tanda baca standar.</p>
+                    <p className="text-xs text-zinc-500">Use Latin alphabet and numbers, without special characters other than standard punctuation.</p>
                 </div>
 
                 <div className="pt-4 flex items-center justify-end gap-3 border-t border-zinc-800">
@@ -397,13 +393,13 @@ export default function AdminCollections() {
                         onClick={() => setCurrentView('list')}
                         className="px-4 py-2 bg-zinc-800 text-zinc-300 font-medium rounded-md hover:bg-zinc-700 transition-colors"
                     >
-                        Batal
+                        Cancel
                     </button>
                     <button
                         type="submit"
                         className="px-4 py-2 bg-rose-500 text-white font-medium rounded-md hover:bg-rose-600 transition-colors shadow-lg shadow-rose-500/20"
                     >
-                        Simpan Data
+                        Save
                     </button>
                 </div>
             </form>

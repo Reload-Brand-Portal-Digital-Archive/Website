@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react"
+// eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion"
 import { Link } from "react-router-dom"
 import { ArrowRight, ShoppingBag, Instagram, Twitter, Music } from "lucide-react"
@@ -538,8 +539,8 @@ export default function LandingPage() {
       <Navbar />
       <HeroSection />
       <CurrentDropSection />
-      <MaterialIntegritySection />
       <EndorsementCarousel />
+      <MaterialIntegritySection />
       <ShopCTASection />
       <NewsletterSignup />
       <FooterSection />

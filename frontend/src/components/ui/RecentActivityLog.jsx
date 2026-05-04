@@ -22,7 +22,7 @@ export default function RecentActivityLog({ dateRange = {} }) {
                 params
             });
             if (response.data.success) {
-                // Hanya tampilkan link_click (klik ke Shopee/TikTok)
+                // Only show link_click events (clicks to Shopee/TikTok)
                 const linkClicks = response.data.data.latest_activities
                     .filter(a => a.type === 'link_click');
                 setClicks(linkClicks);
@@ -45,7 +45,7 @@ export default function RecentActivityLog({ dateRange = {} }) {
             <div className="flex items-center justify-between p-5 border-b border-zinc-800">
                 <h3 className="text-sm font-semibold text-zinc-100 flex items-center gap-2">
                     <ShoppingBag size={16} className="text-rose-500" />
-                    Pesanan Terbaru (Klik ke Toko)
+                    Recent Store Clicks
                 </h3>
                 <button onClick={fetchData} className="text-zinc-500 hover:text-zinc-300 transition-colors" title="Refresh">
                     <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
@@ -58,7 +58,7 @@ export default function RecentActivityLog({ dateRange = {} }) {
                 </div>
             ) : clicks.length === 0 ? (
                 <div className="p-8 text-center text-zinc-600 text-sm">
-                    Belum ada klik ke toko yang tercatat.
+                    No store clicks recorded yet.
                 </div>
             ) : (
                 <div className="overflow-x-auto">
@@ -67,7 +67,7 @@ export default function RecentActivityLog({ dateRange = {} }) {
                             <tr className="text-[11px] uppercase tracking-wider text-zinc-500 border-b border-zinc-800">
                                 <th className="px-5 py-3 text-left font-medium">Platform</th>
                                 <th className="px-5 py-3 text-left font-medium">IP Address</th>
-                                <th className="px-5 py-3 text-right font-medium">Waktu</th>
+                                <th className="px-5 py-3 text-right font-medium">Time</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-zinc-800/60">
@@ -102,7 +102,7 @@ export default function RecentActivityLog({ dateRange = {} }) {
 }
 
 function formatTime(ts) {
-    return new Date(ts).toLocaleString('id-ID', {
+    return new Date(ts).toLocaleString('en-US', {
         day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
     });
 }

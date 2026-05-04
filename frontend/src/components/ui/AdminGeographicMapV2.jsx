@@ -93,11 +93,11 @@ export default function AdminGeographicMapV2({ refreshTrigger }) {
                 if (response.data.success && response.data.data) {
                     setHubData(response.data.data);
                 } else {
-                    setError("Data Hub tidak valid.");
+                    setError("Invalid Hub data.");
                 }
             } catch (error) {
                 console.error("Hub Fetch Error:", error);
-                setError("Gagal mengambil data dari API.");
+                setError("Failed to fetch data from API.");
             } finally {
                 setIsLoading(false);
             }
@@ -160,7 +160,7 @@ export default function AdminGeographicMapV2({ refreshTrigger }) {
                     <div style="font-size: 12px;">
                         <b style="color: #000;">${order.product_name}</b>
                         <p style="margin: 4px 0;">📍 ${order.customer?.city || 'Unknown'}</p>
-                        <p style="margin: 0; color: #e11d48; font-weight: bold;">Rp ${order.total_amount.toLocaleString('id-ID')}</p>
+                        <p style="margin: 0; color: #e11d48; font-weight: bold;">Rp ${order.total_amount.toLocaleString('en-US')}</p>
                     </div>
                 </div>
             `;
@@ -206,7 +206,7 @@ export default function AdminGeographicMapV2({ refreshTrigger }) {
                         E-Commerce <span className="text-zinc-500 font-light">Distribution Map</span>
                         {isSimulationMode && <span className="ml-2 text-[10px] bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 px-2 py-0.5 rounded-full tracking-widest uppercase">Simulation Mode</span>}
                     </h3>
-                    <p className="text-xs text-zinc-400">Peta distribusi penjualan TikTok & Shopee.</p>
+                    <p className="text-xs text-zinc-400">Sales distribution map for TikTok &amp; Shopee.</p>
                 </div>
 
                 {hubData && (
@@ -217,7 +217,7 @@ export default function AdminGeographicMapV2({ refreshTrigger }) {
                         </div>
                         <div className="bg-zinc-950/50 border border-zinc-800 px-4 py-2 rounded-md">
                             <p className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold mb-1">Revenue</p>
-                            <span className="text-lg font-bold text-zinc-100 font-mono">Rp {hubData.total_sales.toLocaleString('id-ID')}</span>
+                            <span className="text-lg font-bold text-zinc-100 font-mono">Rp {hubData.total_sales.toLocaleString('en-US')}</span>
                         </div>
                     </div>
                 )}
