@@ -1,59 +1,215 @@
+const db = require('../config/database');
+const { geocodeLocation } = require('../utils/geocoder');
+const axios = require('axios');
+
 /**
- * settingsController - Managed store and dashboard settings
- * 
- * This controller provides geographic hub data (orders and coordinates) 
- * for the admin dashboard map visualization.
+ * applyJitter - Menambahkan pergeseran acak kecil pada koordinat
+ * agar marker tidak bertumpuk di titik yang sama persis.
  */
+const applyJitter = (coords) => {
+    if (!coords || !Array.isArray(coords)) return null;
+    const offset = 0.02; // Sekitar 2km
+    const jitterLat = (Math.random() - 0.5) * offset;
+    const jitterLng = (Math.random() - 0.5) * offset;
+    return [coords[0] + jitterLat, coords[1] + jitterLng];
+};
 
-exports.getEcommerceHubData = async (req, res) => {
+exports.getPublicSettings = async (req, res) => {
     try {
-        // Mock data representing e-commerce statistics
-        // In production, this would be aggregated from the database (Shopee/TikTok integrations)
-        const hubData = {
-            total_orders: 50,
-            total_sales: 8765608,
-            platform_breakdown: {
-                TikTok: 26,
-                Shopee: 24
-            },
-            orders: [
-                { order_id: "TK-001", platform: "TikTok", customer: { city: "Jakarta" }, coordinates: [-6.2088, 106.8456], product_name: "Reload Oversized Tee", total_amount: 159000 },
-                { order_id: "SH-002", platform: "Shopee", customer: { city: "Surabaya" }, coordinates: [-7.2575, 112.7521], product_name: "Graphic Hoodie", total_amount: 349000 },
-                { order_id: "TK-003", platform: "TikTok", customer: { city: "Bandung" }, coordinates: [-6.9175, 107.6191], product_name: "Denim Jacket", total_amount: 459000 },
-                { order_id: "SH-004", platform: "Shopee", customer: { city: "Medan" }, coordinates: [3.5952, 98.6722], product_name: "Vintage Shorts", total_amount: 129000 },
-                { order_id: "TK-005", platform: "TikTok", customer: { city: "Makassar" }, coordinates: [-5.1476, 119.4327], product_name: "Reload Crewneck", total_amount: 249000 },
-                { order_id: "SH-006", platform: "Shopee", customer: { city: "Denpasar" }, coordinates: [-8.6705, 115.2126], product_name: "Beach Shirt", total_amount: 189000 },
-                { order_id: "SH-007", platform: "Shopee", customer: { city: "Yogyakarta" }, coordinates: [-7.7956, 110.3695], product_name: "Batik Modern Tee", total_amount: 149000 },
-                { order_id: "TK-008", platform: "TikTok", customer: { city: "Semarang" }, coordinates: [-6.9667, 110.4167], product_name: "Canvas Bag", total_amount: 89000 },
-                { order_id: "TK-009", platform: "TikTok", customer: { city: "Palembang" }, coordinates: [-2.9761, 104.7754], product_name: "Reload Cap", total_amount: 99000 },
-                { order_id: "SH-010", platform: "Shopee", customer: { city: "Banjarmasin" }, coordinates: [-3.3167, 114.5917], product_name: "Cargo Pants", total_amount: 299000 }
-            ]
-        };
-
-        res.status(200).json({
-            success: true,
-            data: hubData
+        const [rows] = await db.query('SELECT setting_key, setting_value FROM site_settings');
+        const settings = {};
+        
+        const excludedKeys = ['admin_notification_email', 'ecommerce_hub_data'];
+        
+        rows.forEach(row => {
+            if (!excludedKeys.includes(row.setting_key)) {
+                settings[row.setting_key] = row.setting_value;
+            }
         });
+        
+        res.status(200).json({ success: true, data: settings });
     } catch (error) {
-        console.error("Error fetching hub data:", error);
-        res.status(500).json({
-            success: false,
-            message: "Gagal mengambil data geographic hub."
-        });
+        console.error('Fetch Public Settings Error:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch public settings' });
     }
 };
 
+/**
+ * getEcommerceHubData - Mengambil data hub dari tabel site_settings (format JSON)
+ */
+exports.getEcommerceHubData = async (req, res) => {
+    try {
+        const [rows] = await db.query('SELECT setting_value FROM site_settings WHERE setting_key = ?', ['ecommerce_hub_data']);
+        
+        let hubData = { total_orders: 0, total_sales: 0, platform_breakdown: { TikTok: 0, Shopee: 0 }, orders: [] };
+
+        if (rows.length > 0 && rows[0].setting_value) {
+            try {
+                const parsed = JSON.parse(rows[0].setting_value);
+                const orders = Array.isArray(parsed) ? parsed : [];
+                
+                let totalSales = 0;
+                const platformBreakdown = { TikTok: 0, Shopee: 0 };
+                
+                orders.forEach(order => {
+                    totalSales += parseFloat(order.total_amount || 0);
+                    platformBreakdown[order.platform] = (platformBreakdown[order.platform] || 0) + 1;
+                });
+
+                hubData = {
+                    total_orders: orders.length,
+                    total_sales: totalSales,
+                    platform_breakdown: platformBreakdown,
+                    orders: orders
+                };
+            } catch (parseError) {
+                console.error("Gagal parse JSON hub_data:", parseError);
+            }
+        }
+
+        res.status(200).json({ success: true, data: hubData });
+    } catch (error) {
+        console.error("Error fetching hub data:", error);
+        res.status(500).json({ success: false, message: "Gagal mengambil data geographic hub." });
+    }
+};
+
+/**
+ * syncEcommerce - Sinkronisasi dengan API eksternal dan simpan ke site_settings sebagai JSON
+ */
 exports.syncEcommerce = async (req, res) => {
     try {
-        // Mock sync logic
+        const response = await axios.get('http://localhost:8000/api/external/orders');
+        const rawData = response.data.data;
+
+        const [rows] = await db.query('SELECT setting_value FROM site_settings WHERE setting_key = ?', ['ecommerce_hub_data']);
+        let currentOrders = [];
+        if (rows.length > 0 && rows[0].setting_value) {
+            try {
+                const parsed = JSON.parse(rows[0].setting_value);
+                currentOrders = Array.isArray(parsed) ? parsed : [];
+            } catch (e) {
+                currentOrders = [];
+            }
+        }
+
+        const coordsCache = {};
+        let syncCount = 0;
+
+        for (const item of rawData) {
+            if (currentOrders.some(o => o.order_id === item.order_id)) continue;
+
+            if (!coordsCache[item.city]) {
+                coordsCache[item.city] = await geocodeLocation(item.city);
+            }
+
+            const baseCoords = coordsCache[item.city];
+            const jitteredCoords = applyJitter(baseCoords) || [0, 0];
+
+            currentOrders.push({
+                order_id: item.order_id,
+                platform: item.platform,
+                product_name: item.product,
+                total_amount: parseFloat(item.amount),
+                customer: { city: item.city },
+                coordinates: jitteredCoords,
+                created_at: new Date().toISOString()
+            });
+            syncCount++;
+        }
+
+        const jsonValue = JSON.stringify(currentOrders);
+        if (rows.length > 0) {
+            await db.query('UPDATE site_settings SET setting_value = ? WHERE setting_key = ?', [jsonValue, 'ecommerce_hub_data']);
+        } else {
+            await db.query('INSERT INTO site_settings (setting_key, setting_value) VALUES (?, ?)', ['ecommerce_hub_data', jsonValue]);
+        }
+
         res.status(200).json({
             success: true,
-            message: "Sinkronisasi data berhasil!"
+            message: `Sinkronisasi berhasil! ${syncCount} data baru ditambahkan.`,
+            processed_count: syncCount
         });
     } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: "Gagal sinkronisasi."
+        console.error("Sync Error:", error.message);
+        res.status(500).json({ success: false, message: "Gagal sinkronisasi API.", error: error.message });
+    }
+};
+
+/**
+ * uploadReport - Handler untuk upload laporan dengan Mapping Otomatis
+ */
+exports.uploadReport = async (req, res) => {
+    try {
+        const data = req.body.orders; 
+        if (!data || !Array.isArray(data)) {
+            return res.status(400).json({ success: false, message: "Format data tidak valid." });
+        }
+
+        const [rows] = await db.query('SELECT setting_value FROM site_settings WHERE setting_key = ?', ['ecommerce_hub_data']);
+        let currentOrders = [];
+        if (rows.length > 0 && rows[0].setting_value) {
+            try {
+                const parsed = JSON.parse(rows[0].setting_value);
+                currentOrders = Array.isArray(parsed) ? parsed : [];
+            } catch (e) {
+                currentOrders = [];
+            }
+        }
+
+        const coordsCache = {};
+        let newCount = 0;
+
+        for (const item of data) {
+            // Hindari duplikasi jika order_id sudah ada
+            if (currentOrders.some(o => o.order_id && o.order_id.toString() === item.order_id.toString())) continue;
+
+            if (!coordsCache[item.city]) {
+                const fullLocation = item.province ? `${item.city}, ${item.province}` : item.city;
+                coordsCache[item.city] = await geocodeLocation(fullLocation);
+            }
+            const baseCoords = coordsCache[item.city];
+            const jitteredCoords = applyJitter(baseCoords) || [0, 0];
+
+            currentOrders.push({
+                order_id: item.order_id,
+                platform: item.platform,
+                product_name: item.product_name,
+                total_amount: parseFloat(item.total_amount),
+                customer: { city: item.city },
+                coordinates: jitteredCoords,
+                created_at: item.created_at || new Date().toISOString()
+            });
+            newCount++;
+        }
+
+        const jsonValue = JSON.stringify(currentOrders);
+        if (rows.length > 0) {
+            await db.query('UPDATE site_settings SET setting_value = ? WHERE setting_key = ?', [jsonValue, 'ecommerce_hub_data']);
+        } else {
+            await db.query('INSERT INTO site_settings (setting_key, setting_value) VALUES (?, ?)', ['ecommerce_hub_data', jsonValue]);
+        }
+
+        res.status(200).json({ 
+            success: true, 
+            message: `Berhasil mengimpor ${newCount} data laporan baru.`,
+            processed_count: newCount
         });
+    } catch (error) {
+        console.error("Upload Error:", error);
+        res.status(500).json({ success: false, message: "Gagal memproses laporan." });
+    }
+};
+
+/**
+ * clearEcommerceData - Menghapus semua data e-commerce di site_settings (Reset)
+ */
+exports.clearEcommerceData = async (req, res) => {
+    try {
+        await db.query('UPDATE site_settings SET setting_value = ? WHERE setting_key = ?', ['[]', 'ecommerce_hub_data']);
+        res.status(200).json({ success: true, message: "Seluruh data e-commerce berhasil direset." });
+    } catch (error) {
+        console.error("Reset Error:", error);
+        res.status(500).json({ success: false, message: "Gagal meriset data." });
     }
 };

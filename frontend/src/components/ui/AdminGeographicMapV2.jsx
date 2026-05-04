@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { Loader2, Globe, AlertTriangle } from 'lucide-react';
+import { useSettings } from '../../context/SettingsContext';
 import L from 'leaflet';
 
 /**
@@ -13,6 +14,8 @@ export default function AdminGeographicMapV2({ refreshTrigger }) {
     const [hubData, setHubData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
+    const { settings } = useSettings();
+    const isSimulationMode = settings?.simulation_mode === 'true';
     
     const mapContainerRef = useRef(null);
     const mapInstanceRef = useRef(null);
@@ -32,12 +35,60 @@ export default function AdminGeographicMapV2({ refreshTrigger }) {
         shadowSize: [41, 41]
     });
 
-    // Fetch E-Commerce Hub Data
     useEffect(() => {
         const fetchHubData = async () => {
             try {
                 setIsLoading(true);
                 setError(null);
+                
+                if (isSimulationMode) {
+                    const mockOrders = [];
+                    const cities = [
+                        { name: 'Jakarta', coords: [-6.2088, 106.8456] },
+                        { name: 'Surabaya', coords: [-7.2504, 112.7688] },
+                        { name: 'Bandung', coords: [-6.9147, 107.6098] },
+                        { name: 'Medan', coords: [3.5952, 98.6722] },
+                        { name: 'Makassar', coords: [-5.1477, 119.4327] },
+                        { name: 'Yogyakarta', coords: [-7.7956, 110.3695] },
+                        { name: 'Semarang', coords: [-6.9667, 110.4167] },
+                        { name: 'Denpasar', coords: [-8.6500, 115.2167] },
+                    ];
+                    const platforms = ['TikTok', 'Shopee'];
+                    const products = ['Reload Basic Tee', 'Archive Hoodie', 'Street Cargo Pants', 'Varsity Jacket'];
+
+                    for (let i = 0; i < 50; i++) {
+                        const city = cities[Math.floor(Math.random() * cities.length)];
+                        const jitterLat = (Math.random() - 0.5) * 0.05;
+                        const jitterLng = (Math.random() - 0.5) * 0.05;
+                        
+                        mockOrders.push({
+                            order_id: `SIM-${Math.floor(Math.random() * 100000)}`,
+                            platform: platforms[Math.floor(Math.random() * platforms.length)],
+                            product_name: products[Math.floor(Math.random() * products.length)],
+                            total_amount: Math.floor(Math.random() * 500000) + 150000,
+                            customer: { city: city.name },
+                            coordinates: [city.coords[0] + jitterLat, city.coords[1] + jitterLng],
+                        });
+                    }
+
+                    const platformBreakdown = { TikTok: 0, Shopee: 0 };
+                    let totalSales = 0;
+                    mockOrders.forEach(o => {
+                        platformBreakdown[o.platform]++;
+                        totalSales += o.total_amount;
+                    });
+
+                    setHubData({
+                        total_orders: mockOrders.length,
+                        total_sales: totalSales,
+                        platform_breakdown: platformBreakdown,
+                        orders: mockOrders
+                    });
+                    
+                    setIsLoading(false);
+                    return;
+                }
+
                 const response = await axios.get(import.meta.env.VITE_API_URL + '/api/settings/ecommerce-hub');
                 if (response.data.success && response.data.data) {
                     setHubData(response.data.data);
@@ -53,7 +104,7 @@ export default function AdminGeographicMapV2({ refreshTrigger }) {
         };
 
         fetchHubData();
-    }, [refreshTrigger]);
+    }, [refreshTrigger, isSimulationMode]);
 
     // Initialize Map Instance
     useEffect(() => {
@@ -153,6 +204,7 @@ export default function AdminGeographicMapV2({ refreshTrigger }) {
                     <h3 className="text-xl font-bold text-zinc-100 flex items-center gap-2">
                         <Globe size={20} className="text-rose-500" />
                         E-Commerce <span className="text-zinc-500 font-light">Distribution Map</span>
+                        {isSimulationMode && <span className="ml-2 text-[10px] bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 px-2 py-0.5 rounded-full tracking-widest uppercase">Simulation Mode</span>}
                     </h3>
                     <p className="text-xs text-zinc-400">Sales distribution map for TikTok &amp; Shopee.</p>
                 </div>

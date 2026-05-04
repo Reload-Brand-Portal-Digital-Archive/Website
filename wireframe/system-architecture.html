@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RELOAD — System Architecture Diagram</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:        #0b0d14;
+      --surface:   #111421;
+      --card:      #151926;
+      --border:    #1f2542;
+      --accent:    #6366f1;
+      --accent2:   #22d3ee;
+      --accent3:   #f59e0b;
+      --accent4:   #10b981;
+      --accent5:   #ec4899;
+      --text:      #e2e8f0;
+      --muted:     #64748b;
+      --danger:    #ef4444;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: auto;
+    }
+
+    /* ─── HEADER ─── */
+    header {
+      background: linear-gradient(135deg, #0f1120 0%, #1a1f3c 50%, #0f1120 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 24px 40px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(12px);
+    }
+
+    .logo-badge {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: white;
+      font-weight: 800;
+      font-size: 14px;
+      padding: 6px 14px;
+      border-radius: 8px;
+      letter-spacing: 1.5px;
+    }
+
+    header h1 {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    header p {
+      font-size: 12px;
+      color: var(--muted);
+      margin-left: auto;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ─── MAIN CANVAS ─── */
+    .canvas {
+      padding: 40px;
+      max-width: 1500px;
+      margin: 0 auto;
+    }
+
+    /* ─── SECTION LABEL ─── */
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-label::before {
+      content: '';
+      display: inline-block;
+      width: 3px;
+      height: 14px;
+      border-radius: 2px;
+    }
+
+    /* ─── LAYERS ─── */
+    .arch-layer {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 16px;
+      position: relative;
+      overflow: visible;
+    }
+
+    .arch-layer::before {
+      content: attr(data-label);
+      position: absolute;
+      top: -12px;
+      left: 24px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      padding: 2px 12px;
+      border-radius: 20px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+    }
+
+    /* ─── GRID LAYOUTS ─── */
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .grid-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+    .grid-auto { display: flex; flex-wrap: wrap; gap: 10px; }
+
+    /* ─── BOX / CARD ─── */
+    .box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      transition: all .25s ease;
+      cursor: default;
+      position: relative;
+    }
+
+    .box:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(99, 102, 241, .2);
+    }
+
+    .box-title {
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .box-sub {
+      font-size: 11px;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+      line-height: 1.6;
+    }
+
+    .box-sub span {
+      display: block;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* ─── COLOR VARIANTS ─── */
+    .c-purple  { --clr: var(--accent);  }
+    .c-cyan    { --clr: var(--accent2); }
+    .c-amber   { --clr: var(--accent3); }
+    .c-green   { --clr: var(--accent4); }
+    .c-pink    { --clr: var(--accent5); }
+    .c-red     { --clr: var(--danger);  }
+
+    .box.c-purple:hover { border-color: var(--accent);  box-shadow: 0 8px 24px rgba(99,102,241,.25);  }
+    .box.c-cyan:hover   { border-color: var(--accent2); box-shadow: 0 8px 24px rgba(34,211,238,.25);  }
+    .box.c-amber:hover  { border-color: var(--accent3); box-shadow: 0 8px 24px rgba(245,158,11,.25);  }
+    .box.c-green:hover  { border-color: var(--accent4); box-shadow: 0 8px 24px rgba(16,185,129,.25);  }
+    .box.c-pink:hover   { border-color: var(--accent5); box-shadow: 0 8px 24px rgba(236,72,153,.25);  }
+    .box.c-red:hover    { border-color: var(--danger);  box-shadow: 0 8px 24px rgba(239,68,68,.25);   }
+
+    .dot.c-purple { background: var(--accent);  }
+    .dot.c-cyan   { background: var(--accent2); }
+    .dot.c-amber  { background: var(--accent3); }
+    .dot.c-green  { background: var(--accent4); }
+    .dot.c-pink   { background: var(--accent5); }
+    .dot.c-red    { background: var(--danger);  }
+
+    [class*="c-"] .box-title { color: var(--clr, var(--text)); }
+
+    .arch-layer[data-color="purple"] { border-color: rgba(99,102,241,.3); }
+    .arch-layer[data-color="cyan"]   { border-color: rgba(34,211,238,.3); }
+    .arch-layer[data-color="amber"]  { border-color: rgba(245,158,11,.3); }
+    .arch-layer[data-color="green"]  { border-color: rgba(16,185,129,.3); }
+    .arch-layer[data-color="pink"]   { border-color: rgba(236,72,153,.3); }
+    .arch-layer[data-color="red"]    { border-color: rgba(239,68,68,.3);  }
+
+    .arch-layer[data-color="purple"]::before { color: var(--accent);  border-color: rgba(99,102,241,.5);  }
+    .arch-layer[data-color="cyan"]::before   { color: var(--accent2); border-color: rgba(34,211,238,.5);  }
+    .arch-layer[data-color="amber"]::before  { color: var(--accent3); border-color: rgba(245,158,11,.5);  }
+    .arch-layer[data-color="green"]::before  { color: var(--accent4); border-color: rgba(16,185,129,.5);  }
+    .arch-layer[data-color="pink"]::before   { color: var(--accent5); border-color: rgba(236,72,153,.5);  }
+    .arch-layer[data-color="red"]::before    { color: var(--danger);  border-color: rgba(239,68,68,.5);   }
+
+    /* ─── ARROW CONNECTOR ─── */
+    .arrow-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 8px 0;
+    }
+
+    .arrow-line {
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border), transparent);
+      max-width: 200px;
+    }
+
+    .arrow-label {
+      font-size: 11px;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--surface);
+      padding: 4px 12px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .arrow-label .icon { font-size: 14px; }
+
+    /* ─── FLOW SECTION ─── */
+    .flow-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .flow-desc {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 32px;
+    }
+
+    /* ─── BADGE ─── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .badge-get    { background: rgba(16,185,129,.15);  color: var(--accent4); border: 1px solid rgba(16,185,129,.3);  }
+    .badge-post   { background: rgba(99,102,241,.15);  color: var(--accent);  border: 1px solid rgba(99,102,241,.3);  }
+    .badge-put    { background: rgba(245,158,11,.15);  color: var(--accent3); border: 1px solid rgba(245,158,11,.3);  }
+    .badge-delete { background: rgba(239,68,68,.15);   color: var(--danger);  border: 1px solid rgba(239,68,68,.3);   }
+    .badge-lock   { background: rgba(236,72,153,.15);  color: var(--accent5); border: 1px solid rgba(236,72,153,.3);  }
+
+    /* ─── API TABLE ─── */
+    .api-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .api-table thead th {
+      background: var(--surface);
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      padding: 10px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .api-table tbody tr {
+      border-bottom: 1px solid rgba(31,37,66,.5);
+      transition: background .15s;
+    }
+
+    .api-table tbody tr:hover { background: rgba(99,102,241,.05); }
+    .api-table tbody td { padding: 9px 14px; vertical-align: middle; }
+    .api-table .ep { color: var(--text); }
+    .api-table .ep-path { color: var(--accent2); }
+    .api-table .ep-desc { color: var(--muted); font-size: 11px; font-family: 'Inter', sans-serif; }
+    .api-table .ep-guard { color: var(--accent5); font-size: 10px; }
+
+    /* ─── MIDDLEWARE CHAIN ─── */
+    .middleware-chain {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .mw-step {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .mw-arrow {
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    /* ─── LEGEND ─── */
+    .legend {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin-bottom: 32px;
+      padding: 16px 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    /* ─── DIVIDERS ─── */
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 40px 0;
+    }
+
+    .section-header {
+      margin-bottom: 24px;
+    }
+
+    h2 {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    h2 span {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* ─── TECH STACK PILLS ─── */
+    .tech-pills {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .tech-pill {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    /* ─── FLOW DIAGRAM (VERTICAL) ─── */
+    .vflow {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+    }
+
+    .vflow-node {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 24px;
+      min-width: 280px;
+      text-align: center;
+      transition: all .2s;
+    }
+
+    .vflow-node:hover {
+      border-color: var(--accent);
+      box-shadow: 0 0 20px rgba(99,102,241,.2);
+    }
+
+    .vflow-node .node-title { font-weight: 700; font-size: 14px; }
+    .vflow-node .node-sub   { font-size: 11px; color: var(--muted); margin-top: 4px; font-family: 'JetBrains Mono', monospace; }
+
+    .vflow-connector {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 4px 0;
+    }
+
+    .vflow-line {
+      width: 2px;
+      height: 20px;
+      background: linear-gradient(to bottom, var(--border), var(--accent));
+    }
+
+    .vflow-arrowhead {
+      width: 0;
+      height: 0;
+      border-left: 6px solid transparent;
+      border-right: 6px solid transparent;
+      border-top: 8px solid var(--accent);
+    }
+
+    .vflow-tag {
+      font-size: 10px;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 2px 10px;
+      border-radius: 10px;
+      margin: 4px 0;
+    }
+
+    /* ─── 2-COL LAYOUT ─── */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 900px) {
+      .two-col, .grid-3, .grid-4, .grid-5 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════
+     HEADER
+═══════════════════════════════════════════════════ -->
+<header>
+  <span class="logo-badge">RELOAD</span>
+  <h1>System Architecture Diagram</h1>
+  <p>Stack: React + Node.js/Express + MySQL</p>
+</header>
+
+<div class="canvas">
+
+  <!-- ─── LEGEND ─── -->
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div> Frontend (React/Vite)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--accent2)"></div> Backend API (Express)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--accent4)"></div> Database (MySQL)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--accent3)"></div> Middleware Layer</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--accent5)"></div> Auth-Protected</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--danger)"></div> Admin-Only</div>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       SECTION 1 — HIGH-LEVEL OVERVIEW
+  ════════════════════════════════════════ -->
+  <div class="section-header">
+    <h2>1. <span>High-Level Overview</span></h2>
+    <p style="font-size:13px;color:var(--muted)">Gambaran umum arsitektur sistem dari user hingga database</p>
+  </div>
+
+  <!-- CLIENT -->
+  <div class="arch-layer" data-label="Client Layer" data-color="purple">
+    <div class="grid-5">
+      <div class="box c-purple">
+        <div class="box-title"><div class="dot c-purple"></div>Browser / User</div>
+        <div class="box-sub"><span>React SPA (Vite)</span><span>React Router DOM</span><span>Port: 5173</span></div>
+      </div>
+      <div class="box c-purple">
+        <div class="box-title"><div class="dot c-purple"></div>Public Pages</div>
+        <div class="box-sub"><span>/ LandingPage</span><span>/collections</span><span>/shop, /wholesale</span></div>
+      </div>
+      <div class="box c-purple">
+        <div class="box-title"><div class="dot c-purple"></div>Auth Pages</div>
+        <div class="box-sub"><span>/login</span><span>/register</span><span>/forgot-password</span><span>/reset-password</span></div>
+      </div>
+      <div class="box c-pink">
+        <div class="box-title"><div class="dot c-pink"></div>User Area</div>
+        <div class="box-sub"><span>/profile</span><span>🔒 verifyToken</span></div>
+      </div>
+      <div class="box c-red">
+        <div class="box-title"><div class="dot c-red"></div>Admin Area</div>
+        <div class="box-sub"><span>/admin/dashboard</span><span>/admin/products</span><span>/admin/collections</span><span>🔒 isAdmin</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ARROW DOWN -->
+  <div class="arrow-row">
+    <div class="arrow-line"></div>
+    <div class="arrow-label"><span class="icon">↕️</span> HTTP REST / axios · localhost:5000</div>
+    <div class="arrow-line"></div>
+  </div>
+
+  <!-- BACKEND SERVER -->
+  <div class="arch-layer" data-label="Backend Layer (Express.js)" data-color="cyan">
+    <div class="grid-4">
+      <div class="box c-cyan">
+        <div class="box-title"><div class="dot c-cyan"></div>server.js (Entry Point)</div>
+        <div class="box-sub"><span>express + cors</span><span>express.json()</span><span>Mounts all /api/* routes</span><span>Serves /uploads static</span></div>
+      </div>
+      <div class="box c-amber">
+        <div class="box-title"><div class="dot c-amber"></div>Middleware Chain</div>
+        <div class="box-sub"><span>verifyToken (JWT)</span><span>isAdmin (role check)</span><span>optionalVerifyToken</span><span>uploadMiddleware (multer)</span></div>
+      </div>
+      <div class="box c-cyan">
+        <div class="box-title"><div class="dot c-cyan"></div>Route Handlers (10 files)</div>
+        <div class="box-sub"><span>authRoutes, productRoutes</span><span>collectionRoutes, categoryRoutes</span><span>materialRoutes, endorsementRoutes</span><span>trackingRoutes, settingsRoutes</span><span>wholesaleRoutes, profileRoutes</span></div>
+      </div>
+      <div class="box c-cyan">
+        <div class="box-title"><div class="dot c-cyan"></div>Controllers (10 files)</div>
+        <div class="box-sub"><span>Business logic per domain</span><span>DB queries via mysql2</span><span>File handling via multer</span><span>JWT sign/verify</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ARROW DOWN -->
+  <div class="arrow-row">
+    <div class="arrow-line"></div>
+    <div class="arrow-label"><span class="icon">↕️</span> mysql2/promise · Connection Pool (max:10)</div>
+    <div class="arrow-line"></div>
+  </div>
+
+  <!-- DATABASE -->
+  <div class="arch-layer" data-label="Data Layer" data-color="green">
+    <div class="grid-4">
+      <div class="box c-green">
+        <div class="box-title"><div class="dot c-green"></div>MySQL (reload_db)</div>
+        <div class="box-sub"><span>Host: process.env.DB_HOST</span><span>Port: 3306</span><span>Pool: waitForConnections</span><span>queueLimit: 0</span></div>
+      </div>
+      <div class="box c-green">
+        <div class="box-title"><div class="dot c-green"></div>Core Tables</div>
+        <div class="box-sub"><span>users (auth, roles)</span><span>products, categories</span><span>collections, materials</span></div>
+      </div>
+      <div class="box c-green">
+        <div class="box-title"><div class="dot c-green"></div>Commerce Tables</div>
+        <div class="box-sub"><span>wholesale_orders</span><span>endorsements</span><span>ecommerce_hub</span></div>
+      </div>
+      <div class="box c-green">
+        <div class="box-title"><div class="dot c-green"></div>Tracking Tables</div>
+        <div class="box-sub"><span>page_views</span><span>link_clicks</span><span>client_id (cookie-based)</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXTERNAL -->
+  <div style="margin-top:16px" class="arch-layer" data-label="External / Third-Party" data-color="amber">
+    <div class="grid-4">
+      <div class="box c-amber">
+        <div class="box-title"><div class="dot c-amber"></div>Google OAuth</div>
+        <div class="box-sub"><span>POST /api/auth/google</span><span>googleLogin controller</span></div>
+      </div>
+      <div class="box c-amber">
+        <div class="box-title"><div class="dot c-amber"></div>Email (SMTP)</div>
+        <div class="box-sub"><span>forgotPassword flow</span><span>Reset link via token-URL</span></div>
+      </div>
+      <div class="box c-amber">
+        <div class="box-title"><div class="dot c-amber"></div>Shopee API</div>
+        <div class="box-sub"><span>/api/settings/sync-ecommerce</span><span>Dashboard map data</span></div>
+      </div>
+      <div class="box c-amber">
+        <div class="box-title"><div class="dot c-amber"></div>TikTok Shop</div>
+        <div class="box-sub"><span>/api/settings/sync-ecommerce</span><span>Click tracking redirect</span></div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider" />
+
+  <!-- ════════════════════════════════════════
+       SECTION 2 — API ROUTE MAP
+  ════════════════════════════════════════ -->
+  <div class="section-header">
+    <h2>2. <span>API Route Map</span></h2>
+    <p style="font-size:13px;color:var(--muted)">Seluruh endpoint yang tersedia di backend Express</p>
+  </div>
+
+  <!-- AUTH -->
+  <div class="arch-layer" style="margin-bottom:12px" data-label="POST /api/auth/..." data-color="purple">
+    <table class="api-table">
+      <thead><tr><th>Method</th><th>Endpoint</th><th>Guard</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><span class="badge badge-post">POST</span></td><td class="ep-path">/api/auth/register</td><td>—</td><td class="ep-desc">Register user baru</td></tr>
+        <tr><td><span class="badge badge-post">POST</span></td><td class="ep-path">/api/auth/login</td><td>—</td><td class="ep-desc">Login → JWT token</td></tr>
+        <tr><td><span class="badge badge-post">POST</span></td><td class="ep-path">/api/auth/google</td><td>—</td><td class="ep-desc">Google OAuth login</td></tr>
+        <tr><td><span class="badge badge-post">POST</span></td><td class="ep-path">/api/auth/forgot-password</td><td>—</td><td class="ep-desc">Kirim link reset via email</td></tr>
+        <tr><td><span class="badge badge-post">POST</span></td><td class="ep-path">/api/auth/reset-password/:id/:token</td><td>—</td><td class="ep-desc">Reset password dengan token</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- PRODUCTS -->
+  <div class="arch-layer" style="margin-bottom:12px" data-label="CRUD /api/products/..." data-color="cyan">
+    <table class="api-table">
+      <thead><tr><th>Method</th><th>Endpoint</th><th>Guard</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><span class="badge badge-get">GET</span></td><td class="ep-path">/api/products</td><td>—</td><td class="ep-desc">Get semua produk</td></tr>
+        <tr><td><span class="badge badge-get">GET</span></td><td class="ep-path">/api/products/:slug</td><td>—</td><td class="ep-desc">Get produk by slug</td></tr>
+        <tr><td><span class="badge badge-post">POST</span></td><td class="ep-path">/api/products</td><td class="ep-guard">🔒 verifyToken + isAdmin + upload.array(images,5)</td><td class="ep-desc">Buat produk baru + upload gambar</td></tr>
+        <tr><td><span class="badge badge-put">PUT</span></td><td class="ep-path">/api/products/:id</td><td class="ep-guard">🔒 verifyToken + isAdmin + upload.array(images,5)</td><td class="ep-desc">Update produk + gambar</td></tr>
+        <tr><td><span class="badge badge-delete">DEL</span></td><td class="ep-path">/api/products/:id</td><td class="ep-guard">🔒 verifyToken + isAdmin</td><td class="ep-desc">Hapus produk</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- COLLECTIONS -->
+  <div class="arch-layer" style="margin-bottom:12px" data-label="CRUD /api/collections/..." data-color="cyan">
+    <table class="api-table">
+      <thead><tr><th>Method</th><th>Endpoint</th><th>Guard</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><span class="badge badge-get">GET</span></td><td class="ep-path">/api/collections</td><td>—</td><td class="ep-desc">Semua koleksi</td></tr>
+        <tr><td><span class="badge badge-get">GET</span></td><td class="ep-path">/api/collections/slug/:slug</td><td>—</td><td class="ep-desc">Koleksi by slug</td></tr>
+        <tr><td><span class="badge badge-get">GET</span></td><td class="ep-path">/api/collections/:id</td><td>—</td><td class="ep-desc">Koleksi by ID</td></tr>
+        <tr><td><span class="badge badge-post">POST</span></td><td class="ep-path">/api/collections</td><td class="ep-guard">upload.single(cover_image)</td><td class="ep-desc">Buat koleksi baru</td></tr>
+        <tr><td><span class="badge badge-put">PUT</span></td><td class="ep-path">/api/collections/:id</td><td class="ep-guard">upload.single(cover_image)</td><td class="ep-desc">Update koleksi</td></tr>
+        <tr><td><span class="badge badge-delete">DEL</span></td><td class="ep-path">/api/collections/:id</td><td>—</td><td class="ep-desc">Hapus koleksi</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- CATEGORIES + MATERIALS + ENDORSEMENTS + PROFILE + SETTINGS + WHOLESALE -->
+  <div class="two-col">
+    <div>
+      <div class="arch-layer" style="margin-bottom:12px" data-label="/api/categories + /api/materials" data-color="green">
+        <table class="api-table">
+          <thead><tr><th>M</th><th>Endpoint</th><th>Guard</th></tr></thead>
+          <tbody>
+            <tr><td><span class="badge badge-get">GET</span></td><td class="ep-path">/api/categories</td><td>—</td></tr>
+            <tr><td><span class="badge badge-post">POST</span></td><td class="ep-path">/api/categories</td><td class="ep-guard">🔒 Admin</td></tr>
+            <tr><td><span class="badge badge-put">PUT</span></td><td class="ep-path">/api/categories/:name</td><td class="ep-guard">🔒 Admin</td></tr>
+            <tr><td><span class="badge badge-delete">DEL</span></td><td class="ep-path">/api/categories/:name</td><td class="ep-guard">🔒 Admin</td></tr>
+            <tr><td colspan="3" style="padding:4px 14px;color:var(--muted);font-size:11px">— identik untuk /api/materials —</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="arch-layer" style="margin-bottom:12px" data-label="/api/endorsements" data-color="pink">
+        <table class="api-table">
+          <thead><tr><th>M</th><th>Endpoint</th><th>Guard</th></tr></thead>
+          <tbody>
+            <tr><td><span class="badge badge-get">GET</span></td><td class="ep-path">/api/endorsements</td><td>—</td></tr>
+            <tr><td><span class="badge badge-post">POST</span></td><td class="ep-path">/api/endorsements</td><td class="ep-guard">🔒 Admin + upload</td></tr>
+            <tr><td><span class="badge badge-put">PUT</span></td><td class="ep-path">/api/endorsements/:id</td><td class="ep-guard">🔒 Admin + upload</td></tr>
+            <tr><td><span class="badge badge-delete">DEL</span></td><td class="ep-path">/api/endorsements/:id</td><td class="ep-guard">🔒 Admin</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div>
+      <div class="arch-layer" style="margin-bottom:12px" data-label="/api/wholesale + /api/profile" data-color="amber">
+        <table class="api-table">
+          <thead><tr><th>M</th><th>Endpoint</th><th>Guard</th></tr></thead>
+          <tbody>
+            <tr><td><span class="badge badge-post">POST</span></td><td class="ep-path">/api/wholesale</td><td>—</td></tr>
+            <tr><td><span class="badge badge-get">GET</span></td><td class="ep-path">/api/wholesale</td><td>—</td></tr>
+            <tr><td><span class="badge badge-get">GET</span></td><td class="ep-path">/api/wholesale/:id</td><td>—</td></tr>
+            <tr><td><span class="badge badge-put">PUT</span></td><td class="ep-path">/api/wholesale/:id/status</td><td>—</td></tr>
+            <tr><td><span class="badge badge-get">GET</span></td><td class="ep-path">/api/profile/wholesale</td><td class="ep-guard">🔒 User</td></tr>
+            <tr><td><span class="badge badge-put">PUT</span></td><td class="ep-path">/api/profile/update</td><td class="ep-guard">🔒 User</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="arch-layer" style="margin-bottom:12px" data-label="/api/track + /api/settings" data-color="red">
+        <table class="api-table">
+          <thead><tr><th>M</th><th>Endpoint</th><th>Guard</th></tr></thead>
+          <tbody>
+            <tr><td><span class="badge badge-post">POST</span></td><td class="ep-path">/api/track/pageview</td><td class="ep-guard">optionalToken</td></tr>
+            <tr><td><span class="badge badge-post">POST</span></td><td class="ep-path">/api/track/click/:platform</td><td class="ep-guard">optionalToken</td></tr>
+            <tr><td><span class="badge badge-get">GET</span></td><td class="ep-path">/api/track/stats</td><td class="ep-guard">🔒 Admin</td></tr>
+            <tr><td><span class="badge badge-get">GET</span></td><td class="ep-path">/api/settings/ecommerce-hub</td><td>—</td></tr>
+            <tr><td><span class="badge badge-post">POST</span></td><td class="ep-path">/api/settings/sync-ecommerce</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider" />
+
+  <!-- ════════════════════════════════════════
+       SECTION 3 — MIDDLEWARE FLOW
+  ════════════════════════════════════════ -->
+  <div class="section-header">
+    <h2>3. <span>Request Flow & Middleware Chain</span></h2>
+    <p style="font-size:13px;color:var(--muted)">Alur sebuah HTTP request dari browser hingga database</p>
+  </div>
+
+  <div class="two-col" style="align-items:start">
+    <!-- LEFT: VERTICAL FLOW -->
+    <div class="vflow" style="padding:20px 0">
+      <div class="vflow-node" style="border-color:rgba(99,102,241,.4)">
+        <div class="node-title" style="color:var(--accent)">🌐 User Browser</div>
+        <div class="node-sub">axios.get/post/put/delete</div>
+      </div>
+      <div class="vflow-connector"><div class="vflow-line"></div><div class="vflow-tag">HTTP Request + Authorization: Bearer &lt;JWT&gt;</div><div class="vflow-arrowhead"></div></div>
+
+      <div class="vflow-node" style="border-color:rgba(34,211,238,.4)">
+        <div class="node-title" style="color:var(--accent2)">⚡ Express Server (Port 5000)</div>
+        <div class="node-sub">cors() → express.json() → express.urlencoded()</div>
+      </div>
+      <div class="vflow-connector"><div class="vflow-line"></div><div class="vflow-tag">Route matching /api/*</div><div class="vflow-arrowhead"></div></div>
+
+      <div class="vflow-node" style="border-color:rgba(245,158,11,.4)">
+        <div class="node-title" style="color:var(--accent3)">🛡️ Middleware Layer</div>
+        <div class="node-sub">verifyToken → isAdmin → uploadMiddleware</div>
+      </div>
+      <div class="vflow-connector"><div class="vflow-line"></div><div class="vflow-tag">req enriched with user + file</div><div class="vflow-arrowhead"></div></div>
+
+      <div class="vflow-node" style="border-color:rgba(34,211,238,.4)">
+        <div class="node-title" style="color:var(--accent2)">📦 Controller Function</div>
+        <div class="node-sub">Business logic + SQL query builder</div>
+      </div>
+      <div class="vflow-connector"><div class="vflow-line"></div><div class="vflow-tag">pool.execute(sql, params)</div><div class="vflow-arrowhead"></div></div>
+
+      <div class="vflow-node" style="border-color:rgba(16,185,129,.4)">
+        <div class="node-title" style="color:var(--accent4)">🗄️ MySQL (reload_db)</div>
+        <div class="node-sub">Connection Pool → Query → Result</div>
+      </div>
+      <div class="vflow-connector"><div class="vflow-line"></div><div class="vflow-tag">res.json({ data })</div><div class="vflow-arrowhead" style="border-top-color:var(--accent4)"></div></div>
+
+      <div class="vflow-node" style="border-color:rgba(99,102,241,.4)">
+        <div class="node-title" style="color:var(--accent)">💻 React Component</div>
+        <div class="node-sub">setState / useState → re-render UI</div>
+      </div>
+    </div>
+
+    <!-- RIGHT: DETAILS -->
+    <div>
+      <div class="arch-layer" style="margin-bottom:16px" data-label="Auth Flow Detail" data-color="purple">
+        <div class="box-title" style="color:var(--accent);margin-bottom:12px">🔐 JWT Authentication Flow</div>
+        <div class="middleware-chain">
+          <div class="mw-step" style="border-color:rgba(99,102,241,.4)">
+            <span>POST /api/auth/login</span>
+          </div>
+          <span class="mw-arrow">→</span>
+          <div class="mw-step" style="border-color:rgba(245,158,11,.4)">
+            <span>bcrypt.compare()</span>
+          </div>
+          <span class="mw-arrow">→</span>
+          <div class="mw-step" style="border-color:rgba(16,185,129,.4)">
+            <span>jwt.sign(payload, SECRET)</span>
+          </div>
+          <span class="mw-arrow">→</span>
+          <div class="mw-step" style="border-color:rgba(99,102,241,.4)">
+            <span>{ token }</span>
+          </div>
+        </div>
+        <div style="margin-top:12px;font-size:12px;color:var(--muted)">
+          Token disimpan di <code style="color:var(--accent2)">localStorage</code> → dikirim via header <code style="color:var(--accent2)">Authorization: Bearer &lt;token&gt;</code>
+        </div>
+      </div>
+
+      <div class="arch-layer" style="margin-bottom:16px" data-label="Guard Levels" data-color="amber">
+        <div class="box-title" style="color:var(--accent3);margin-bottom:12px">🛡️ Middleware Guard Levels</div>
+        <table class="api-table">
+          <thead><tr><th>Level</th><th>Middleware</th><th>Efek jika gagal</th></tr></thead>
+          <tbody>
+            <tr><td style="color:var(--muted)">Public</td><td>—</td><td class="ep-desc">Akses bebas</td></tr>
+            <tr><td style="color:var(--accent2)">Optional</td><td class="ep-path">optionalVerifyToken</td><td class="ep-desc">Guest tetap dilanjutkan</td></tr>
+            <tr><td style="color:var(--accent5)">User</td><td class="ep-path">verifyToken</td><td class="ep-desc">401 Token tidak ditemukan</td></tr>
+            <tr><td style="color:var(--danger)">Admin</td><td class="ep-path">verifyToken + isAdmin</td><td class="ep-desc">403 Bukan admin</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="arch-layer" data-label="User Tracking System" data-color="red">
+        <div class="box-title" style="color:var(--danger);margin-bottom:12px">📊 Tracking System Flow</div>
+        <div class="box-sub" style="line-height:2">
+          <span>1. <code style="color:var(--accent2)">RouteTracker</code> di <code style="color:var(--text)">App.jsx</code> listen setiap perubahan lokasi</span>
+          <span>2. <code style="color:var(--accent2)">trackPageView(pathname)</code> dipanggil otomatis</span>
+          <span>3. Cookie <code style="color:var(--accent2)">client_id</code> di-generate/retrieve</span>
+          <span>4. <code style="color:var(--accent2)">POST /api/track/pageview</code> dengan <code style="color:var(--text)">{ url, client_id }</code></span>
+          <span>5. Click Shopee/TikTok → <code style="color:var(--accent2)">POST /api/track/click/:platform</code></span>
+          <span>6. Backend redirect URL dikembalikan → <code style="color:var(--text)">window.open(url)</code></span>
+          <span>7. Admin melihat stats via <code style="color:var(--accent2)">GET /api/track/stats</code></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider" />
+
+  <!-- ════════════════════════════════════════
+       SECTION 4 — FRONTEND PAGE → API MAPPING
+  ════════════════════════════════════════ -->
+  <div class="section-header">
+    <h2>4. <span>Frontend Page → API Mapping</span></h2>
+    <p style="font-size:13px;color:var(--muted)">Halaman mana memanggil endpoint mana</p>
+  </div>
+
+  <div class="grid-3">
+
+    <div class="box c-purple">
+      <div class="box-title"><div class="dot c-purple"></div>LandingPage.jsx</div>
+      <div class="box-sub">
+        <span class="badge badge-get" style="margin:3px 0">GET /api/collections</span>
+        <span class="badge badge-get" style="margin:3px 0">GET /api/products</span>
+        <span class="badge badge-get" style="margin:3px 0">GET /api/endorsements</span>
+        <span style="margin-top:6px;display:block;">Home → hero, featured products, endorsement slider</span>
+      </div>
+    </div>
+
+    <div class="box c-purple">
+      <div class="box-title"><div class="dot c-purple"></div>Collections.jsx + CollectionDetail.jsx</div>
+      <div class="box-sub">
+        <span class="badge badge-get" style="margin:3px 0">GET /api/collections</span>
+        <span class="badge badge-get" style="margin:3px 0">GET /api/collections/slug/:slug</span>
+        <span style="margin-top:6px;display:block;">Galeri koleksi + detail koleksi per slug</span>
+      </div>
+    </div>
+
+    <div class="box c-purple">
+      <div class="box-title"><div class="dot c-purple"></div>Shop.jsx + ShopDetail.jsx</div>
+      <div class="box-sub">
+        <span class="badge badge-get" style="margin:3px 0">GET /api/products</span>
+        <span class="badge badge-get" style="margin:3px 0">GET /api/products/:slug</span>
+        <span class="badge badge-get" style="margin:3px 0">GET /api/categories</span>
+        <span style="margin-top:6px;display:block;">Filter by category, detail produk</span>
+      </div>
+    </div>
+
+    <div class="box c-purple">
+      <div class="box-title"><div class="dot c-purple"></div>Wholesale.jsx</div>
+      <div class="box-sub">
+        <span class="badge badge-post" style="margin:3px 0">POST /api/wholesale</span>
+        <span style="margin-top:6px;display:block;">Form pemesanan grosir (tanpa auth)</span>
+      </div>
+    </div>
+
+    <div class="box c-pink">
+      <div class="box-title"><div class="dot c-pink"></div>Login.jsx / Register.jsx</div>
+      <div class="box-sub">
+        <span class="badge badge-post" style="margin:3px 0">POST /api/auth/login</span>
+        <span class="badge badge-post" style="margin:3px 0">POST /api/auth/register</span>
+        <span class="badge badge-post" style="margin:3px 0">POST /api/auth/google</span>
+        <span style="margin-top:6px;display:block;">Simpan JWT ke localStorage</span>
+      </div>
+    </div>
+
+    <div class="box c-pink">
+      <div class="box-title"><div class="dot c-pink"></div>UserProfile.jsx</div>
+      <div class="box-sub">
+        <span class="badge badge-get" style="margin:3px 0">GET /api/profile/wholesale</span>
+        <span class="badge badge-put" style="margin:3px 0">PUT /api/profile/update</span>
+        <span style="margin-top:6px;display:block;">🔒 Protected Route</span>
+      </div>
+    </div>
+
+    <div class="box c-red">
+      <div class="box-title"><div class="dot c-red"></div>AdminDashboard.jsx</div>
+      <div class="box-sub">
+        <span class="badge badge-get" style="margin:3px 0">GET /api/track/stats</span>
+        <span class="badge badge-get" style="margin:3px 0">GET /api/settings/ecommerce-hub</span>
+        <span class="badge badge-post" style="margin:3px 0">POST /api/settings/sync-ecommerce</span>
+        <span style="margin-top:6px;display:block;">Charts + Geographic Map + Tracking stats</span>
+      </div>
+    </div>
+
+    <div class="box c-red">
+      <div class="box-title"><div class="dot c-red"></div>AdminProducts.jsx</div>
+      <div class="box-sub">
+        <span class="badge badge-get" style="margin:3px 0">GET /api/products</span>
+        <span class="badge badge-post" style="margin:3px 0">POST /api/products (+ images)</span>
+        <span class="badge badge-put" style="margin:3px 0">PUT /api/products/:id</span>
+        <span class="badge badge-delete" style="margin:3px 0">DEL /api/products/:id</span>
+        <span style="margin-top:6px;display:block;">CRUD produk + upload gambar (max 5)</span>
+      </div>
+    </div>
+
+    <div class="box c-red">
+      <div class="box-title"><div class="dot c-red"></div>AdminCollections.jsx</div>
+      <div class="box-sub">
+        <span class="badge badge-get" style="margin:3px 0">GET /api/collections</span>
+        <span class="badge badge-post" style="margin:3px 0">POST /api/collections (+ cover)</span>
+        <span class="badge badge-put" style="margin:3px 0">PUT /api/collections/:id</span>
+        <span class="badge badge-delete" style="margin:3px 0">DEL /api/collections/:id</span>
+        <span style="margin-top:6px;display:block;">Manajemen koleksi + cover image</span>
+      </div>
+    </div>
+
+  </div>
+
+  <hr class="divider" />
+
+  <!-- ════════════════════════════════════════
+       SECTION 5 — TECH STACK
+  ════════════════════════════════════════ -->
+  <div class="section-header">
+    <h2>5. <span>Tech Stack Summary</span></h2>
+  </div>
+
+  <div class="grid-4">
+    <div class="box c-purple">
+      <div class="box-title"><div class="dot c-purple"></div>Frontend</div>
+      <div class="tech-pills">
+        <span class="tech-pill">React 18</span>
+        <span class="tech-pill">Vite</span>
+        <span class="tech-pill">React Router DOM</span>
+        <span class="tech-pill">axios</span>
+        <span class="tech-pill">react-toastify</span>
+        <span class="tech-pill">Leaflet</span>
+        <span class="tech-pill">Recharts</span>
+      </div>
+    </div>
+    <div class="box c-cyan">
+      <div class="box-title"><div class="dot c-cyan"></div>Backend</div>
+      <div class="tech-pills">
+        <span class="tech-pill">Node.js</span>
+        <span class="tech-pill">Express.js</span>
+        <span class="tech-pill">jsonwebtoken</span>
+        <span class="tech-pill">bcrypt</span>
+        <span class="tech-pill">multer</span>
+        <span class="tech-pill">cors</span>
+        <span class="tech-pill">dotenv</span>
+      </div>
+    </div>
+    <div class="box c-green">
+      <div class="box-title"><div class="dot c-green"></div>Database</div>
+      <div class="tech-pills">
+        <span class="tech-pill">MySQL 8</span>
+        <span class="tech-pill">mysql2/promise</span>
+        <span class="tech-pill">Connection Pool</span>
+      </div>
+    </div>
+    <div class="box c-amber">
+      <div class="box-title"><div class="dot c-amber"></div>Infrastructure</div>
+      <div class="tech-pills">
+        <span class="tech-pill">Static file serve</span>
+        <span class="tech-pill">/uploads dir</span>
+        <span class="tech-pill">Cookie-based tracking</span>
+        <span class="tech-pill">JWT (stateless)</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="height:60px"></div>
+</div>
+
+</body>
+</html>

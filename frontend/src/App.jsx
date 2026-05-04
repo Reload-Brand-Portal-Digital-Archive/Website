@@ -4,6 +4,8 @@ import 'react-toastify/dist/ReactToastify.css';
 import { useEffect } from 'react';
 import { trackPageView } from './utils/tracker';
 import { ConfirmDialogProvider } from './lib/confirm-dialog';
+import { SettingsProvider, useSettings } from './context/SettingsContext';
+import MaintenanceScreen from './components/ui/MaintenanceScreen';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import LandingPage from "./pages/LandingPage"
@@ -35,12 +37,38 @@ function RouteTracker() {
   return null;
 }
 
+function MaintenanceGate({ children }) {
+  const { settings, isLoading } = useSettings();
+  const location = useLocation();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-rose-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  const isMaintenanceMode = settings.maintenance_mode === 'true';
+  const isExcludedRoute = location.pathname.startsWith('/admin') || 
+                          location.pathname.startsWith('/login') || 
+                          location.pathname.startsWith('/forgot-password') || 
+                          location.pathname.startsWith('/reset-password');
+
+  if (isMaintenanceMode && !isExcludedRoute) {
+    return <MaintenanceScreen />;
+  }
+
+  return children;
+}
+
 function App() {
   return (
     <BrowserRouter>
-      <RouteTracker />
-      <ConfirmDialogProvider>
-        <ToastContainer
+      <SettingsProvider>
+        <RouteTracker />
+        <ConfirmDialogProvider>
+          <ToastContainer
           position="top-right"
           autoClose={3000}
           hideProgressBar={false}
@@ -52,7 +80,8 @@ function App() {
           pauseOnHover
           theme="dark"
         />
-        <Routes>
+        <MaintenanceGate>
+          <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/collections" element={<Collections />} />
           <Route path="/collections/:slug" element={<CollectionDetail />} />
@@ -76,8 +105,10 @@ function App() {
             <Route path="/admin/materials" element={<AdminMaterial />} />
           </Route>
           <Route path="*" element={<NotFound />} />
-        </Routes>
+          </Routes>
+        </MaintenanceGate>
       </ConfirmDialogProvider>
+      </SettingsProvider>
     </BrowserRouter>
   )
 }
