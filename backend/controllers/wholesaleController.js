@@ -47,6 +47,42 @@ exports.createWholesaleOrder = async (req, res) => {
         }
 
         await connection.commit();
+
+        try {
+            const [settings] = await db.query('SELECT setting_value FROM site_settings WHERE setting_key = ?', ['admin_notification_email']);
+            if (settings.length > 0 && settings[0].setting_value) {
+                const adminEmail = settings[0].setting_value;
+                const transporter = nodemailer.createTransport({
+                    service: 'gmail',
+                    auth: {
+                        user: process.env.EMAIL_USER,
+                        pass: process.env.EMAIL_PASS
+                    }
+                });
+
+                const mailOptions = {
+                    from: process.env.EMAIL_USER,
+                    to: adminEmail,
+                    subject: `[NEW INQUIRY] Wholesale Order #${order_id}`,
+                    html: `
+                        <div style="background-color: #000000; padding: 40px 20px; font-family: 'Courier New', Consolas, monospace; color: white;">
+                            <h2>New Wholesale Inquiry Received</h2>
+                            <p><strong>Order ID:</strong> #${order_id}</p>
+                            <p><strong>Name:</strong> ${name}</p>
+                            <p><strong>Email:</strong> ${email}</p>
+                            <p><strong>Phone:</strong> ${phone}</p>
+                            <p><strong>Inquiry Type:</strong> ${type}</p>
+                            <p><strong>Message:</strong> ${message || '-'}</p>
+                            <p>Please check the admin panel for full details.</p>
+                        </div>
+                    `
+                };
+                await transporter.sendMail(mailOptions);
+            }
+        } catch (emailErr) {
+            console.error('Failed to send admin notification email:', emailErr);
+        }
+
         res.status(201).json({ message: 'Wholesale order submitted successfully', order_id });
     } catch (error) {
         await connection.rollback();

@@ -14,6 +14,26 @@ const applyJitter = (coords) => {
     return [coords[0] + jitterLat, coords[1] + jitterLng];
 };
 
+exports.getPublicSettings = async (req, res) => {
+    try {
+        const [rows] = await db.query('SELECT setting_key, setting_value FROM site_settings');
+        const settings = {};
+        
+        const excludedKeys = ['admin_notification_email', 'ecommerce_hub_data'];
+        
+        rows.forEach(row => {
+            if (!excludedKeys.includes(row.setting_key)) {
+                settings[row.setting_key] = row.setting_value;
+            }
+        });
+        
+        res.status(200).json({ success: true, data: settings });
+    } catch (error) {
+        console.error('Fetch Public Settings Error:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch public settings' });
+    }
+};
+
 /**
  * getEcommerceHubData - Mengambil data hub dari tabel site_settings (format JSON)
  */
