@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Award, Plus, Trash2, Loader2, Image as ImageIcon, Edit2, X, ArrowLeft, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Award, Plus, Trash2, Loader2, Image as ImageIcon, Edit2, X, ArrowLeft, ToggleLeft, ToggleRight, AlignLeft } from 'lucide-react';
 import axios from 'axios';
 import { notify } from '../lib/toast';
 import { useConfirm } from '../lib/confirm-dialog';
+
+const RATIO_OPTIONS = ['4:3', '9:16'];
+const RATIO_LABELS = { '4:3': 'Landscape 4:3', '9:16': 'Portrait 9:16' };
+const DEFAULT_FORM = { name: '', image: null, is_active: true, ratio_type: '4:3', caption: '' };
 
 export default function AdminEndorsements() {
     const [currentView, setCurrentView] = useState('list');
     const [endorsements, setEndorsements] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [formData, setFormData] = useState({ name: '', image: null, is_active: true });
+    const [formData, setFormData] = useState(DEFAULT_FORM);
     const [preview, setPreview] = useState(null);
     const [selectedEndorsement, setSelectedEndorsement] = useState(null);
     const confirm = useConfirm();
@@ -27,7 +31,7 @@ export default function AdminEndorsements() {
     const handleFile = (e) => {
         const file = e.target.files[0];
         if (file) {
-            setFormData({ ...formData, image: file });
+            setFormData(prev => ({ ...prev, image: file }));
             setPreview(URL.createObjectURL(file));
         }
     };
@@ -37,7 +41,9 @@ export default function AdminEndorsements() {
         setFormData({
             name: endorsement.name,
             image: null,
-            is_active: endorsement.is_active === true || endorsement.is_active === 'true'
+            is_active: endorsement.is_active === true || endorsement.is_active === 'true',
+        ratio_type: RATIO_OPTIONS.includes(endorsement.ratio_type) ? endorsement.ratio_type : '4:3',
+            caption: endorsement.caption || '',
         });
         setPreview(`${import.meta.env.VITE_API_URL}${endorsement.image_path}`);
         setCurrentView('form');
@@ -46,18 +52,20 @@ export default function AdminEndorsements() {
     const handleCancelEdit = () => {
         setCurrentView('list');
         setSelectedEndorsement(null);
-        setFormData({ name: '', image: null, is_active: true });
+        setFormData(DEFAULT_FORM);
         setPreview(null);
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!formData.name) return notify.error("Name is required!");
+        if (!formData.name) return notify.error("Endorser name is required!");
         if (selectedEndorsement === null && !formData.image) return notify.error("An image is required!");
 
         const payload = new FormData();
         payload.append('name', formData.name);
         payload.append('is_active', formData.is_active);
+        payload.append('ratio_type', formData.ratio_type);
+        payload.append('caption', formData.caption);
         if (formData.image) payload.append('image', formData.image);
 
         try {
@@ -66,14 +74,17 @@ export default function AdminEndorsements() {
             let res;
             if (selectedEndorsement === null) {
                 res = await axios.post(import.meta.env.VITE_API_URL + '/api/endorsements', payload, {
-                    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+                    headers: { Authorization: `Bearer ${token}` }
                 });
             } else {
                 res = await axios.put(`${import.meta.env.VITE_API_URL}/api/endorsements/${selectedEndorsement.id}`, payload, {
                     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
                 });
             }
-            notify.update(loadingToastId, { render: res.data.message || (selectedEndorsement ? "Endorsement updated successfully!" : "Endorsement added successfully!"), type: 'success', isLoading: false, autoClose: 3000 });
+            notify.update(loadingToastId, {
+                render: res.data.message || (selectedEndorsement ? "Endorsement updated successfully!" : "Endorsement added successfully!"),
+                type: 'success', isLoading: false, autoClose: 3000
+            });
             setEndorsements(res.data.data);
             handleCancelEdit();
         } catch (error) {
@@ -100,8 +111,7 @@ export default function AdminEndorsements() {
                 if (selectedEndorsement?.id === id) handleCancelEdit();
                 notify.update(loadingToastId, { render: res.data.message || 'Endorsement deleted successfully!', type: 'success', isLoading: false, autoClose: 3000 });
             } catch (error) {
-                const errorMessage = error.response?.data?.message || "Failed to delete endorsement";
-                notify.error(errorMessage);
+                notify.error(error.response?.data?.message || "Failed to delete endorsement");
             }
         }
     };
@@ -111,11 +121,13 @@ export default function AdminEndorsements() {
         const payload = new FormData();
         payload.append('name', endorsement.name);
         payload.append('is_active', newActiveState);
+        payload.append('ratio_type', endorsement.ratio_type || '4:3');
+        payload.append('caption', endorsement.caption || '');
 
         try {
             const token = localStorage.getItem('token');
             const res = await axios.put(`${import.meta.env.VITE_API_URL}/api/endorsements/${endorsement.id}`, payload, {
-                headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+                headers: { Authorization: `Bearer ${token}` }
             });
             setEndorsements(res.data.data);
             notify.success(`Endorsement ${newActiveState ? 'activated' : 'deactivated'}`);
@@ -133,9 +145,12 @@ export default function AdminEndorsements() {
                             <h2 className="text-2xl font-bold text-zinc-50 flex items-center gap-2">
                                 <Award className="text-rose-500" /> Endorsements
                             </h2>
-                            <p className="text-sm text-zinc-400 mt-1">Manage social proof / endorsements displayed on the landing page.</p>
+                            <p className="text-sm text-zinc-400 mt-1">Manage brand ambassadors & artists displayed on the landing page.</p>
                         </div>
-                        <button onClick={() => { setCurrentView('form'); setSelectedEndorsement(null); setFormData({ name: '', image: null, is_active: true }); setPreview(null); }} className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-md font-medium flex items-center gap-2 transition-colors">
+                        <button
+                            onClick={() => { setCurrentView('form'); setSelectedEndorsement(null); setFormData(DEFAULT_FORM); setPreview(null); }}
+                            className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-md font-medium flex items-center gap-2 transition-colors"
+                        >
                             <Plus size={18} /> Add Endorsement
                         </button>
                     </div>
@@ -155,10 +170,19 @@ export default function AdminEndorsements() {
                             ) : (
                                 endorsements.map((item) => {
                                     const isActive = item.is_active === true || item.is_active === 'true';
+                                    const ratioLabel = item.ratio_type === '9:16' ? '9:16' : '4:3';
                                     return (
-                                        <div key={item.id} className={`bg-zinc-900 border rounded-lg overflow-hidden group hover:border-zinc-600 transition-colors ${isActive ? 'border-zinc-800' : 'border-zinc-800/50 opacity-60'}`}>
-                                            <div className="aspect-square bg-zinc-950 relative border-b border-zinc-800">
-                                                <img src={`${import.meta.env.VITE_API_URL}${item.image_path}`} alt={item.name} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
+                                        <div
+                                            key={item.id}
+                                            className={`bg-zinc-900 border rounded-lg overflow-hidden group hover:border-zinc-600 transition-colors ${isActive ? 'border-zinc-800' : 'border-zinc-800/50 opacity-60'}`}
+                                        >
+                                            {/* Image preview — aspect ratio from saved ratio_type */}
+                                            <div className={`bg-zinc-950 relative border-b border-zinc-800 overflow-hidden ${ratioLabel === '9:16' ? 'aspect-[9/16]' : 'aspect-[4/3]'}`}>
+                                                <img
+                                                    src={`${import.meta.env.VITE_API_URL}${item.image_path}`}
+                                                    alt={item.name}
+                                                    className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
+                                                />
                                                 <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                     <button onClick={() => handleEdit(item)} className="bg-blue-500/90 text-white p-2 rounded-md hover:bg-blue-600 transition-colors" title="Edit"><Edit2 size={14} /></button>
                                                     <button onClick={() => handleDelete(item.id, item.name)} className="bg-red-500/90 text-white p-2 rounded-md hover:bg-red-600 transition-colors" title="Delete"><Trash2 size={14} /></button>
@@ -166,9 +190,22 @@ export default function AdminEndorsements() {
                                                 {!isActive && (
                                                     <span className="absolute top-2 left-2 bg-zinc-800/90 text-zinc-400 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">Inactive</span>
                                                 )}
+                                                <span className="absolute bottom-2 left-2 bg-zinc-950/80 text-zinc-400 text-[10px] font-mono px-2 py-0.5 rounded uppercase tracking-widest">{ratioLabel}</span>
                                             </div>
-                                            <div className="p-4 flex items-center justify-between">
-                                                <h3 className="font-semibold text-sm text-zinc-100 truncate flex-1 mr-3">{item.name}</h3>
+                                            <div className="p-3 flex items-center justify-between gap-2">
+                                                <div className="flex-1 min-w-0">
+                                                    <h3 className="font-semibold text-sm text-zinc-100 truncate">{item.name}</h3>
+                                                    <div className="flex items-center gap-2 mt-1">
+                                                        <span className={`inline-block text-[10px] font-mono px-1.5 py-0.5 rounded border ${
+                                                            ratioLabel === '9:16'
+                                                                ? 'border-violet-800 text-violet-400 bg-violet-950/40'
+                                                                : 'border-zinc-700 text-zinc-500 bg-zinc-950'
+                                                        }`}>{ratioLabel}</span>
+                                                        {item.caption && (
+                                                            <p className="text-[11px] text-zinc-500 truncate">{item.caption}</p>
+                                                        )}
+                                                    </div>
+                                                </div>
                                                 <button
                                                     onClick={() => handleToggleActive(item)}
                                                     className={`shrink-0 transition-colors ${isActive ? 'text-emerald-400 hover:text-emerald-300' : 'text-zinc-600 hover:text-zinc-400'}`}
@@ -189,22 +226,75 @@ export default function AdminEndorsements() {
                     <div className="flex items-center gap-4">
                         <button onClick={handleCancelEdit} className="p-2 bg-zinc-900 border border-zinc-800 rounded-md text-zinc-400 hover:text-white transition-colors"><ArrowLeft size={18} /></button>
                         <div>
-                            <h2 className="text-2xl font-bold text-zinc-50 flex items-center gap-2"><Award className="text-rose-500" /> {selectedEndorsement ? 'Edit Endorsement' : 'Add New Endorsement'}</h2>
-                            <p className="text-sm text-zinc-400 mt-1">Manage social proof for the landing page.</p>
+                            <h2 className="text-2xl font-bold text-zinc-50 flex items-center gap-2">
+                                <Award className="text-rose-500" /> {selectedEndorsement ? 'Edit Endorsement' : 'Add New Endorsement'}
+                            </h2>
+                            <p className="text-sm text-zinc-400 mt-1">Brand ambassador or artist wearing Reload products.</p>
                         </div>
                     </div>
 
                     <form onSubmit={handleSubmit} className="bg-zinc-900 border border-zinc-800 p-6 rounded-lg grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="col-span-2 space-y-4">
+                        {/* Left: Fields */}
+                        <div className="col-span-2 space-y-5">
+                            {/* Name */}
                             <div>
-                                <label className="text-sm text-zinc-400 mb-1 block">Endorser Name</label>
-                                <input type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="Example: John Doe / @username" className="w-full bg-zinc-950 border border-zinc-800 rounded-md py-2 px-4 text-zinc-100 focus:outline-none focus:border-rose-500 transition-colors" />
+                                <label className="text-sm text-zinc-400 mb-1 block">Endorser Name <span className="text-rose-500">*</span></label>
+                                <input
+                                    type="text"
+                                    value={formData.name}
+                                    onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                                    placeholder="e.g. @artistname or Full Name"
+                                    className="w-full bg-zinc-950 border border-zinc-800 rounded-md py-2 px-4 text-zinc-100 focus:outline-none focus:border-rose-500 transition-colors"
+                                />
                             </div>
-                            <div className="flex items-center gap-3 py-2">
+
+                            {/* Ratio Type */}
+                            <div>
+                                <label className="text-sm text-zinc-400 mb-2 block">Image Ratio <span className="text-rose-500">*</span></label>
+                                <div className="flex gap-2">
+                                    {RATIO_OPTIONS.map(ratio => (
+                                        <button
+                                            key={ratio}
+                                            type="button"
+                                            onClick={() => setFormData(prev => ({ ...prev, ratio_type: ratio }))}
+                                            className={`flex-1 py-2 px-4 rounded-md border text-sm font-mono uppercase tracking-widest transition-all ${
+                                                formData.ratio_type === ratio
+                                                    ? 'bg-rose-500/10 border-rose-500 text-rose-400'
+                                                    : 'bg-zinc-950 border-zinc-800 text-zinc-500 hover:border-zinc-600'
+                                            }`}
+                                        >
+                                            {ratio}
+                                            <span className="block text-[10px] normal-case tracking-normal text-zinc-500 mt-0.5">
+                                                {RATIO_LABELS[ratio]}
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
+                                <p className="text-[11px] text-zinc-600 mt-1.5">
+                                    Choose the ratio that matches your uploaded image to prevent distortion.
+                                </p>
+                            </div>
+
+                            {/* Caption */}
+                            <div>
+                                <label className="text-sm text-zinc-400 mb-1 flex items-center gap-1.5">
+                                    <AlignLeft size={13} /> Caption <span className="text-zinc-600 font-normal">(optional)</span>
+                                </label>
+                                <textarea
+                                    value={formData.caption}
+                                    onChange={e => setFormData(prev => ({ ...prev, caption: e.target.value }))}
+                                    placeholder="Short description of the endorsement moment..."
+                                    rows={3}
+                                    className="w-full bg-zinc-950 border border-zinc-800 rounded-md py-2 px-4 text-zinc-100 focus:outline-none focus:border-rose-500 transition-colors resize-none text-sm leading-relaxed"
+                                />
+                            </div>
+
+                            {/* Active Status */}
+                            <div className="flex items-center gap-3 py-1">
                                 <label className="text-sm text-zinc-400">Active Status</label>
                                 <button
                                     type="button"
-                                    onClick={() => setFormData({ ...formData, is_active: !formData.is_active })}
+                                    onClick={() => setFormData(prev => ({ ...prev, is_active: !prev.is_active }))}
                                     className={`transition-colors ${formData.is_active ? 'text-emerald-400' : 'text-zinc-600'}`}
                                 >
                                     {formData.is_active ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
@@ -214,25 +304,48 @@ export default function AdminEndorsements() {
                                 </span>
                             </div>
                         </div>
+
+                        {/* Right: Image Upload + Actions */}
                         <div className="flex flex-col gap-4">
-                            <label className="text-sm text-zinc-400 mb-1 block">Upload Photo</label>
-                            <label 
-                                className="flex-1 border-2 border-dashed border-zinc-700 bg-zinc-950 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-zinc-500 transition-colors overflow-hidden relative min-h-[180px]"
+                            <label className="text-sm text-zinc-400 mb-1 block">
+                                Upload Photo <span className="text-rose-500">*</span>
+                                <span className="text-zinc-600 font-normal ml-1">JPG, PNG, WEBP · max 5MB</span>
+                            </label>
+
+                            {/* Preview box — aspect ratio mirrors the selected ratio_type */}
+                            <label
+                                className={`border-2 border-dashed border-zinc-700 bg-zinc-950 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-zinc-500 transition-all overflow-hidden relative ${
+                                    formData.ratio_type === '9:16' ? 'aspect-[9/16]' : 'aspect-[4/3]'
+                                }`}
                                 onDragOver={e => e.preventDefault()}
                                 onDrop={e => {
                                     e.preventDefault();
-                                    if(e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                                    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
                                         handleFile({ target: { files: e.dataTransfer.files } });
                                     }
                                 }}
                             >
-                                {preview ? <img src={preview} alt="Preview" className="absolute inset-0 w-full h-full object-cover opacity-60" /> : <ImageIcon size={32} className="text-zinc-600 mb-2" />}
-                                <span className="text-xs text-zinc-400 z-10 bg-zinc-900/80 px-2 py-1 rounded">Drag & Drop or Click</span>
-                                <input type="file" onChange={handleFile} accept="image/*" className="hidden" />
+                                {preview
+                                    ? <img src={preview} alt="Preview" className="absolute inset-0 w-full h-full object-cover" />
+                                    : <>
+                                        <ImageIcon size={32} className="text-zinc-600 mb-2" />
+                                        <span className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest">
+                                            {formData.ratio_type} preview
+                                        </span>
+                                      </>
+                                }
+                                <span className="text-xs text-zinc-400 z-10 bg-zinc-900/80 px-2 py-1 rounded absolute bottom-2">
+                                    Drag &amp; Drop or Click
+                                </span>
+                                <input type="file" onChange={handleFile} accept="image/jpeg,image/png,image/webp" className="hidden" />
                             </label>
                             <div className="flex gap-2">
-                                <button type="submit" className="flex-1 bg-rose-500 hover:bg-rose-600 text-white py-2 rounded-md font-medium flex items-center justify-center gap-2 transition-colors"><Plus size={18} /> {selectedEndorsement ? 'Update' : 'Save'}</button>
-                                <button type="button" onClick={handleCancelEdit} className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 py-2 rounded-md font-medium flex items-center justify-center gap-2 transition-colors"><X size={18} /> Cancel</button>
+                                <button type="submit" className="flex-1 bg-rose-500 hover:bg-rose-600 text-white py-2 rounded-md font-medium flex items-center justify-center gap-2 transition-colors">
+                                    <Plus size={18} /> {selectedEndorsement ? 'Update' : 'Save'}
+                                </button>
+                                <button type="button" onClick={handleCancelEdit} className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 py-2 rounded-md font-medium flex items-center justify-center gap-2 transition-colors">
+                                    <X size={18} /> Cancel
+                                </button>
                             </div>
                         </div>
                     </form>
@@ -240,4 +353,5 @@ export default function AdminEndorsements() {
             )}
         </div>
     );
+
 }

@@ -141,8 +141,10 @@ export default function Login() {
                             name="email" 
                             onChange={handleChange} 
                             required
-                            className="w-full bg-transparent border-0 border-b border-zinc-700 py-3 text-zinc-50 font-mono text-sm uppercase placeholder:text-zinc-600 focus:outline-none focus:border-zinc-50 focus:ring-0 px-0 rounded-none transition-colors"
-                            placeholder="YOUR@EMAIL.COM" 
+                            autoCapitalize="none"
+                            autoCorrect="off"
+                            className="w-full bg-transparent border-0 border-b border-zinc-700 py-3 text-zinc-50 font-mono text-sm placeholder:text-zinc-600 focus:outline-none focus:border-zinc-50 focus:ring-0 px-0 rounded-none transition-colors"
+                            placeholder="your@email.com" 
                         />
                     </div>
 
@@ -158,7 +160,9 @@ export default function Login() {
                             name="password" 
                             onChange={handleChange} 
                             required
-                            className="w-full bg-transparent border-0 border-b border-zinc-700 py-3 text-zinc-50 font-mono text-sm uppercase placeholder:text-zinc-600 focus:outline-none focus:border-zinc-50 focus:ring-0 px-0 rounded-none transition-colors"
+                            autoCapitalize="none"
+                            autoCorrect="off"
+                            className="w-full bg-transparent border-0 border-b border-zinc-700 py-3 text-zinc-50 font-mono text-sm placeholder:text-zinc-600 focus:outline-none focus:border-zinc-50 focus:ring-0 px-0 rounded-none transition-colors"
                             placeholder="••••••••" 
                         />
                     </div>

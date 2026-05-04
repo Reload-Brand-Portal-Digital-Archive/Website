@@ -1,62 +1,50 @@
 export const mockEndorsements = [
   {
     id: "endorsement-01",
-    talentName: "Ayla Rahman",
-    roleOrTag: "Brand Ambassador",
-    ratioType: "9:16",
-    mediaType: "image",
-    mediaUrlPlaceholder: "",
+    name: "Ayla Rahman",
+    ratio_type: "4:3",
     caption: "Street performance look with layered outerwear and heavyweight basics.",
-    isActive: true
+    image_path: "",
+    is_active: true
   },
   {
     id: "endorsement-02",
-    talentName: "Rafi Kurnia",
-    roleOrTag: "Artist",
-    ratioType: "2:3",
-    mediaType: "image",
-    mediaUrlPlaceholder: "",
+    name: "Rafi Kurnia",
+    ratio_type: "9:16",
     caption: "Studio session fit featuring oversized tee and relaxed utility pants.",
-    isActive: true
+    image_path: "",
+    is_active: true
   },
   {
     id: "endorsement-03",
-    talentName: "Nadya Prasetyo",
-    roleOrTag: "Brand Ambassador",
-    ratioType: "16:9",
-    mediaType: "video",
-    mediaUrlPlaceholder: "",
+    name: "Nadya Prasetyo",
+    ratio_type: "4:3",
     caption: "Backstage moment highlighting movement, texture, and silhouette.",
-    isActive: true
+    image_path: "",
+    is_active: true
   },
   {
     id: "endorsement-04",
-    talentName: "Dion Pratama",
-    roleOrTag: "Artist",
-    ratioType: "9:16",
-    mediaType: "image",
-    mediaUrlPlaceholder: "",
+    name: "Dion Pratama",
+    ratio_type: "9:16",
     caption: "Night city styling in core monochrome pieces from the latest drop.",
-    isActive: true
+    image_path: "",
+    is_active: true
   },
   {
     id: "endorsement-05",
-    talentName: "Salma Wijaya",
-    roleOrTag: "Brand Ambassador",
-    ratioType: "2:3",
-    mediaType: "image",
-    mediaUrlPlaceholder: "",
+    name: "Salma Wijaya",
+    ratio_type: "4:3",
     caption: "Editorial portrait focused on fabric structure and fit details.",
-    isActive: true
+    image_path: "",
+    is_active: true
   },
   {
     id: "endorsement-06",
-    talentName: "Reza Hidayat",
-    roleOrTag: "Artist",
-    ratioType: "16:9",
-    mediaType: "video",
-    mediaUrlPlaceholder: "",
+    name: "Reza Hidayat",
+    ratio_type: "9:16",
     caption: "Live show capture with performance-ready streetwear layering.",
-    isActive: true
+    image_path: "",
+    is_active: true
   }
 ];
