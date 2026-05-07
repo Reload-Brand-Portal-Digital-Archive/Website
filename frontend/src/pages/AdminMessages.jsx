@@ -68,7 +68,9 @@ export default function AdminMessages() {
     const fetchOrders = async () => {
         try {
             setLoading(true);
-            const res = await axios.get(import.meta.env.VITE_API_URL + '/api/wholesale');
+            const res = await axios.get(import.meta.env.VITE_API_URL + '/api/wholesale', {
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            });
             setOrders(res.data);
         } catch (error) {
             console.error('Error fetching orders:', error);
@@ -83,7 +85,9 @@ export default function AdminMessages() {
             setIsDetailModalOpen(true);
             setLoadingDetails(true);
             // Calling this endpoint automatically updates "Belum Dibaca" to "Dibaca" in the backend
-            const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/wholesale/${orderId}`);
+            const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/wholesale/${orderId}`, {
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            });
             setSelectedOrder(res.data);
             
             // Silently update local state so the red badge disappears without a full refresh
@@ -100,7 +104,10 @@ export default function AdminMessages() {
     const handleUpdateStatus = async (newStatus) => {
         if (!selectedOrder) return;
         try {
-            await axios.put(`${import.meta.env.VITE_API_URL}/api/wholesale/${selectedOrder.order_id}/status`, { status: newStatus });
+            await axios.put(`${import.meta.env.VITE_API_URL}/api/wholesale/${selectedOrder.order_id}/status`, 
+                { status: newStatus },
+                { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }
+            );
             setSelectedOrder({ ...selectedOrder, status: newStatus });
             setOrders(prev => prev.map(o => o.order_id === selectedOrder.order_id ? { ...o, status: newStatus } : o));
             toast.success('Status berhasil diperbarui!');

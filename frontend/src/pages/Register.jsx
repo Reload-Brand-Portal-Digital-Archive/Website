@@ -86,7 +86,7 @@ export default function Register() {
     return (
         <main className="relative flex items-center justify-center min-h-[100dvh] bg-zinc-950 px-4 py-8 font-sans selection:bg-zinc-50 selection:text-zinc-950 overflow-hidden">
             {/* Minimal background noise/grain */}
-            <div className="absolute inset-0 z-0 pointer-events-none opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
+            <div className="absolute inset-0 z-0 pointer-events-none opacity-[0.03]"></div>
 
             <motion.div 
                 variants={containerVariants}

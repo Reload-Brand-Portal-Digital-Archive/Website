@@ -19,6 +19,7 @@ import { DashboardSummaryCards } from '../components/ui/admin-summary-cards';
 import { TrafficChart, UserGrowthChart, SubscriberChart, ExternalClicksChart } from '../components/ui/admin-charts';
 import AdminGeographicMap from '../components/ui/AdminGeographicMapV2';
 import RecentActivityLog from '../components/ui/RecentActivityLog';
+import AdminActivityLog from '../components/ui/AdminActivityLog';
 import SyncEcommerceModal from '../components/ui/SyncEcommerceModal';
 
 export default function AdminDashboard() {
@@ -48,7 +49,13 @@ export default function AdminDashboard() {
     };
     const dateRange = getDateRange();
     
-    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
+    
+    useEffect(() => {
+        const handleResize = () => setIsSidebarOpen(window.innerWidth > 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
     const [activeTab, setActiveTab] = useState('home');
     
     // Sinkronisasi E-Commerce state
@@ -168,7 +175,10 @@ export default function AdminDashboard() {
                 </div>
             </div>
 
-            <RecentActivityLog dateRange={dateRange} />
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                <RecentActivityLog dateRange={dateRange} />
+                <AdminActivityLog />
+            </div>
         </div>
     );
 

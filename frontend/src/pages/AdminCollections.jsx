@@ -126,12 +126,18 @@ export default function AdminCollections() {
 
             if (currentView === 'create') {
                 await axios.post(import.meta.env.VITE_API_URL + '/api/collections', formPayload, {
-                    headers: { 'Content-Type': 'multipart/form-data' }
+                    headers: { 
+                        'Content-Type': 'multipart/form-data',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
                 });
                 notify.update(loadingToastId, { render: 'Koleksi berhasil dibuat!', type: 'success', isLoading: false, autoClose: 3000 });
             } else if (currentView === 'edit') {
                 await axios.put(`${import.meta.env.VITE_API_URL}/api/collections/${selectedCollection.collection_id}`, formPayload, {
-                    headers: { 'Content-Type': 'multipart/form-data' }
+                    headers: { 
+                        'Content-Type': 'multipart/form-data',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
                 });
                 notify.update(loadingToastId, { render: 'Koleksi berhasil diperbarui!', type: 'success', isLoading: false, autoClose: 3000 });
             }
@@ -168,7 +174,9 @@ export default function AdminCollections() {
         if (confirmed) {
             try {
                 const loadingToastId = notify.loading('Menghapus koleksi...');
-                await axios.delete(`${import.meta.env.VITE_API_URL}/api/collections/${id}`);
+                await axios.delete(`${import.meta.env.VITE_API_URL}/api/collections/${id}`, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
                 setCollections(collections.filter(c => c.collection_id !== id));
                 notify.update(loadingToastId, { render: 'Koleksi berhasil dihapus!', type: 'success', isLoading: false, autoClose: 3000 });
             } catch (error) {

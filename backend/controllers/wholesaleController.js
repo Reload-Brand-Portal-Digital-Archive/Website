@@ -1,5 +1,6 @@
 const db = require('../config/database');
 const nodemailer = require('nodemailer');
+const { logAdminActivity } = require('../utils/activityLogger');
 
 exports.createWholesaleOrder = async (req, res) => {
     const { user_id, name, email, phone, inquiry_type, message, address, items } = req.body;
@@ -261,6 +262,8 @@ exports.updateOrderStatus = async (req, res) => {
                 console.error('Failed to send status update email:', emailError);
             }
         }
+
+        await logAdminActivity(req, 'UPDATE', 'Wholesale Order', id, { status });
 
         res.status(200).json({ message: 'Status updated successfully' });
     } catch (error) {

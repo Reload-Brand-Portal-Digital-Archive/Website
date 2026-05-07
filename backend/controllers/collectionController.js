@@ -1,6 +1,7 @@
 const db = require('../config/database');
 const fs = require('fs');
 const path = require('path');
+const { logAdminActivity } = require('../utils/activityLogger');
 
 exports.getAllCollections = async (req, res) => {
     try {
@@ -92,6 +93,9 @@ exports.createCollection = async (req, res) => {
         );
 
         const [newCollection] = await db.query('SELECT * FROM collections WHERE collection_id = ?', [result.insertId]);
+        
+        await logAdminActivity(req, 'CREATE', 'Collection', result.insertId, { name, slug, description, year });
+        
         res.status(201).json({ message: 'Koleksi berhasil ditambahkan', data: newCollection[0] });
     } catch (error) {
         console.error("Error creating collection:", error);
@@ -132,6 +136,9 @@ exports.updateCollection = async (req, res) => {
         }
 
         const [updatedData] = await db.query('SELECT * FROM collections WHERE collection_id = ?', [id]);
+        
+        await logAdminActivity(req, 'UPDATE', 'Collection', id, { name, slug, description, year });
+        
         res.json({ message: 'Koleksi berhasil diperbarui', data: updatedData[0] });
     } catch (error) {
         console.error("Error updating collection:", error);
@@ -158,6 +165,8 @@ exports.deleteCollection = async (req, res) => {
                 fs.unlinkSync(filePath);
             }
         }
+
+        await logAdminActivity(req, 'DELETE', 'Collection', id, { collection_id: id });
 
         res.json({ message: 'Koleksi berhasil dihapus' });
     } catch (error) {

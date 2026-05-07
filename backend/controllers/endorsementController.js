@@ -1,6 +1,7 @@
 const db = require('../config/database');
 const fs = require('fs');
 const path = require('path');
+const { logAdminActivity } = require('../utils/activityLogger');
 
 const getEndorsements = async () => {
     const [rows] = await db.query('SELECT setting_value FROM site_settings WHERE setting_key = "endorsements_data"');
@@ -50,6 +51,8 @@ exports.createEndorsement = async (req, res) => {
         endorsements.push(newEndorsement);
         await saveEndorsements(endorsements);
 
+        await logAdminActivity(req, 'CREATE', 'Endorsement', newEndorsement.id, { name });
+
         res.status(201).json({ message: 'Endorsement berhasil ditambahkan', data: endorsements });
     } catch (error) {
         console.error('Error creating endorsement:', error);
@@ -91,6 +94,9 @@ exports.updateEndorsement = async (req, res) => {
         }
 
         await saveEndorsements(endorsements);
+
+        await logAdminActivity(req, 'UPDATE', 'Endorsement', endorsementId, { name, is_active });
+
         res.json({ message: 'Endorsement berhasil diperbarui', data: endorsements });
     } catch (error) {
         console.error('Error updating endorsement:', error);
@@ -114,6 +120,8 @@ exports.deleteEndorsement = async (req, res) => {
 
             endorsements = endorsements.filter(e => e.id !== endorsementId);
             await saveEndorsements(endorsements);
+
+            await logAdminActivity(req, 'DELETE', 'Endorsement', endorsementId, { name: toDelete.name });
         }
 
         res.json({ message: 'Endorsement berhasil dihapus', data: endorsements });

@@ -38,9 +38,9 @@ export default function AdminCategories() {
             );
             setCategories(res.data.data);
             setNewCategory('');
-            toast.success(res.data.message);
+            notify.success(res.data.message);
         } catch (error) {
-            toast.error(error.response?.data?.message || "Gagal menambah kategori");
+            notify.error(error.response?.data?.message || "Gagal menambah kategori");
         }
     };
 
@@ -62,9 +62,9 @@ export default function AdminCategories() {
             setCategories(res.data.data);
             setEditingCategory(null);
             setEditValue('');
-            toast.success(res.data.message || "Kategori berhasil diperbarui!");
+            notify.success(res.data.message || "Kategori berhasil diperbarui!");
         } catch (error) {
-            toast.error(error.response?.data?.message || "Gagal memperbarui kategori");
+            notify.error(error.response?.data?.message || "Gagal memperbarui kategori");
         }
     };
 

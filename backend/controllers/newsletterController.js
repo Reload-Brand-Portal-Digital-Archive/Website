@@ -2,6 +2,7 @@ const db = require('../config/database');
 const nodemailer = require('nodemailer');
 const fs = require('fs');
 const path = require('path');
+const { logAdminActivity } = require('../utils/activityLogger');
 
 exports.subscribe = async (req, res) => {
     const { email } = req.body;
@@ -110,6 +111,9 @@ exports.deleteSubscriber = async (req, res) => {
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: 'Subscriber not found.' });
         }
+        
+        await logAdminActivity(req, 'DELETE', 'Newsletter', id, { newsletter_id: id });
+        
         res.json({ message: 'Subscriber deleted successfully.' });
     } catch (error) {
         console.error('Delete Newsletter Subscriber Error:', error);
@@ -168,6 +172,7 @@ exports.exportData = async (req, res) => {
 
             res.setHeader('Content-Type', 'text/csv');
             res.setHeader('Content-Disposition', 'attachment; filename=newsletter_subscribers.csv');
+            await logAdminActivity(req, 'READ', 'Newsletter', null, { action: 'export_subscribers', format: 'csv' });
             return res.status(200).send(csv);
             
         } else if (format === 'excel') {
@@ -192,6 +197,7 @@ exports.exportData = async (req, res) => {
             res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
             res.setHeader('Content-Disposition', 'attachment; filename=newsletter_subscribers.xlsx');
             
+            await logAdminActivity(req, 'READ', 'Newsletter', null, { action: 'export_subscribers', format: 'excel' });
             await workbook.xlsx.write(res);
             return res.end();
             
@@ -232,6 +238,7 @@ exports.exportData = async (req, res) => {
                 prepareRow: () => doc.font('Helvetica').fontSize(10)
             });
 
+            await logAdminActivity(req, 'READ', 'Newsletter', null, { action: 'export_subscribers', format: 'pdf' });
             doc.end();
             return;
         } else {

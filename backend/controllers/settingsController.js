@@ -1,6 +1,7 @@
 const db = require('../config/database');
 const { geocodeLocation } = require('../utils/geocoder');
 const axios = require('axios');
+const { logAdminActivity } = require('../utils/activityLogger');
 
 /**
  * applyJitter - Menambahkan pergeseran acak kecil pada koordinat
@@ -125,6 +126,8 @@ exports.syncEcommerce = async (req, res) => {
             await db.query('INSERT INTO site_settings (setting_key, setting_value) VALUES (?, ?)', ['ecommerce_hub_data', jsonValue]);
         }
 
+        await logAdminActivity(req, 'UPDATE', 'Settings', null, { action: 'sync_ecommerce', processed_count: syncCount });
+
         res.status(200).json({
             success: true,
             message: `Sinkronisasi berhasil! ${syncCount} data baru ditambahkan.`,
@@ -190,6 +193,8 @@ exports.uploadReport = async (req, res) => {
             await db.query('INSERT INTO site_settings (setting_key, setting_value) VALUES (?, ?)', ['ecommerce_hub_data', jsonValue]);
         }
 
+        await logAdminActivity(req, 'UPDATE', 'Settings', null, { action: 'upload_report', processed_count: newCount });
+
         res.status(200).json({ 
             success: true, 
             message: `Berhasil mengimpor ${newCount} data laporan baru.`,
@@ -207,6 +212,9 @@ exports.uploadReport = async (req, res) => {
 exports.clearEcommerceData = async (req, res) => {
     try {
         await db.query('UPDATE site_settings SET setting_value = ? WHERE setting_key = ?', ['[]', 'ecommerce_hub_data']);
+        
+        await logAdminActivity(req, 'DELETE', 'Settings', null, { action: 'clear_ecommerce_data' });
+        
         res.status(200).json({ success: true, message: "Seluruh data e-commerce berhasil direset." });
     } catch (error) {
         console.error("Reset Error:", error);
