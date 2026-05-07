@@ -11,6 +11,7 @@ import AdminCollections from './AdminCollections';
 import AdminCategories from './AdminCategories';
 import AdminMaterial from './AdminMaterial';
 import AdminMessages from './AdminMessages';
+import AdminChats from './AdminChats';
 import AdminNewsletter from './AdminNewsletter';
 import SystemSettings from './SystemSettings';
 import AdminEndorsements from './AdminEndorsements';
@@ -187,6 +188,8 @@ export default function AdminDashboard() {
                 return <AdminMaterial />;
             case 'endorsements':
                 return <AdminEndorsements />;
+            case 'chats':
+                return <AdminChats />;
             case 'messages':
                 return <AdminMessages />;
             case 'newsletter':
