@@ -18,21 +18,14 @@ export default function SystemSettings() {
         hero_banner_image: ''
     });
 
-    const [passwordData, setPasswordData] = useState({
-        oldPassword: '',
-        newPassword: '',
-        confirmPassword: ''
-    });
+
 
     const { refreshSettings } = useSettings();
 
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
-    const [isSavingPassword, setIsSavingPassword] = useState(false);
     const [heroImagePreview, setHeroImagePreview] = useState(null);
     const fileInputRef = useRef(null);
-    const [showOldPassword, setShowOldPassword] = useState(false);
-    const [showNewPassword, setShowNewPassword] = useState(false);
 
     useEffect(() => {
         fetchSettings();
@@ -67,13 +60,7 @@ export default function SystemSettings() {
         }));
     };
 
-    const handlePasswordChange = (e) => {
-        const { name, value } = e.target;
-        setPasswordData(prev => ({
-            ...prev,
-            [name]: value
-        }));
-    };
+
 
     const handleImageChange = (e) => {
         if (e.target.files && e.target.files[0]) {
@@ -124,39 +111,7 @@ export default function SystemSettings() {
         }
     };
 
-    const handleUpdatePassword = async (e) => {
-        e.preventDefault();
-        if (passwordData.newPassword !== passwordData.confirmPassword) {
-            toast.error('Konfirmasi password tidak cocok!');
-            return;
-        }
 
-        if (passwordData.newPassword.length < 6) {
-            toast.error('Password baru minimal 6 karakter!');
-            return;
-        }
-
-        setIsSavingPassword(true);
-        try {
-            const token = localStorage.getItem('token');
-            const response = await axios.put(import.meta.env.VITE_API_URL + '/api/admin/password', {
-                oldPassword: passwordData.oldPassword,
-                newPassword: passwordData.newPassword
-            }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-
-            if (response.data.success) {
-                toast.success('Password berhasil diperbarui!');
-                setPasswordData({ oldPassword: '', newPassword: '', confirmPassword: '' });
-            }
-        } catch (error) {
-            console.error('Error updating password:', error);
-            toast.error(error.response?.data?.message || 'Gagal memperbarui password');
-        } finally {
-            setIsSavingPassword(false);
-        }
-    };
 
     if (isLoading) {
         return (
@@ -399,84 +354,7 @@ export default function SystemSettings() {
                 </div>
             </form>
 
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden shadow-sm mt-8">
-                <div className="bg-zinc-800/50 px-6 py-4 border-b border-zinc-800 flex items-center gap-3">
-                    <Shield className="text-rose-500" size={20} />
-                    <h3 className="font-semibold text-lg text-white">Security</h3>
-                </div>
-                <div className="p-6">
-                    <form onSubmit={handleUpdatePassword} className="max-w-md space-y-5">
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-zinc-300">Old Password</label>
-                            <div className="relative">
-                                <input
-                                    type={showOldPassword ? "text" : "password"}
-                                    name="oldPassword"
-                                    value={passwordData.oldPassword}
-                                    onChange={handlePasswordChange}
-                                    required
-                                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-zinc-100 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition-colors"
-                                />
-                                <button 
-                                    type="button" 
-                                    onClick={() => setShowOldPassword(!showOldPassword)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
-                                >
-                                    {showOldPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                                </button>
-                            </div>
-                        </div>
 
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-zinc-300">New Password</label>
-                            <div className="relative">
-                                <input
-                                    type={showNewPassword ? "text" : "password"}
-                                    name="newPassword"
-                                    value={passwordData.newPassword}
-                                    onChange={handlePasswordChange}
-                                    required
-                                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-zinc-100 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition-colors"
-                                />
-                                <button 
-                                    type="button" 
-                                    onClick={() => setShowNewPassword(!showNewPassword)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
-                                >
-                                    {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                                </button>
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-zinc-300">Confirm New Password</label>
-                            <input
-                                type="password"
-                                name="confirmPassword"
-                                value={passwordData.confirmPassword}
-                                onChange={handlePasswordChange}
-                                required
-                                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-zinc-100 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition-colors"
-                            />
-                        </div>
-
-                        <div className="pt-2">
-                            <button
-                                type="submit"
-                                disabled={isSavingPassword}
-                                className="flex items-center justify-center w-full sm:w-auto gap-2 px-6 py-2.5 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 border border-zinc-700 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors"
-                            >
-                                {isSavingPassword ? (
-                                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/20 border-t-white"></div>
-                                ) : (
-                                    <Shield size={16} className="text-zinc-400" />
-                                )}
-                                <span>{isSavingPassword ? 'Updating...' : 'Update Password'}</span>
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
             
         </div>
     );
