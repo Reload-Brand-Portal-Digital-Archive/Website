@@ -38,9 +38,9 @@ export default function AdminCategories() {
             );
             setCategories(res.data.data);
             setNewCategory('');
-            notify.success(res.data.message || "Category added successfully!");
+            notify.success(res.data.message);
         } catch (error) {
-            notify.error(error.response?.data?.message || "Failed to add category");
+            notify.error(error.response?.data?.message || "Gagal menambah kategori");
         }
     };
 
@@ -62,9 +62,9 @@ export default function AdminCategories() {
             setCategories(res.data.data);
             setEditingCategory(null);
             setEditValue('');
-            notify.success(res.data.message || "Category updated successfully!");
+            notify.success(res.data.message || "Kategori berhasil diperbarui!");
         } catch (error) {
-            notify.error(error.response?.data?.message || "Failed to update category");
+            notify.error(error.response?.data?.message || "Gagal memperbarui kategori");
         }
     };
 

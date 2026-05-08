@@ -12,4 +12,6 @@ router.post('/settings/hero-image', verifyToken, isAdmin, upload.single('hero_ba
 
 router.put('/password', verifyToken, isAdmin, adminController.changePassword);
 
+router.get('/activity-logs', verifyToken, isAdmin, adminController.getActivityLogs);
+
 module.exports = router;

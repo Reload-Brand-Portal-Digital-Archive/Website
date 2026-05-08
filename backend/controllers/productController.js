@@ -2,6 +2,7 @@ const db = require('../config/database');
 const fs = require('fs');
 const path = require('path');
 const nodemailer = require('nodemailer');
+const { logAdminActivity } = require('../utils/activityLogger');
 
 const sendProductNotification = async (productData) => {
     try {
@@ -174,6 +175,8 @@ exports.createProduct = async (req, res) => {
             sizes
         });
 
+        await logAdminActivity(req, 'CREATE', 'Product', newProductId, { name, category, status, collection_id });
+
     } catch (error) {
         console.error('Create Product Error:', error);
         res.status(500).json({ message: 'Terjadi kesalahan pada server' });
@@ -219,6 +222,7 @@ exports.updateProduct = async (req, res) => {
         }
 
         await Promise.all(allQueries);
+        await logAdminActivity(req, 'UPDATE', 'Product', productId, { name, category, status, collection_id });
         res.json({ message: 'Data produk berhasil diperbarui!' });
     } catch (error) {
         console.error('Update Product Error:', error);
@@ -235,6 +239,7 @@ exports.deleteProduct = async (req, res) => {
             const filePath = path.join(__dirname, '..', img.image_path);
             if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
         });
+        await logAdminActivity(req, 'DELETE', 'Product', productId, { productId });
         res.json({ message: 'Produk berhasil dihapus permanen!' });
     } catch (error) {
         console.error('Delete Product Error:', error);
@@ -287,6 +292,7 @@ exports.exportProducts = async (req, res) => {
             });
             res.setHeader('Content-Type', 'text/csv');
             res.setHeader('Content-Disposition', 'attachment; filename="products_export.csv"');
+            await logAdminActivity(req, 'READ', 'Product', null, { action: 'export_products', format: 'csv' });
             return res.status(200).send(csv);
 
         } else if (format === 'pdf') {
@@ -328,6 +334,7 @@ exports.exportProducts = async (req, res) => {
                 prepareRow: () => doc.font('Helvetica').fontSize(10)
             });
 
+            await logAdminActivity(req, 'READ', 'Product', null, { action: 'export_products', format: 'pdf' });
             doc.end();
             return;
 
@@ -382,6 +389,7 @@ exports.exportProducts = async (req, res) => {
             const excelBuffer = await workbook.xlsx.writeBuffer();
             archive.append(excelBuffer, { name: 'products.xlsx' });
 
+            await logAdminActivity(req, 'READ', 'Product', null, { action: 'export_products', format: 'excel' });
             await archive.finalize();
             return;
         } else {

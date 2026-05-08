@@ -15,16 +15,26 @@ import AdminChats from './AdminChats';
 import AdminNewsletter from './AdminNewsletter';
 import SystemSettings from './SystemSettings';
 import AdminEndorsements from './AdminEndorsements';
+import AdminProfile from './AdminProfile';
 
 import { DashboardSummaryCards } from '../components/ui/admin-summary-cards';
 import { TrafficChart, UserGrowthChart, SubscriberChart, ExternalClicksChart } from '../components/ui/admin-charts';
 import AdminGeographicMap from '../components/ui/AdminGeographicMapV2';
 import RecentActivityLog from '../components/ui/RecentActivityLog';
+import AdminActivityLog from '../components/ui/AdminActivityLog';
 import SyncEcommerceModal from '../components/ui/SyncEcommerceModal';
 
 export default function AdminDashboard() {
     const navigate = useNavigate();
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const [user, setUser] = useState(JSON.parse(localStorage.getItem('user') || '{}'));
+
+    useEffect(() => {
+        const handleUserUpdate = () => {
+            setUser(JSON.parse(localStorage.getItem('user') || '{}'));
+        };
+        window.addEventListener('userProfileUpdated', handleUserUpdate);
+        return () => window.removeEventListener('userProfileUpdated', handleUserUpdate);
+    }, []);
     const [preset, setPreset] = useState('7d');
     const [customStart, setCustomStart] = useState('');
     const [customEnd, setCustomEnd] = useState('');
@@ -49,7 +59,13 @@ export default function AdminDashboard() {
     };
     const dateRange = getDateRange();
     
-    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
+    
+    useEffect(() => {
+        const handleResize = () => setIsSidebarOpen(window.innerWidth > 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
     const [activeTab, setActiveTab] = useState('home');
     
 
@@ -170,7 +186,10 @@ export default function AdminDashboard() {
                 </div>
             </div>
 
-            <RecentActivityLog dateRange={dateRange} />
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                <RecentActivityLog dateRange={dateRange} />
+                <AdminActivityLog />
+            </div>
         </div>
     );
 
@@ -196,6 +215,8 @@ export default function AdminDashboard() {
                 return <AdminNewsletter />;
             case 'settings':
                 return <SystemSettings />;
+            case 'profile':
+                return <AdminProfile />;
             default:
                 return (
                     <div className="flex items-center justify-center h-[70vh] animate-in fade-in duration-500">
@@ -223,12 +244,12 @@ export default function AdminDashboard() {
                 <header className="h-16 flex items-center px-4 md:px-8 border-b border-zinc-800/50 bg-zinc-950/80 backdrop-blur-sm shrink-0">
                     <button 
                         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                        className="text-zinc-400 hover:text-white transition-colors p-2 rounded-md hover:bg-zinc-800/50 mr-4"
+                        className="text-zinc-400 hover:text-white transition-all duration-300 p-2 rounded-md hover:bg-zinc-800/50 mr-4"
                     >
-                        <Menu size={24} />
+                        <Menu size={24} className={`transition-transform duration-300 ${!isSidebarOpen ? 'rotate-90' : 'rotate-0'}`} />
                     </button>
                     <div className="text-sm text-zinc-500 font-medium">
-                        Administrator / <span className="text-zinc-300 capitalize">{navigationItems.find(item => item.id === activeTab)?.label}</span>
+                        Administrator / <span className="text-zinc-300 capitalize">{activeTab === 'profile' ? 'Profil Admin' : navigationItems.find(item => item.id === activeTab)?.label}</span>
                     </div>
                 </header>
 

@@ -89,7 +89,10 @@ export default function AdminGeographicMapV2({ refreshTrigger }) {
                     return;
                 }
 
-                const response = await axios.get(import.meta.env.VITE_API_URL + '/api/settings/ecommerce-hub');
+                const token = localStorage.getItem('token');
+                const response = await axios.get(import.meta.env.VITE_API_URL + '/api/settings/ecommerce-hub', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
                 if (response.data.success && response.data.data) {
                     setHubData(response.data.data);
                 } else {

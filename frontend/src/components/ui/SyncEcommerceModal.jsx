@@ -13,7 +13,10 @@ export default function SyncEcommerceModal({ isOpen, onClose, onSyncComplete }) 
     const handleApiSync = async () => {
         setIsProcessing(true);
         try {
-            const response = await axios.post(import.meta.env.VITE_API_URL + '/api/settings/sync-ecommerce');
+            const token = localStorage.getItem('token');
+            const response = await axios.post(import.meta.env.VITE_API_URL + '/api/settings/sync-ecommerce', {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
             if (response.data.success) {
                 toast.success(`Berhasil menyinkronkan ${response.data.processed_count} data dari API!`);
                 onSyncComplete();
@@ -148,8 +151,11 @@ export default function SyncEcommerceModal({ isOpen, onClose, onSyncComplete }) 
                 return;
             }
 
+            const token = localStorage.getItem('token');
             const response = await axios.post(import.meta.env.VITE_API_URL + '/api/settings/upload-report', {
                 orders: mapped
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
             });
 
             if (response.data.success) {
@@ -213,7 +219,10 @@ export default function SyncEcommerceModal({ isOpen, onClose, onSyncComplete }) 
         
         setIsProcessing(true);
         try {
-            const response = await axios.delete(import.meta.env.VITE_API_URL + '/api/settings/clear-ecommerce');
+            const token = localStorage.getItem('token');
+            const response = await axios.delete(import.meta.env.VITE_API_URL + '/api/settings/clear-ecommerce', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
             if (response.data.success) {
                 toast.success("Data berhasil direset!");
                 onSyncComplete();

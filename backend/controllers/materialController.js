@@ -1,6 +1,7 @@
 const db = require('../config/database');
 const fs = require('fs');
 const path = require('path');
+const { logAdminActivity } = require('../utils/activityLogger');
 
 const getMaterials = async () => {
     const [rows] = await db.query('SELECT setting_value FROM site_settings WHERE setting_key = "landing_materials"');
@@ -46,6 +47,8 @@ exports.createMaterial = async (req, res) => {
         materials.push(newMaterial);
         await saveMaterials(materials);
 
+        await logAdminActivity(req, 'CREATE', 'Material', newMaterial.id, { title, description });
+
         res.status(201).json({ message: 'Material berhasil ditambahkan', data: materials });
     } catch (error) {
         res.status(500).json({ message: 'Gagal menambah material' });
@@ -64,6 +67,8 @@ exports.deleteMaterial = async (req, res) => {
 
             materials = materials.filter(m => m.id !== materialId);
             await saveMaterials(materials);
+
+            await logAdminActivity(req, 'DELETE', 'Material', materialId, { title: materialToDelete.title });
         }
 
         res.json({ message: 'Material berhasil dihapus', data: materials });
@@ -99,6 +104,9 @@ exports.updateMaterial = async (req, res) => {
         }
 
         await saveMaterials(materials);
+
+        await logAdminActivity(req, 'UPDATE', 'Material', materialId, { title, description });
+
         res.json({ message: 'Material berhasil diperbarui', data: materials });
     } catch (error) {
         if (req.file) {
