@@ -15,6 +15,7 @@ export default function Wholesale() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [formData, setFormData] = useState({
+    shop_name: '',
     name: '',
     email: '',
     phone: '',
@@ -102,7 +103,7 @@ export default function Wholesale() {
         if (res.data.order_id) {
             toast.success('Wholesale order submitted successfully! We will review it soon.');
             setSelectedItems([]);
-            setFormData({...formData, address: '', message: ''});
+            setFormData({...formData, address: '', message: '', shop_name: ''});
         }
     } catch (err) {
         console.error("Submit error:", err);
@@ -164,7 +165,7 @@ export default function Wholesale() {
               <ol className="text-xs leading-relaxed space-y-2 font-sans font-medium text-zinc-400 pt-2">
                 <li><strong className="text-zinc-200">1.</strong> Browse or search the catalog below.</li>
                 <li><strong className="text-zinc-200">2.</strong> Click on the size badges under a product to add it to your cart. Click again to remove it.</li>
-                <li><strong className="text-zinc-200">3.</strong> Adjust quantities or remove items from the Cart panel on the right.</li>
+                <li><strong className="text-zinc-200">3.</strong> Remove items from the Cart panel on the right if needed.</li>
                 <li><strong className="text-zinc-200">4.</strong> Fill out your shipping and contact details in the Checkout details.</li>
                 <li><strong className="text-zinc-200">5.</strong> Submit your wholesale order request for our team to review.</li>
               </ol>
@@ -244,7 +245,7 @@ export default function Wholesale() {
             {/* RIGHT COLUMN: TABLE & FORM */}
             <div className="lg:col-span-5 flex flex-col gap-8 sticky top-32">
                 <div className="bg-zinc-900/40 border border-zinc-800 p-6 flex flex-col">
-                    <h2 className="text-sm font-mono tracking-widest text-zinc-400 capitalize border-b border-zinc-800 pb-4 mb-4">Cart & Quantity</h2>
+                    <h2 className="text-sm font-mono tracking-widest text-zinc-400 capitalize border-b border-zinc-800 pb-4 mb-4">Selected Products</h2>
                     
                     {selectedItems.length === 0 ? (
                         <div className="py-8 text-center bg-zinc-950 border border-dashed border-zinc-800">
@@ -259,13 +260,6 @@ export default function Wholesale() {
                                         <p className="text-[10px] font-mono text-zinc-500 mt-1">Size: {item.size}</p>
                                     </div>
                                     <div className="flex items-center gap-3">
-                                        <input 
-                                            type="number" 
-                                            min="1"
-                                            value={item.quantity}
-                                            onChange={(e) => handleUpdateQuantity(item.id, e.target.value)}
-                                            className="w-16 h-8 bg-zinc-900 border border-zinc-700 text-center text-xs text-white outline-none focus:border-white transition-colors"
-                                        />
                                         <button 
                                             onClick={() => handleRemoveItem(item.id)}
                                             className="text-zinc-500 hover:text-red-500 transition-colors p-1"
@@ -282,9 +276,14 @@ export default function Wholesale() {
                 <form onSubmit={handleSubmit} className="bg-zinc-900/40 border border-zinc-800 p-6 flex flex-col gap-4">
                     <h2 className="text-sm font-mono tracking-widest text-zinc-400 capitalize border-b border-zinc-800 pb-4 mb-2">Checkout Details</h2>
                     
+                    <div className="flex flex-col gap-1.5">
+                        <label className="text-[10px] font-mono text-zinc-500 uppercase">Shop Name</label>
+                        <input required name="shop_name" value={formData.shop_name} onChange={handleFormChange} type="text" className="bg-zinc-950 border border-zinc-800 focus:border-zinc-600 outline-none h-10 px-3 text-xs text-zinc-200" />
+                    </div>
+
                     <div className="grid grid-cols-2 gap-4">
                         <div className="flex flex-col gap-1.5">
-                            <label className="text-[10px] font-mono text-zinc-500 uppercase">Name</label>
+                            <label className="text-[10px] font-mono text-zinc-500 uppercase">Buyer Name</label>
                             <input required name="name" value={formData.name} onChange={handleFormChange} type="text" className="bg-zinc-950 border border-zinc-800 focus:border-zinc-600 outline-none h-10 px-3 text-xs text-zinc-200" />
                         </div>
                         <div className="flex flex-col gap-1.5">
