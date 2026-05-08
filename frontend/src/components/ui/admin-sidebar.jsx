@@ -11,10 +11,14 @@ export const navigationItems = [
     { id: 'categories', label: 'Category', icon: Tag },
     { id: 'materials', label: 'Material', icon: Palette },
     { id: 'endorsements', label: 'Endorsement', icon: Award },
+    { id: 'chats', label: 'Chats', icon: MessageSquare },
     { id: 'messages', label: 'Wholesale Order', icon: MessageSquare },
     { id: 'newsletter', label: 'Newsletter', icon: Mail },
     { id: 'settings', label: 'Setting', icon: Settings },
 ];
+
+import axios from 'axios';
+const API = import.meta.env.VITE_API_URL;
 
 export default function AdminSidebar({
     isSidebarOpen,
@@ -24,6 +28,25 @@ export default function AdminSidebar({
     user,
     handleLogout
 }) {
+    const [unreadChatsCount, setUnreadChatsCount] = React.useState(0);
+    const token = localStorage.getItem('token');
+
+    React.useEffect(() => {
+        const fetchUnreadCount = async () => {
+            try {
+                const res = await axios.get(`${API}/api/chats/admin/unread-count`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                setUnreadChatsCount(res.data.unreadUsers);
+            } catch (error) {
+                console.error('Error fetching unread chat count', error);
+            }
+        };
+        fetchUnreadCount();
+        const interval = setInterval(fetchUnreadCount, 10000);
+        return () => clearInterval(interval);
+    }, [token]);
+
     return (
         <>
             {!isSidebarOpen && (
@@ -93,6 +116,11 @@ export default function AdminSidebar({
                                 <span className={`font-medium whitespace-nowrap transition-all duration-300 ${isSidebarOpen ? "opacity-100 w-auto" : "opacity-0 w-0 md:hidden"}`}>
                                     {item.label}
                                 </span>
+                                {item.id === 'chats' && unreadChatsCount > 0 && (
+                                    <div className={`absolute right-3 top-1/2 -translate-y-1/2 bg-rose-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full transition-all duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0 md:opacity-100 md:right-1'}`}>
+                                        {unreadChatsCount}
+                                    </div>
+                                )}
                             </button>
                         );
                     })}

@@ -42,7 +42,7 @@ export default function AdminEndorsements() {
             name: endorsement.name,
             image: null,
             is_active: endorsement.is_active === true || endorsement.is_active === 'true',
-        ratio_type: RATIO_OPTIONS.includes(endorsement.ratio_type) ? endorsement.ratio_type : '4:3',
+            ratio_type: RATIO_OPTIONS.includes(endorsement.ratio_type) ? endorsement.ratio_type : '4:3',
             caption: endorsement.caption || '',
         });
         setPreview(`${import.meta.env.VITE_API_URL}${endorsement.image_path}`);
@@ -196,11 +196,10 @@ export default function AdminEndorsements() {
                                                 <div className="flex-1 min-w-0">
                                                     <h3 className="font-semibold text-sm text-zinc-100 truncate">{item.name}</h3>
                                                     <div className="flex items-center gap-2 mt-1">
-                                                        <span className={`inline-block text-[10px] font-mono px-1.5 py-0.5 rounded border ${
-                                                            ratioLabel === '9:16'
+                                                        <span className={`inline-block text-[10px] font-mono px-1.5 py-0.5 rounded border ${ratioLabel === '9:16'
                                                                 ? 'border-violet-800 text-violet-400 bg-violet-950/40'
                                                                 : 'border-zinc-700 text-zinc-500 bg-zinc-950'
-                                                        }`}>{ratioLabel}</span>
+                                                            }`}>{ratioLabel}</span>
                                                         {item.caption && (
                                                             <p className="text-[11px] text-zinc-500 truncate">{item.caption}</p>
                                                         )}
@@ -257,11 +256,10 @@ export default function AdminEndorsements() {
                                             key={ratio}
                                             type="button"
                                             onClick={() => setFormData(prev => ({ ...prev, ratio_type: ratio }))}
-                                            className={`flex-1 py-2 px-4 rounded-md border text-sm font-mono uppercase tracking-widest transition-all ${
-                                                formData.ratio_type === ratio
+                                            className={`flex-1 py-2 px-4 rounded-md border text-sm font-mono uppercase tracking-widest transition-all ${formData.ratio_type === ratio
                                                     ? 'bg-rose-500/10 border-rose-500 text-rose-400'
                                                     : 'bg-zinc-950 border-zinc-800 text-zinc-500 hover:border-zinc-600'
-                                            }`}
+                                                }`}
                                         >
                                             {ratio}
                                             <span className="block text-[10px] normal-case tracking-normal text-zinc-500 mt-0.5">
@@ -314,9 +312,8 @@ export default function AdminEndorsements() {
 
                             {/* Preview box — aspect ratio mirrors the selected ratio_type */}
                             <label
-                                className={`border-2 border-dashed border-zinc-700 bg-zinc-950 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-zinc-500 transition-all overflow-hidden relative ${
-                                    formData.ratio_type === '9:16' ? 'aspect-[9/16]' : 'aspect-[4/3]'
-                                }`}
+                                className={`border-2 border-dashed border-zinc-700 bg-zinc-950 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-zinc-500 transition-all overflow-hidden relative ${formData.ratio_type === '9:16' ? 'aspect-[9/16]' : 'aspect-[4/3]'
+                                    }`}
                                 onDragOver={e => e.preventDefault()}
                                 onDrop={e => {
                                     e.preventDefault();
@@ -332,7 +329,7 @@ export default function AdminEndorsements() {
                                         <span className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest">
                                             {formData.ratio_type} preview
                                         </span>
-                                      </>
+                                    </>
                                 }
                                 <span className="text-xs text-zinc-400 z-10 bg-zinc-900/80 px-2 py-1 rounded absolute bottom-2">
                                     Drag &amp; Drop or Click

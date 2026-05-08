@@ -66,6 +66,12 @@ const Navbar = () => {
         >
           About
         </Link>
+        <Link
+          to="/contact"
+          className={`hover:text-zinc-300 transition-colors ${location.pathname.startsWith('/contact') ? 'text-white border-b border-white/30 pb-1' : 'text-zinc-400'}`}
+        >
+          Contact Us
+        </Link>
       </div>
 
       <div className="flex items-center gap-4">
@@ -124,6 +130,9 @@ const Navbar = () => {
               </Link>
               <Link to="/about" className={`text-left hover:text-zinc-300 transition-colors ${location.pathname.startsWith('/about') ? 'text-white' : 'text-zinc-400'}`}>
                 About
+              </Link>
+              <Link to="/contact" className={`text-left hover:text-zinc-300 transition-colors ${location.pathname.startsWith('/contact') ? 'text-white' : 'text-zinc-400'}`}>
+                Contact
               </Link>
               <Separator className="bg-zinc-800 my-4" />
               {user ? (
