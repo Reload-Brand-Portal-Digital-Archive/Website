@@ -1,7 +1,9 @@
 import React from 'react';
 import { X, Info, Calendar, User, Activity, Database } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export default function AdminActivityDetailModal({ isOpen, onClose, activity }) {
+    const { t } = useTranslation();
     if (!isOpen || !activity) return null;
 
     let details = {};
@@ -24,8 +26,8 @@ export default function AdminActivityDetailModal({ isOpen, onClose, activity }) 
                             <Activity size={20} className="text-rose-500" />
                         </div>
                         <div>
-                            <h3 className="text-lg font-bold text-zinc-100">Detail Aktivitas</h3>
-                            <p className="text-xs text-zinc-500">ID Aktivitas: #{activity.id}</p>
+                            <h3 className="text-lg font-bold text-zinc-100">{t('admin_activity.detail_title')}</h3>
+                            <p className="text-xs text-zinc-500">{t('admin_activity.activity_id')} #{activity.id}</p>
                         </div>
                     </div>
                     <button 
@@ -41,14 +43,14 @@ export default function AdminActivityDetailModal({ isOpen, onClose, activity }) 
                         <div className="p-4 bg-zinc-950 border border-zinc-800/50 rounded-lg space-y-3">
                             <div className="flex items-center gap-2 text-zinc-400 text-xs uppercase tracking-wider font-semibold">
                                 <User size={14} className="text-zinc-500" />
-                                Admin
+                                {t('admin_activity.th_admin')}
                             </div>
                             <p className="text-zinc-100 font-medium">{activity.admin_name || 'System'}</p>
                         </div>
                         <div className="p-4 bg-zinc-950 border border-zinc-800/50 rounded-lg space-y-3">
                             <div className="flex items-center gap-2 text-zinc-400 text-xs uppercase tracking-wider font-semibold">
                                 <Calendar size={14} className="text-zinc-500" />
-                                Waktu
+                                {t('admin_activity.th_time')}
                             </div>
                             <p className="text-zinc-100 font-medium">
                                 {new Date(activity.created_at).toLocaleString('id-ID', {
@@ -60,7 +62,7 @@ export default function AdminActivityDetailModal({ isOpen, onClose, activity }) 
                         <div className="p-4 bg-zinc-950 border border-zinc-800/50 rounded-lg space-y-3">
                             <div className="flex items-center gap-2 text-zinc-400 text-xs uppercase tracking-wider font-semibold">
                                 <Activity size={14} className="text-zinc-500" />
-                                Tindakan
+                                {t('admin_activity.th_action')}
                             </div>
                             <div className="flex items-center gap-2">
                                 <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
@@ -76,7 +78,7 @@ export default function AdminActivityDetailModal({ isOpen, onClose, activity }) 
                         <div className="p-4 bg-zinc-950 border border-zinc-800/50 rounded-lg space-y-3">
                             <div className="flex items-center gap-2 text-zinc-400 text-xs uppercase tracking-wider font-semibold">
                                 <Database size={14} className="text-zinc-500" />
-                                ID Entitas
+                                {t('admin_activity.entity_id')}
                             </div>
                             <p className="text-zinc-100 font-mono">{activity.entity_id || '-'}</p>
                         </div>
@@ -85,7 +87,7 @@ export default function AdminActivityDetailModal({ isOpen, onClose, activity }) 
                     <div className="space-y-3">
                         <div className="flex items-center gap-2 text-zinc-400 text-xs uppercase tracking-wider font-semibold px-1">
                             <Info size={14} className="text-zinc-500" />
-                            Data Perubahan / Payload
+                            {t('admin_activity.payload')}
                         </div>
                         <div className="bg-zinc-950 border border-zinc-800 rounded-lg overflow-hidden">
                             <div className="p-4 overflow-x-auto">
@@ -107,7 +109,7 @@ export default function AdminActivityDetailModal({ isOpen, onClose, activity }) 
                                         ))}
                                     </div>
                                 ) : (
-                                    <p className="text-zinc-500 text-sm italic">Tidak ada detail data tambahan.</p>
+                                    <p className="text-zinc-500 text-sm italic">{t('admin_activity.no_details')}</p>
                                 )}
                             </div>
                         </div>
@@ -119,7 +121,7 @@ export default function AdminActivityDetailModal({ isOpen, onClose, activity }) 
                         onClick={onClose}
                         className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-sm font-medium transition-colors"
                     >
-                        Tutup
+                        {t('admin_activity.close')}
                     </button>
                 </div>
             </div>

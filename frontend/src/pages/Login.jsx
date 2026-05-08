@@ -6,8 +6,10 @@ import { GoogleLogin } from '@react-oauth/google';
 import { motion } from 'framer-motion';
 import { X, Eye, EyeOff } from 'lucide-react';
 import { notify } from '../lib/toast';
+import { useTranslation } from 'react-i18next';
 
 export default function Login() {
+    const { t } = useTranslation();
     const [formData, setFormData] = useState({ email: '', password: '' });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
@@ -178,11 +180,9 @@ export default function Login() {
                     <div className="flex items-center gap-4 mb-2">
                         <span className="text-zinc-50 font-sans font-bold text-xl tracking-widest leading-none">RELOAD</span>
                     </div>
-                    <h2 className="text-3xl md:text-4xl font-bold text-zinc-50 tracking-tighter uppercase leading-none mt-8">
-                        Welcome <br className="hidden sm:block" />Back
-                    </h2>
+                    <h2 className="text-3xl md:text-4xl font-bold text-zinc-50 tracking-tighter uppercase leading-none mt-8" dangerouslySetInnerHTML={{ __html: t('login.welcome_back') }}></h2>
                     <p className="text-sm text-zinc-400 mt-4 leading-relaxed max-w-[30ch]">
-                        Sign in to continue to Reload.
+                        {t('login.sign_in_desc')}
                     </p>
                 </motion.div>
 
@@ -199,7 +199,7 @@ export default function Login() {
                 {requireOtp ? (
                     <motion.form variants={itemVariants} onSubmit={handleOtpSubmit} className="space-y-8">
                         <div className="space-y-2">
-                            <label className="block text-zinc-400 text-xs font-mono uppercase tracking-[0.1em]">Verification Code</label>
+                            <label className="block text-zinc-400 text-xs font-mono uppercase tracking-[0.1em]">{t('login.otp_label')}</label>
                             <input
                                 type="text"
                                 value={otp}
@@ -207,14 +207,14 @@ export default function Login() {
                                 required
                                 disabled={timeLeft === 0}
                                 className="w-full bg-transparent border-0 border-b border-zinc-700 py-3 text-zinc-50 font-mono text-center tracking-[1em] text-xl placeholder:text-zinc-600 focus:outline-none focus:border-zinc-50 focus:ring-0 px-0 rounded-none transition-colors disabled:opacity-50"
-                                placeholder="------"
+                                placeholder={t('login.otp_placeholder')}
                                 maxLength={6}
                             />
                         </div>
 
                         <div className="space-y-2 pt-2">
                             <div className="flex justify-between text-xs font-mono uppercase tracking-widest">
-                                <span className="text-zinc-500">Expires in</span>
+                                <span className="text-zinc-500">{t('login.expires_in')}</span>
                                 <span className={timeLeft <= 10 ? 'text-red-500 font-bold' : 'text-zinc-300'}>{timeLeft}s</span>
                             </div>
                             <div className="h-1 w-full bg-zinc-900 rounded-none overflow-hidden">
@@ -226,26 +226,7 @@ export default function Login() {
                                 />
                             </div>
                         </div>
-                        <div className="relative">
-                            <input 
-                                type={showPassword ? "text" : "password"} 
-                                name="password" 
-                                onChange={handleChange} 
-                                required
-                                autoCapitalize="none"
-                                autoCorrect="off"
-                                className="w-full bg-transparent border-0 border-b border-zinc-700 py-3 pr-10 text-zinc-50 font-mono text-sm placeholder:text-zinc-600 focus:outline-none focus:border-zinc-50 focus:ring-0 px-0 rounded-none transition-colors"
-                                placeholder="••••••••" 
-                            />
-                            <button
-                                type="button"
-                                className="absolute right-0 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors p-2"
-                                onClick={() => setShowPassword(!showPassword)}
-                            >
-                                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                            </button>
-                        </div>
-                    </div>
+
                         <motion.button
                             whileHover={{ scale: timeLeft === 0 ? 1 : 0.98 }}
                             whileTap={{ scale: timeLeft === 0 ? 1 : 0.95 }}
@@ -253,7 +234,7 @@ export default function Login() {
                             disabled={loading || timeLeft === 0}
                             className="w-full bg-zinc-50 text-zinc-950 font-bold uppercase text-sm tracking-widest hover:bg-zinc-200 transition-colors rounded-none h-14 px-8 flex items-center justify-center disabled:opacity-50 disabled:hover:bg-zinc-50"
                         >
-                            {timeLeft === 0 ? 'OTP EXPIRED' : (loading ? 'Verifying...' : 'Verify OTP')}
+                            {timeLeft === 0 ? t('login.otp_expired') : (loading ? t('login.verifying_btn') : t('login.verify_otp_btn'))}
                         </motion.button>
                         
                         <div className="text-center mt-6">
@@ -262,7 +243,7 @@ export default function Login() {
                                 onClick={() => setRequireOtp(false)}
                                 className="text-xs text-zinc-500 hover:text-zinc-300 font-mono uppercase tracking-widest transition-colors"
                             >
-                                Back to login
+                                {t('login.back_to_login')}
                             </button>
                         </div>
                     </motion.form>
@@ -270,7 +251,7 @@ export default function Login() {
                     <>
                         <motion.form variants={itemVariants} onSubmit={handleSubmit} className="space-y-8">
                             <div className="space-y-2">
-                                <label className="block text-zinc-400 text-xs font-mono uppercase tracking-[0.1em]">Email</label>
+                                <label className="block text-zinc-400 text-xs font-mono uppercase tracking-[0.1em]">{t('login.email_label')}</label>
                                 <input
                                     type="email"
                                     name="email"
@@ -279,27 +260,36 @@ export default function Login() {
                                     autoCapitalize="none"
                                     autoCorrect="off"
                                     className="w-full bg-transparent border-0 border-b border-zinc-700 py-3 text-zinc-50 font-mono text-sm placeholder:text-zinc-600 focus:outline-none focus:border-zinc-50 focus:ring-0 px-0 rounded-none transition-colors"
-                                    placeholder="your@email.com"
+                                    placeholder={t('login.email_placeholder')}
                                 />
                             </div>
 
                             <div className="space-y-2">
                                 <div className="flex justify-between items-end">
-                                    <label className="block text-zinc-400 text-xs font-mono uppercase tracking-[0.1em]">Password</label>
+                                    <label className="block text-zinc-400 text-xs font-mono uppercase tracking-[0.1em]">{t('login.password_label')}</label>
                                     <Link to="/forgot-password" className="text-[10px] text-zinc-500 hover:text-zinc-300 font-mono uppercase tracking-widest transition-colors">
-                                        Forgot password?
+                                        {t('login.forgot_password')}
                                     </Link>
                                 </div>
-                                <input
-                                    type="password"
-                                    name="password"
-                                    onChange={handleChange}
-                                    required
-                                    autoCapitalize="none"
-                                    autoCorrect="off"
-                                    className="w-full bg-transparent border-0 border-b border-zinc-700 py-3 text-zinc-50 font-mono text-sm placeholder:text-zinc-600 focus:outline-none focus:border-zinc-50 focus:ring-0 px-0 rounded-none transition-colors"
-                                    placeholder="••••••••"
-                                />
+                                <div className="relative">
+                                    <input 
+                                        type={showPassword ? "text" : "password"} 
+                                        name="password" 
+                                        onChange={handleChange} 
+                                        required
+                                        autoCapitalize="none"
+                                        autoCorrect="off"
+                                        className="w-full bg-transparent border-0 border-b border-zinc-700 py-3 pr-10 text-zinc-50 font-mono text-sm placeholder:text-zinc-600 focus:outline-none focus:border-zinc-50 focus:ring-0 px-0 rounded-none transition-colors"
+                                        placeholder={t('login.password_placeholder')}
+                                    />
+                                    <button
+                                        type="button"
+                                        className="absolute right-0 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors p-2"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                    >
+                                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                    </button>
+                                </div>
                             </div>
 
                             <motion.button
@@ -309,13 +299,13 @@ export default function Login() {
                                 disabled={loading}
                                 className="w-full bg-zinc-50 text-zinc-950 font-bold uppercase text-sm tracking-widest hover:bg-zinc-200 transition-colors rounded-none h-14 px-8 mt-4 flex items-center justify-center"
                             >
-                                {loading ? 'Continuing...' : 'Sign in'}
+                                {loading ? t('login.continuing_btn') : t('login.sign_in_btn')}
                             </motion.button>
                         </motion.form>
 
                         <motion.div variants={itemVariants} className="my-10 flex items-center justify-center gap-4">
                             <span className="flex-1 border-b border-zinc-800"></span>
-                            <span className="text-[10px] text-zinc-500 font-mono uppercase tracking-widest">Or continue with</span>
+                            <span className="text-[10px] text-zinc-500 font-mono uppercase tracking-widest">{t('login.or_continue_with')}</span>
                             <span className="flex-1 border-b border-zinc-800"></span>
                         </motion.div>
 
@@ -337,9 +327,9 @@ export default function Login() {
                         </motion.div>
 
                         <motion.p variants={itemVariants} className="text-center text-zinc-500 mt-10 text-xs font-mono uppercase tracking-widest">
-                            Don't have an account?{' '}
+                            {t('login.no_account')}{' '}
                             <Link to="/register" className="text-zinc-300 hover:text-zinc-50 transition-colors">
-                                Register
+                                {t('login.register')}
                             </Link>
                         </motion.p>
                     </>

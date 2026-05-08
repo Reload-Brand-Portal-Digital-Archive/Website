@@ -5,8 +5,10 @@ import { Loader2 } from 'lucide-react';
 import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from 'react-i18next';
 
 export default function NewsletterSignup() {
+    const { t } = useTranslation();
     const [email, setEmail] = useState('');
     const [loading, setLoading] = useState(false);
 
@@ -14,7 +16,7 @@ export default function NewsletterSignup() {
         e.preventDefault();
         
         if (!email) {
-            toast.error('Please enter your email.');
+            toast.error(t('newsletter.please_enter_email'));
             return;
         }
 
@@ -24,10 +26,10 @@ export default function NewsletterSignup() {
             const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
             const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/newsletter/subscribe`, { email }, { headers });
-            toast.success(res.data.message || 'Thanks for subscribing!');
+            toast.success(res.data.message || t('newsletter.thanks_subscribing'));
             setEmail('');
         } catch (error) {
-            const errorMsg = error.response?.data?.message || 'Failed to subscribe.';
+            const errorMsg = error.response?.data?.message || t('newsletter.failed_subscribe');
             toast.error(errorMsg);
         } finally {
             setLoading(false);
@@ -45,11 +47,11 @@ export default function NewsletterSignup() {
             >
                 <div className="max-w-lg">
                     <span className="font-mono text-xs tracking-[0.3em] text-zinc-500 uppercase block mb-4">
-                        [ NEWSLETTER ]
+                        {t('newsletter.badge')}
                     </span>
                     <h2 className="text-3xl md:text-5xl font-black leading-none tracking-tighter uppercase mb-2">
-                        Sign up for{" "}
-                        <span className="text-zinc-600">updates.</span>
+                        {t('newsletter.sign_up_for')}
+                        <span className="text-zinc-600">{t('newsletter.updates')}</span>
                     </h2>
                 </div>
 
@@ -59,7 +61,7 @@ export default function NewsletterSignup() {
                             type="email"
                             value={email}
                             onChange={e => setEmail(e.target.value)}
-                            placeholder="Enter your email"
+                            placeholder={t('newsletter.enter_email')}
                             disabled={loading}
                             required
                             className="w-full bg-transparent border-0 text-zinc-50 font-mono text-sm uppercase placeholder:text-zinc-500 focus-visible:ring-0 focus-visible:ring-offset-0 px-0 rounded-none h-auto py-1"
@@ -70,11 +72,11 @@ export default function NewsletterSignup() {
                             disabled={loading}
                             className="text-xs font-mono tracking-[0.2em] text-zinc-400 hover:text-zinc-50 hover:bg-transparent uppercase px-0 h-auto whitespace-nowrap shrink-0 disabled:opacity-50"
                         >
-                            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Sign Up"}
+                            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : t('newsletter.sign_up_btn')}
                         </Button>
                     </div>
                     <p className="mt-3 font-mono text-[10px] text-zinc-600 uppercase tracking-widest">
-                        Get drop updates. Unsubscribe anytime.
+                        {t('newsletter.footer_text')}
                     </p>
                 </form>
             </motion.div>

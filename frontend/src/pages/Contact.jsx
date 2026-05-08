@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Send, User, Shield } from 'lucide-react';
 import Navbar from '../components/ui/Navbar';
 import { notify } from '../lib/toast';
+import { useTranslation } from 'react-i18next';
 
 const API = import.meta.env.VITE_API_URL;
 
@@ -21,6 +22,7 @@ const itemVariants = {
 };
 
 export default function Contact() {
+    const { t } = useTranslation();
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
     const [loading, setLoading] = useState(true);
@@ -55,7 +57,7 @@ export default function Contact() {
             setMessages(res.data.messages);
         } catch (error) {
             console.error('Error fetching messages:', error);
-            if (showLoading) notify.error('Failed to load chat history.');
+            if (showLoading) notify.error(t('contact.error_load'));
         } finally {
             if (showLoading) setLoading(false);
         }
@@ -66,6 +68,7 @@ export default function Contact() {
             await axios.put(`${API}/api/chats/read`, { senderToMark: 'admin' }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
+            window.dispatchEvent(new Event('refreshNotifications'));
         } catch (error) {
             console.error('Error marking messages as read:', error);
         }
@@ -94,7 +97,7 @@ export default function Contact() {
             fetchMessages(false); // Refresh to get actual DB record
         } catch (error) {
             console.error('Error sending message:', error);
-            notify.error('Failed to send message.');
+            notify.error(t('contact.error_send'));
             // Revert optimistic update on error
             setMessages(prev => prev.filter(m => m.chat_id !== tempMsg.chat_id));
             setNewMessage(messageText);
@@ -123,10 +126,10 @@ export default function Contact() {
                     className="mb-8 shrink-0"
                 >
                     <motion.span variants={itemVariants} className="font-mono text-xs tracking-[0.3em] text-zinc-400 uppercase block mb-2">
-                        [ SUPPORT ]
+                        {t('contact.support_badge')}
                     </motion.span>
                     <motion.h1 variants={itemVariants} className="font-sans text-4xl md:text-6xl font-black uppercase tracking-tighter leading-[0.9]">
-                        CONTACT <span className="text-zinc-600">ADMIN</span>
+                        {t('contact.title_1')} <span className="text-zinc-600">{t('contact.title_2')}</span>
                     </motion.h1>
                 </motion.div>
 
@@ -146,8 +149,8 @@ export default function Contact() {
                         ) : messages.length === 0 ? (
                             <div className="flex flex-col items-center justify-center h-full text-zinc-500 font-mono text-sm uppercase tracking-widest text-center px-4">
                                 <Shield className="w-10 h-10 mb-4 opacity-50" />
-                                <p>Start a conversation with our admin.</p>
-                                <p className="text-[10px] mt-2 opacity-60">We usually reply within a few hours.</p>
+                                <p>{t('contact.empty_msg_1')}</p>
+                                <p className="text-[10px] mt-2 opacity-60">{t('contact.empty_msg_2')}</p>
                             </div>
                         ) : (
                             messages.map((msg) => {
@@ -159,7 +162,7 @@ export default function Contact() {
                                                 {isUser ? <User className="w-3.5 h-3.5 text-zinc-400" /> : <Shield className="w-3.5 h-3.5 text-amber-500" />}
                                             </div>
                                             <span className="font-mono text-[10px] text-zinc-500 uppercase tracking-widest">
-                                                {isUser ? user.name || 'You' : 'Admin'}
+                                                {isUser ? user.name || t('contact.you') : t('contact.admin')}
                                             </span>
                                             <span className="font-mono text-[9px] text-zinc-700">
                                                 {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -187,7 +190,7 @@ export default function Contact() {
                                 type="text"
                                 value={newMessage}
                                 onChange={(e) => setNewMessage(e.target.value)}
-                                placeholder="TYPE YOUR MESSAGE..."
+                                placeholder={t('contact.placeholder')}
                                 className="w-full bg-zinc-900 border border-zinc-800 focus:border-zinc-500 outline-none h-14 pl-6 pr-16 text-sm text-zinc-100 font-mono placeholder:text-zinc-600 transition-colors"
                             />
                             <button

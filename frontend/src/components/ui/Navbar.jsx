@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from "react"
-import { Menu } from "lucide-react"
+import { Menu, MessageSquare } from "lucide-react"
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { useNavigate, Link, useLocation } from "react-router-dom"
+import axios from "axios"
 import reloadLogoTransparent from "../../assets/reload_logo_transparent.png"
+import LanguageSwitcher from "./LanguageSwitcher"
+import { useTranslation } from "react-i18next"
 
 const Navbar = () => {
+  const { t } = useTranslation();
   const [scrolled, setScrolled] = useState(false)
   const [user, setUser] = useState(() => {
     const loggedInUser = localStorage.getItem('user')
@@ -14,8 +18,28 @@ const Navbar = () => {
   })
   const navigate = useNavigate()
   const location = useLocation()
+  const [notifications, setNotifications] = useState({ unreadChats: false, unreadOrders: false })
 
   const isScrolledOrNotHome = scrolled || location.pathname !== '/';
+
+  const fetchNotifications = async () => {
+    if (!user || user.role === 'admin') return;
+    try {
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/profile/notifications`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      setNotifications(res.data);
+    } catch (err) {
+      console.error('Failed to fetch notifications:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotifications();
+    const handleRefresh = () => fetchNotifications();
+    window.addEventListener('refreshNotifications', handleRefresh);
+    return () => window.removeEventListener('refreshNotifications', handleRefresh);
+  }, [user]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -46,35 +70,30 @@ const Navbar = () => {
           to="/collections"
           className={`hover:text-zinc-300 transition-colors ${location.pathname.startsWith('/collections') ? 'text-white border-b border-white/30 pb-1' : 'text-zinc-400'}`}
         >
-          Collections
+          {t('nav.collections')}
         </Link>
         <Link
           to="/shop"
           className={`hover:text-zinc-300 transition-colors ${location.pathname.startsWith('/shop') ? 'text-white border-b border-white/30 pb-1' : 'text-zinc-400'}`}
         >
-          Shop
+          {t('nav.shop')}
         </Link>
         <Link
           to="/wholesale"
           className={`hover:text-zinc-300 transition-colors ${location.pathname.startsWith('/wholesale') ? 'text-white border-b border-white/30 pb-1' : 'text-zinc-400'}`}
         >
-          Wholesale
+          {t('nav.wholesale')}
         </Link>
         <Link
           to="/about"
           className={`hover:text-zinc-300 transition-colors ${location.pathname.startsWith('/about') ? 'text-white border-b border-white/30 pb-1' : 'text-zinc-400'}`}
         >
-          About
-        </Link>
-        <Link
-          to="/contact"
-          className={`hover:text-zinc-300 transition-colors ${location.pathname.startsWith('/contact') ? 'text-white border-b border-white/30 pb-1' : 'text-zinc-400'}`}
-        >
-          Contact Us
+          {t('nav.about')}
         </Link>
       </div>
 
       <div className="flex items-center gap-4">
+        <LanguageSwitcher className="hidden md:flex" />
         {user ? (
           <div className="hidden md:flex items-center gap-4">
             {user.role === 'admin' && (
@@ -82,18 +101,46 @@ const Navbar = () => {
                 to="/admin/dashboard"
                 className="inline-flex items-center justify-center rounded-none border border-zinc-500 text-zinc-300 bg-transparent hover:bg-zinc-800 hover:text-white transition-colors h-9 px-4 text-xs tracking-widest uppercase cursor-pointer"
               >
-                Admin Panel
+                {t('nav.admin_panel')}
               </Link>
             )}
-            <Link
-              to="/profile"
-              className={`text-xs tracking-widest uppercase transition-colors font-mono ${location.pathname === '/profile' ? 'text-white' : 'text-zinc-400 hover:text-zinc-200'}`}
-            >
-              [ Profile ]
-            </Link>
-            <Button onClick={handleLogout} variant="ghost" className="text-zinc-400 hover:text-red-500 hover:bg-transparent transition-colors uppercase tracking-widest text-xs">
-              [ Logout ]
-            </Button>
+            <div className="relative group py-2">
+              <Link
+                to="/profile"
+                className={`relative text-xs tracking-widest uppercase transition-colors font-mono ${location.pathname === '/profile' ? 'text-white' : 'text-zinc-400 hover:text-zinc-200'}`}
+              >
+                [ {t('nav.profile')} ]
+                {notifications.unreadOrders && (
+                  <span className="absolute -top-1 -right-2 w-2 h-2 rounded-full bg-red-500"></span>
+                )}
+              </Link>
+              <div className="absolute right-0 top-full pt-2 w-48 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform origin-top-right z-50">
+                <div className="bg-zinc-950 border border-zinc-800 shadow-xl py-2 flex flex-col">
+                  <Link
+                    to="/profile"
+                    className="px-4 py-2 text-xs font-mono tracking-widest uppercase text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors"
+                  >
+                    {t('nav.profile')}
+                  </Link>
+                  <Link
+                    to="/orders"
+                    className="px-4 py-2 text-xs font-mono tracking-widest uppercase text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors flex items-center justify-between"
+                  >
+                    {t('nav.orders')}
+                    {notifications.unreadOrders && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                    )}
+                  </Link>
+                  <Separator className="my-1 bg-zinc-800" />
+                  <button
+                    onClick={handleLogout}
+                    className="px-4 py-2 text-xs font-mono tracking-widest uppercase text-red-500 hover:text-red-400 hover:bg-zinc-900 transition-colors text-left w-full"
+                  >
+                    {t('nav.logout')}
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         ) : (
           <Link
@@ -101,50 +148,56 @@ const Navbar = () => {
             state={{ from: location.pathname }}
             className="hidden md:inline-flex items-center justify-center rounded-full border border-white/70 bg-transparent text-zinc-100 hover:bg-white/10 transition-colors h-9 px-6 text-sm font-normal cursor-pointer"
           >
-            Login
+            {t('nav.login')}
           </Link>
         )}
-        <Button variant="outline" className="hidden md:inline-flex rounded-full border-white/70 bg-transparent text-zinc-100 hover:bg-white/10 transition-colors h-9 px-6 text-sm font-normal">
-          Shop Now
-        </Button>
+        <Link
+          to="/contact"
+          className="relative hidden md:inline-flex items-center gap-2 rounded-full border border-white/70 bg-transparent text-zinc-100 hover:bg-white/10 transition-colors h-9 px-5 text-sm font-normal cursor-pointer"
+        >
+          <MessageSquare className="w-4 h-4" />
+          {t('nav.chat')}
+          {notifications.unreadChats && (
+            <span className="absolute top-0 right-0 w-2.5 h-2.5 rounded-full bg-red-500 border border-zinc-950"></span>
+          )}
+        </Link>
 
         <Sheet>
           <SheetTrigger className="md:hidden p-2 text-zinc-50 hover:text-zinc-300 transition-colors pointer-events-auto cursor-pointer flex items-center justify-center bg-transparent border-none">
             <Menu className="w-6 h-6" strokeWidth={1.5} />
           </SheetTrigger>
           <SheetContent side="right" className="bg-zinc-950 border-zinc-800 text-zinc-50 p-6 z-[100]">
-            <SheetTitle className="sr-only">Mobile Menu</SheetTitle>
+            <SheetTitle className="sr-only">{t('nav.mobile_menu')}</SheetTitle>
             <div className="mt-4 mb-12">
               <img src={reloadLogoTransparent} alt="RELOAD" className="h-6 w-auto object-contain" />
             </div>
 
             <div className="flex flex-col gap-8 mt-12 text-sm uppercase tracking-widest font-sans">
               <Link to="/collections" className={`text-left hover:text-zinc-300 transition-colors ${location.pathname.startsWith('/collections') ? 'text-white' : 'text-zinc-400'}`}>
-                Collections
+                {t('nav.collections')}
               </Link>
               <Link to="/shop" className={`text-left hover:text-zinc-300 transition-colors ${location.pathname.startsWith('/shop') ? 'text-white' : 'text-zinc-400'}`}>
-                Shop
+                {t('nav.shop')}
               </Link>
               <Link to="/wholesale" className={`text-left hover:text-zinc-300 transition-colors ${location.pathname.startsWith('/wholesale') ? 'text-white' : 'text-zinc-400'}`}>
-                Wholesale
+                {t('nav.wholesale')}
               </Link>
               <Link to="/about" className={`text-left hover:text-zinc-300 transition-colors ${location.pathname.startsWith('/about') ? 'text-white' : 'text-zinc-400'}`}>
-                About
-              </Link>
-              <Link to="/contact" className={`text-left hover:text-zinc-300 transition-colors ${location.pathname.startsWith('/contact') ? 'text-white' : 'text-zinc-400'}`}>
-                Contact
+                {t('nav.about')}
               </Link>
               <Separator className="bg-zinc-800 my-4" />
+              <LanguageSwitcher className="w-fit mb-4" />
               {user ? (
                 <>
                   {user.role === 'admin' && (
-                    <Link to="/admin/dashboard" className="block w-full text-left py-2 text-zinc-400 hover:text-white transition-colors">Admin Panel</Link>
+                    <Link to="/admin/dashboard" className="block w-full text-left py-2 text-zinc-400 hover:text-white transition-colors">{t('nav.admin_panel')}</Link>
                   )}
-                  <Link to="/profile" className={`block w-full text-left py-2 transition-colors ${location.pathname === '/profile' ? 'text-white' : 'text-zinc-400 hover:text-white'}`}>Profile</Link>
-                  <button onClick={handleLogout} className="block w-full text-left py-2 text-red-500 hover:text-red-400 transition-colors">Logout</button>
+                  <Link to="/profile" className={`block w-full text-left py-2 transition-colors ${location.pathname === '/profile' ? 'text-white' : 'text-zinc-400 hover:text-white'}`}>{t('nav.profile')}</Link>
+                  <Link to="/orders" className={`block w-full text-left py-2 transition-colors ${location.pathname === '/orders' ? 'text-white' : 'text-zinc-400 hover:text-white'}`}>{t('nav.orders')}</Link>
+                  <button onClick={handleLogout} className="block w-full text-left py-2 text-red-500 hover:text-red-400 transition-colors">{t('nav.logout')}</button>
                 </>
               ) : (
-                <Link to="/login" state={{ from: location.pathname }} className="block w-full text-left py-2 text-zinc-400 hover:text-white transition-colors">Login / Register</Link>
+                <Link to="/login" state={{ from: location.pathname }} className="block w-full text-left py-2 text-zinc-400 hover:text-white transition-colors">{t('nav.login_register')}</Link>
               )}
             </div>
           </SheetContent>

@@ -10,8 +10,10 @@ import {
     Tooltip, ResponsiveContainer, LineChart, Line,
     AreaChart, Area, Legend
 } from 'recharts';
+import { useTranslation } from 'react-i18next';
 
 export default function AdminTracking() {
+    const { t } = useTranslation();
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -30,7 +32,7 @@ export default function AdminTracking() {
             }
         } catch (err) {
             console.error('Failed to fetch tracking stats:', err);
-            setError('Failed to load tracking data. Please ensure the backend is running and the page_views & link_clicks tables are available.');
+            setError(t('admin_tracking.failed_load'));
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -47,7 +49,7 @@ export default function AdminTracking() {
         return (
             <div className="flex flex-col items-center justify-center h-[60vh] space-y-4">
                 <RefreshCw size={32} className="animate-spin text-rose-500" />
-                <p className="text-zinc-400 animate-pulse font-mono text-xs uppercase tracking-widest">Initialising Analytics...</p>
+                <p className="text-zinc-400 animate-pulse font-mono text-xs uppercase tracking-widest">{t('admin_tracking.init')}</p>
             </div>
         );
     }
@@ -56,14 +58,14 @@ export default function AdminTracking() {
         return (
             <div className="bg-rose-500/10 border border-rose-500/20 rounded-lg p-8 text-center max-w-2xl mx-auto mt-10">
                 <AlertCircle size={48} className="text-rose-500 mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-white mb-2">Access Error</h3>
+                <h3 className="text-xl font-bold text-white mb-2">{t('admin_tracking.access_error')}</h3>
                 <p className="text-zinc-400 mb-6 font-mono text-sm">{error}</p>
                 <button 
                     onClick={fetchStats}
                     className="bg-rose-500 hover:bg-rose-600 text-white px-6 py-2 rounded-md transition-colors flex items-center gap-2 mx-auto"
                 >
                     <RefreshCw size={18} className={refreshing ? "animate-spin" : ""} />
-                    Retry Protocol
+                    {t('admin_tracking.retry')}
                 </button>
             </div>
         );
@@ -78,9 +80,9 @@ export default function AdminTracking() {
             <div className="flex justify-between items-end">
                 <div>
                     <h2 className="text-2xl font-bold text-zinc-50 flex items-center gap-2">
-                        <Activity className="text-rose-500" /> Web Analytics <span className="text-zinc-600 font-light lowercase">/ native</span>
+                        <Activity className="text-rose-500" /> {t('admin_tracking.page_title')} <span className="text-zinc-600 font-light lowercase">/ {t('admin_tracking.native')}</span>
                     </h2>
-                    <p className="text-sm text-zinc-400 mt-1">Self-hosted tracking of page inventory views and shop conversion.</p>
+                    <p className="text-sm text-zinc-400 mt-1">{t('admin_tracking.page_desc')}</p>
                 </div>
                 <button 
                     onClick={fetchStats}
@@ -88,38 +90,38 @@ export default function AdminTracking() {
                     className="flex items-center gap-2 text-[10px] font-mono font-bold uppercase tracking-widest text-zinc-400 hover:text-white bg-zinc-900 border border-zinc-800 px-4 py-2 rounded-sm transition-all"
                 >
                     <RefreshCw size={12} className={refreshing ? "animate-spin" : ""} />
-                    {refreshing ? "Syncing..." : "Manual Sync"}
+                    {refreshing ? t('admin_tracking.syncing') : t('admin_tracking.manual_sync')}
                 </button>
             </div>
 
             {/* Stats Overview */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <StatCard 
-                    title="Total Page Views" 
+                    title={t('admin_tracking.total_views')} 
                     value={stats.total_views} 
                     icon={Users} 
-                    trend="Self-hosted" 
+                    trend={t('admin_tracking.self_hosted')} 
                     color="rose"
                 />
                 <StatCard 
-                    title="Shopee Conversions" 
+                    title={t('admin_tracking.shopee_conversions')} 
                     value={shopeeClicks} 
                     icon={ShoppingCart} 
-                    trend="External Link" 
+                    trend={t('admin_tracking.external_link')} 
                     color="orange"
                 />
                 <StatCard 
-                    title="TikTok Conversions" 
+                    title={t('admin_tracking.tiktok_conversions')} 
                     value={tiktokClicks} 
                     icon={MessageCircle} 
-                    trend="External Link" 
+                    trend={t('admin_tracking.external_link')} 
                     color="emerald"
                 />
                 <StatCard 
-                    title="Click-Through Rate" 
+                    title={t('admin_tracking.ctr')} 
                     value={stats.total_views > 0 ? `${((totalClicks / stats.total_views) * 100).toFixed(1)}%` : '0%'} 
                     icon={MousePointer2} 
-                    trend="Conversion" 
+                    trend={t('admin_tracking.conversion')} 
                     color="blue"
                 />
             </div>
@@ -129,7 +131,7 @@ export default function AdminTracking() {
                 {/* Daily Visits Chart */}
                 <div className="bg-zinc-900 border border-white/5 rounded-none p-6">
                     <h3 className="text-xs font-mono font-bold uppercase tracking-widest text-zinc-500 mb-6 flex items-center gap-2">
-                        [ Visit Archive / 7 Days ]
+                        {t('admin_tracking.visit_archive')}
                     </h3>
                     <div className="h-64 w-full">
                         <ResponsiveContainer width="100%" height="100%">
@@ -157,7 +159,7 @@ export default function AdminTracking() {
                 {/* Conversion Comparison Chart */}
                 <div className="bg-zinc-900 border border-white/5 rounded-none p-6">
                     <h3 className="text-xs font-mono font-bold uppercase tracking-widest text-zinc-500 mb-6 flex items-center gap-2">
-                        [ Link Clicks / Comparison ]
+                        {t('admin_tracking.link_clicks')}
                     </h3>
                     <div className="h-64 w-full">
                         <ResponsiveContainer width="100%" height="100%">
@@ -184,18 +186,18 @@ export default function AdminTracking() {
             <div className="bg-zinc-900 border border-white/5 rounded-none overflow-hidden">
                 <div className="p-6 border-b border-white/5 flex justify-between items-center">
                     <h3 className="text-xs font-mono font-bold uppercase tracking-widest text-zinc-500">
-                        [ SYSTEM LOG / RECENT ]
+                        {t('admin_tracking.system_log')}
                     </h3>
-                    <span className="text-[10px] font-mono text-zinc-600">LATEST 10 ENTITIES</span>
+                    <span className="text-[10px] font-mono text-zinc-600">{t('admin_tracking.latest_entities')}</span>
                 </div>
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
                         <thead>
                             <tr className="bg-zinc-950/50 text-zinc-500 text-[10px] uppercase tracking-wider font-bold">
-                                <th className="px-6 py-4">Event</th>
-                                <th className="px-6 py-4">Identifier</th>
-                                <th className="px-6 py-4">Source IP</th>
-                                <th className="px-6 py-4 text-right">Timestamp</th>
+                                <th className="px-6 py-4">{t('admin_tracking.event')}</th>
+                                <th className="px-6 py-4">{t('admin_tracking.identifier')}</th>
+                                <th className="px-6 py-4">{t('admin_tracking.source_ip')}</th>
+                                <th className="px-6 py-4 text-right">{t('admin_tracking.timestamp')}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-white/5">

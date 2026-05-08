@@ -3,6 +3,7 @@ import axios from 'axios';
 import { Loader2, Globe, AlertTriangle } from 'lucide-react';
 import { useSettings } from '../../context/SettingsContext';
 import L from 'leaflet';
+import { useTranslation } from 'react-i18next';
 
 /**
  * AdminGeographicMapV2 - Direct Leaflet Integration 
@@ -11,6 +12,7 @@ import L from 'leaflet';
  * This component is designed to be placed beside 1/3 column charts in a 3-col grid.
  */
 export default function AdminGeographicMapV2({ refreshTrigger }) {
+    const { t } = useTranslation();
     const [hubData, setHubData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -183,7 +185,7 @@ export default function AdminGeographicMapV2({ refreshTrigger }) {
             <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 flex items-center justify-center h-full min-h-[400px]">
                 <div className="text-center">
                     <Loader2 className="animate-spin text-rose-500 mx-auto mb-4" size={40} />
-                    <p className="text-zinc-400 font-medium">Loading Map Data...</p>
+                    <p className="text-zinc-400 font-medium">{t('admin_map.loading')}</p>
                 </div>
             </div>
         );
@@ -206,20 +208,20 @@ export default function AdminGeographicMapV2({ refreshTrigger }) {
                 <div>
                     <h3 className="text-xl font-bold text-zinc-100 flex items-center gap-2">
                         <Globe size={20} className="text-rose-500" />
-                        E-Commerce <span className="text-zinc-500 font-light">Distribution Map</span>
-                        {isSimulationMode && <span className="ml-2 text-[10px] bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 px-2 py-0.5 rounded-full tracking-widest uppercase">Simulation Mode</span>}
+                        {t('admin_map.title_1')} <span className="text-zinc-500 font-light">{t('admin_map.title_2')}</span>
+                        {isSimulationMode && <span className="ml-2 text-[10px] bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 px-2 py-0.5 rounded-full tracking-widest uppercase">{t('admin_map.simulation_badge')}</span>}
                     </h3>
-                    <p className="text-xs text-zinc-400">Sales distribution map for TikTok &amp; Shopee.</p>
+                    <p className="text-xs text-zinc-400">{t('admin_map.subtitle')}</p>
                 </div>
 
                 {hubData && (
                     <div className="flex gap-4">
                         <div className="bg-zinc-950/50 border border-zinc-800 px-4 py-2 rounded-md">
-                            <p className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold mb-1">Orders</p>
+                            <p className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold mb-1">{t('admin_map.stats_orders')}</p>
                             <span className="text-lg font-bold text-zinc-100 font-mono">{hubData.total_orders}</span>
                         </div>
                         <div className="bg-zinc-950/50 border border-zinc-800 px-4 py-2 rounded-md">
-                            <p className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold mb-1">Revenue</p>
+                            <p className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold mb-1">{t('admin_map.stats_revenue')}</p>
                             <span className="text-lg font-bold text-zinc-100 font-mono">Rp {hubData.total_sales.toLocaleString('en-US')}</span>
                         </div>
                     </div>

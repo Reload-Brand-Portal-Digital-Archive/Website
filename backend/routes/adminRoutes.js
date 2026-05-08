@@ -10,7 +10,11 @@ router.put('/settings', verifyToken, isAdmin, adminController.updateSettings);
 
 router.post('/settings/hero-image', verifyToken, isAdmin, upload.single('hero_banner_image'), adminController.uploadHeroImage);
 
-router.put('/password', verifyToken, isAdmin, adminController.changePassword);
+router.post('/settings/founder-image', verifyToken, isAdmin, upload.single('founder_image'), adminController.uploadFounderImage);
+
+router.put('/password/request-otp', verifyToken, isAdmin, adminController.requestPasswordChangeOtp);
+
+router.post('/password/verify-otp', verifyToken, isAdmin, adminController.verifyPasswordChangeOtp);
 
 router.get('/activity-logs', verifyToken, isAdmin, adminController.getActivityLogs);
 

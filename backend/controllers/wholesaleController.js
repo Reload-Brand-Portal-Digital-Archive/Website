@@ -154,7 +154,7 @@ exports.updateOrderStatus = async (req, res) => {
 
         const order = orders[0];
 
-        const query = 'UPDATE wholesale_orders SET status = ? WHERE order_id = ?';
+        const query = 'UPDATE wholesale_orders SET status = ?, has_unread_updates = TRUE WHERE order_id = ?';
         const [result] = await db.query(query, [status, id]);
         
         if (result.affectedRows === 0) {

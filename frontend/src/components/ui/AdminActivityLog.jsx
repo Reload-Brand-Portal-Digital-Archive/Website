@@ -3,8 +3,10 @@ import { Activity, Clock, ChevronRight, RefreshCw, Eye } from 'lucide-react';
 import axios from 'axios';
 import AdminActivityLogModal from './AdminActivityLogModal';
 import AdminActivityDetailModal from './AdminActivityDetailModal';
+import { useTranslation } from 'react-i18next';
 
 export default function AdminActivityLog() {
+    const { t } = useTranslation();
     const [activities, setActivities] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isLogModalOpen, setIsLogModalOpen] = useState(false);
@@ -48,7 +50,7 @@ export default function AdminActivityLog() {
                     <div className="p-2 bg-rose-500/10 rounded-lg">
                         <Activity size={18} className="text-rose-500" />
                     </div>
-                    <h3 className="text-sm font-bold text-zinc-100 tracking-tight">Log Aktivitas Admin</h3>
+                    <h3 className="text-sm font-bold text-zinc-100 tracking-tight">{t('admin_dashboard.admin_activity_log')}</h3>
                 </div>
                 <button 
                     onClick={fetchLatestActivities}
@@ -67,7 +69,7 @@ export default function AdminActivityLog() {
                 ) : activities.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center p-12 text-center">
                         <Activity size={40} className="text-zinc-800 mb-3 opacity-50" />
-                        <p className="text-sm text-zinc-500">Belum ada aktivitas admin yang tercatat.</p>
+                        <p className="text-sm text-zinc-500">{t('admin_dashboard.no_admin_activity')}</p>
                     </div>
                 ) : (
                     <div className="divide-y divide-zinc-800/50">
@@ -86,7 +88,7 @@ export default function AdminActivityLog() {
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center justify-between mb-1">
                                             <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider truncate">
-                                                {activity.admin_name || 'System'}
+                                                {activity.admin_name || t('admin_dashboard.system')}
                                             </p>
                                             <div className="flex items-center gap-1 text-[10px] text-zinc-500 font-medium">
                                                 <Clock size={10} />
@@ -113,7 +115,7 @@ export default function AdminActivityLog() {
                     onClick={handleViewAll}
                     className="w-full py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white rounded-lg text-xs font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2 group"
                 >
-                    Lihat Semua
+                    {t('admin_dashboard.view_all')}
                     <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
                 </button>
             </div>

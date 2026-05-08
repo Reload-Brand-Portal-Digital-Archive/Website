@@ -3,8 +3,10 @@ import { Package, Search, ChevronRight, X, Phone, Mail, MapPin, Inbox, Calendar,
 import DateRangePickerModal from '../components/ui/DateRangePickerModal';
 import axios from 'axios';
 import { notify } from '../lib/toast';
+import { useTranslation } from 'react-i18next';
 
 export default function AdminMessages() {
+    const { t } = useTranslation();
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -40,30 +42,30 @@ export default function AdminMessages() {
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [loadingDetails, setLoadingDetails] = useState(false);
 
-    // DB status values (must match backend) → English UI labels
+    // DB status values (must match backend) → UI labels
     const STATUS_LABELS = {
-        'Belum Dibaca':                       'Unread',
-        'Dibaca':                             'Read',
-        'Dalam proses penyiapan barang':      'Processing',
-        'Barang siap untuk diambil di gudang':'Ready for Pickup',
-        'Pesanan selesai':                    'Completed',
+        'Belum Dibaca':                       t('admin_messages.status_unread'),
+        'Dibaca':                             t('admin_messages.status_read'),
+        'Dalam proses penyiapan barang':      t('admin_messages.status_processing'),
+        'Barang siap untuk diambil di gudang':t('admin_messages.status_ready'),
+        'Pesanan selesai':                    t('admin_messages.status_completed'),
     };
 
-    // Filter options: value = DB key, label = English display
+    // Filter options: value = DB key, label = display
     const statuses = [
-        { value: 'All',                                  label: 'All' },
-        { value: 'Belum Dibaca',                         label: 'Unread' },
-        { value: 'Dibaca',                               label: 'Read' },
-        { value: 'Dalam proses penyiapan barang',        label: 'Processing' },
-        { value: 'Barang siap untuk diambil di gudang',  label: 'Ready for Pickup' },
-        { value: 'Pesanan selesai',                      label: 'Completed' },
+        { value: 'All',                                  label: t('admin_messages.status_all') },
+        { value: 'Belum Dibaca',                         label: t('admin_messages.status_unread') },
+        { value: 'Dibaca',                               label: t('admin_messages.status_read') },
+        { value: 'Dalam proses penyiapan barang',        label: t('admin_messages.status_processing') },
+        { value: 'Barang siap untuk diambil di gudang',  label: t('admin_messages.status_ready') },
+        { value: 'Pesanan selesai',                      label: t('admin_messages.status_completed') },
     ];
 
     const updatableStatuses = [
-        { value: 'Dibaca',                               label: 'Mark as Read' },
-        { value: 'Dalam proses penyiapan barang',        label: 'Processing' },
-        { value: 'Barang siap untuk diambil di gudang',  label: 'Ready for Pickup' },
-        { value: 'Pesanan selesai',                      label: 'Completed' },
+        { value: 'Dibaca',                               label: t('admin_messages.status_mark_read') },
+        { value: 'Dalam proses penyiapan barang',        label: t('admin_messages.status_processing') },
+        { value: 'Barang siap untuk diambil di gudang',  label: t('admin_messages.status_ready') },
+        { value: 'Pesanan selesai',                      label: t('admin_messages.status_completed') },
     ];
 
     useEffect(() => {
@@ -84,7 +86,7 @@ export default function AdminMessages() {
             setOrders(res.data);
         } catch (error) {
             console.error('Error fetching orders:', error);
-            notify.error('Failed to fetch orders.');
+            notify.error(t('admin_messages.failed_load_orders'));
         } finally {
             setLoading(false);
         }
@@ -104,7 +106,7 @@ export default function AdminMessages() {
             setOrders(prev => prev.map(o => o.order_id === orderId && o.status === 'Belum Dibaca' ? { ...o, status: 'Dibaca' } : o));
         } catch (error) {
             console.error('Error fetching details:', error);
-            notify.error('Failed to load order details.');
+            notify.error(t('admin_messages.failed_load_details'));
             setIsDetailModalOpen(false);
         } finally {
             setLoadingDetails(false);
@@ -120,10 +122,10 @@ export default function AdminMessages() {
             );
             setSelectedOrder({ ...selectedOrder, status: newStatus });
             setOrders(prev => prev.map(o => o.order_id === selectedOrder.order_id ? { ...o, status: newStatus } : o));
-            notify.success('Status updated successfully!');
+            notify.success(t('admin_messages.status_updated'));
         } catch (error) {
             console.error('Error updating status:', error);
-            notify.error('Failed to update status.');
+            notify.error(t('admin_messages.failed_update_status'));
         }
     };
 
@@ -177,8 +179,8 @@ export default function AdminMessages() {
         <div className="space-y-6 animate-in fade-in duration-500 relative">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-zinc-800 pb-6">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Wholesale <span className="text-zinc-500 font-light">Orders</span></h1>
-                    <p className="text-zinc-400 text-sm mt-1">Manage wholesale & B2B portal orders.</p>
+                    <h1 className="text-3xl font-bold tracking-tight" dangerouslySetInnerHTML={{ __html: t('admin_messages.title') }}></h1>
+                    <p className="text-zinc-400 text-sm mt-1">{t('admin_messages.desc')}</p>
                 </div>
             </div>
 
@@ -190,7 +192,7 @@ export default function AdminMessages() {
                         </div>
                         <input 
                             type="text"
-                            placeholder="Search by name or order ID..."
+                            placeholder={t('admin_messages.search_placeholder')}
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="bg-transparent border-none text-sm text-zinc-200 px-3 py-2 w-full outline-none"
@@ -198,7 +200,7 @@ export default function AdminMessages() {
                     </div>
                     
                     <div className="bg-zinc-950 border border-zinc-700 rounded-md p-1 flex">
-                        {[['all', 'All'], ['today', 'Today'], ['7d', '7 Days'], ['30d', '30 Days']].map(([key, label]) => (
+                        {[['all', t('admin_messages.all')], ['today', t('admin_messages.today')], ['7d', t('admin_messages.days_7')], ['30d', t('admin_messages.days_30')]].map(([key, label]) => (
                             <button
                                 key={key}
                                 onClick={() => { setPreset(key); setIsPickerOpen(false); }}
@@ -218,14 +220,14 @@ export default function AdminMessages() {
                             <CalendarDays size={12} />
                             {preset === 'custom' && customStart && customEnd
                                 ? `${customStart} — ${customEnd}`
-                                : 'Select'
+                                : t('admin_messages.select')
                             }
                         </button>
                     </div>
                 </div>
                 
                 <div className="w-full md:w-auto flex items-center gap-3">
-                    <span className="text-sm text-zinc-400 whitespace-nowrap min-w-max">Filter Status:</span>
+                    <span className="text-sm text-zinc-400 whitespace-nowrap min-w-max">{t('admin_messages.filter_status')}</span>
                     <select 
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value)}
@@ -260,19 +262,19 @@ export default function AdminMessages() {
                 ) : filteredOrders.length === 0 ? (
                     <div className="p-12 flex flex-col items-center justify-center text-center">
                         <Inbox size={48} className="text-zinc-700 mb-4" />
-                        <h3 className="text-lg font-medium text-zinc-300">No Orders Yet</h3>
-                        <p className="text-sm text-zinc-500 mt-1">No wholesale order data found for your search.</p>
+                        <h3 className="text-lg font-medium text-zinc-300">{t('admin_messages.no_orders')}</h3>
+                        <p className="text-sm text-zinc-500 mt-1">{t('admin_messages.no_orders_desc')}</p>
                     </div>
                 ) : (
                     <div className="overflow-x-auto custom-scrollbar">
                         <table className="w-full text-left text-sm whitespace-nowrap">
                             <thead className="bg-zinc-950 text-zinc-400 border-b border-zinc-800 uppercase text-[10px] tracking-wider font-mono">
                                 <tr>
-                                    <th className="px-5 py-4 font-medium">Order ID</th>
-                                    <th className="px-5 py-4 font-medium">Date</th>
-                                    <th className="px-5 py-4 font-medium">Name / Type</th>
-                                    <th className="px-5 py-4 font-medium">Status</th>
-                                    <th className="px-5 py-4 font-medium text-right">Actions</th>
+                                    <th className="px-5 py-4 font-medium">{t('admin_messages.col_order_id')}</th>
+                                    <th className="px-5 py-4 font-medium">{t('admin_messages.col_date')}</th>
+                                    <th className="px-5 py-4 font-medium">{t('admin_messages.col_name')}</th>
+                                    <th className="px-5 py-4 font-medium">{t('admin_messages.col_status')}</th>
+                                    <th className="px-5 py-4 font-medium text-right">{t('admin_messages.col_actions')}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-zinc-800/50">
@@ -298,7 +300,8 @@ export default function AdminMessages() {
                                                 onClick={() => handleViewOrder(order.order_id)}
                                                 className="inline-flex items-center gap-1 bg-white text-zinc-950 hover:bg-zinc-200 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors"
                                             >
-                                                <span>Detail</span>
+                                                <span className="sr-only">{t('admin_messages.btn_detail')}</span>
+                                                <span>{t('admin_messages.btn_detail')}</span>
                                                 <ChevronRight size={14} />
                                             </button>
                                         </td>
@@ -318,20 +321,20 @@ export default function AdminMessages() {
                             disabled={currentPage === 1}
                             className="relative inline-flex items-center border border-zinc-800 bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-300 hover:bg-zinc-800 disabled:opacity-50"
                         >
-                            Previous
+                            {t('admin_messages.prev')}
                         </button>
                         <button
                             onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                             disabled={currentPage === totalPages}
                             className="relative ml-3 inline-flex items-center border border-zinc-800 bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-300 hover:bg-zinc-800 disabled:opacity-50"
                         >
-                            Next
+                            {t('admin_messages.next')}
                         </button>
                     </div>
                     <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
                         <div>
                             <p className="text-[11px] font-mono text-zinc-500 uppercase tracking-widest">
-                                Showing <span className="font-bold text-zinc-200">{indexOfFirstOrder + 1}</span> – <span className="font-bold text-zinc-200">{Math.min(indexOfLastOrder, filteredOrders.length)}</span> of <span className="font-bold text-zinc-200">{filteredOrders.length}</span> results
+                                {t('admin_messages.showing')} <span className="font-bold text-zinc-200">{indexOfFirstOrder + 1}</span> – <span className="font-bold text-zinc-200">{Math.min(indexOfLastOrder, filteredOrders.length)}</span> {t('admin_messages.of')} <span className="font-bold text-zinc-200">{filteredOrders.length}</span> {t('admin_messages.results')}
                             </p>
                         </div>
                         <div>
@@ -385,21 +388,21 @@ export default function AdminMessages() {
                         {loadingDetails || !selectedOrder ? (
                             <div className="p-16 flex flex-col items-center justify-center">
                                 <div className="w-8 h-8 rounded-full border-2 border-zinc-700 border-t-white animate-spin mb-4"></div>
-                                <span className="text-zinc-400 font-mono uppercase text-xs tracking-widest">Loading Details...</span>
+                                <span className="text-zinc-400 font-mono uppercase text-xs tracking-widest">{t('admin_messages.loading_details')}</span>
                             </div>
                         ) : (
                             <>
                                 <div className="p-6 md:p-8 border-b border-zinc-800 overflow-y-auto">
                                     <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
                                         <div>
-                                            <span className="font-mono text-xs tracking-[0.2em] text-zinc-500 uppercase">Order #{selectedOrder.order_id}</span>
+                                            <span className="font-mono text-xs tracking-[0.2em] text-zinc-500 uppercase">{t('admin_messages.order_number', { id: selectedOrder.order_id })}</span>
                                             <h2 className="text-2xl font-bold uppercase tracking-tight mt-1 mb-2">{selectedOrder.name}</h2>
                                             <span className={`inline-flex px-3 py-1 text-[11px] uppercase font-mono tracking-widest ${getStatusStyles(selectedOrder.status)}`}>
                                                 {getStatusLabel(selectedOrder.status)}
                                             </span>
                                         </div>
                                         <div className="flex flex-col md:items-end gap-1">
-                                            <label className="text-[10px] font-mono text-zinc-500 uppercase">Update Order Status:</label>
+                                            <label className="text-[10px] font-mono text-zinc-500 uppercase">{t('admin_messages.update_status')}</label>
                                             <select 
                                                 value={selectedOrder.status}
                                                 onChange={(e) => handleUpdateStatus(e.target.value)}
@@ -414,12 +417,12 @@ export default function AdminMessages() {
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
                                         <div className="space-y-4">
-                                            <h3 className="text-xs font-mono uppercase text-zinc-500 border-b border-zinc-800 pb-2 mb-4">Client Information</h3>
+                                            <h3 className="text-xs font-mono uppercase text-zinc-500 border-b border-zinc-800 pb-2 mb-4">{t('admin_messages.client_info')}</h3>
                                             
                                             <div className="flex items-start gap-3">
                                                 <Mail size={16} className="text-zinc-600 mt-0.5" />
                                                 <div className="min-w-0">
-                                                    <p className="text-[10px] font-mono text-zinc-500">Email Address</p>
+                                                    <p className="text-[10px] font-mono text-zinc-500">{t('admin_messages.email_address')}</p>
                                                     <p className="text-sm text-zinc-200 truncate">{selectedOrder.email}</p>
                                                 </div>
                                             </div>
@@ -427,7 +430,7 @@ export default function AdminMessages() {
                                             <div className="flex items-start gap-3">
                                                 <Phone size={16} className="text-zinc-600 mt-0.5" />
                                                 <div className="min-w-0">
-                                                    <p className="text-[10px] font-mono text-zinc-500">Phone Number</p>
+                                                    <p className="text-[10px] font-mono text-zinc-500">{t('admin_messages.phone_number')}</p>
                                                     <p className="text-sm text-zinc-200 truncate">{selectedOrder.phone || '-'}</p>
                                                 </div>
                                             </div>
@@ -435,33 +438,33 @@ export default function AdminMessages() {
                                             <div className="flex items-start gap-3">
                                                 <MapPin size={16} className="text-zinc-600 mt-0.5" />
                                                 <div className="min-w-0">
-                                                    <p className="text-[10px] font-mono text-zinc-500">Shipping Address</p>
+                                                    <p className="text-[10px] font-mono text-zinc-500">{t('admin_messages.shipping_address')}</p>
                                                     <p className="text-sm text-zinc-200 leading-relaxed whitespace-pre-wrap">{selectedOrder.address || '-'}</p>
                                                 </div>
                                             </div>
                                         </div>
                                         
                                         <div className="space-y-4">
-                                            <h3 className="text-xs font-mono uppercase text-zinc-500 border-b border-zinc-800 pb-2 mb-4">Notes / Additional Info</h3>
+                                            <h3 className="text-xs font-mono uppercase text-zinc-500 border-b border-zinc-800 pb-2 mb-4">{t('admin_messages.notes')}</h3>
                                             <div className="bg-zinc-900 border border-zinc-800 p-4 h-full min-h-[120px]">
                                                 <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider block mb-2">{selectedOrder.inquiry_type}</span>
                                                 <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap">
-                                                    {selectedOrder.message ? selectedOrder.message : <span className="italic text-zinc-600">No additional message.</span>}
+                                                    {selectedOrder.message ? selectedOrder.message : <span className="italic text-zinc-600">{t('admin_messages.no_notes')}</span>}
                                                 </p>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <h3 className="text-xs font-mono uppercase text-zinc-500 border-b border-zinc-800 pb-2 mb-4">Items ({selectedOrder.items?.length || 0})</h3>
+                                    <h3 className="text-xs font-mono uppercase text-zinc-500 border-b border-zinc-800 pb-2 mb-4">{t('admin_messages.items_count', { count: selectedOrder.items?.length || 0 })}</h3>
                                     
                                     {selectedOrder.items && selectedOrder.items.length > 0 ? (
                                         <div className="border border-zinc-800 overflow-hidden bg-zinc-900/50">
                                             <table className="w-full text-left text-sm whitespace-nowrap">
                                                 <thead className="bg-zinc-900 border-b border-zinc-800 text-zinc-400 text-[10px] uppercase font-mono tracking-widest">
                                                     <tr>
-                                                        <th className="px-4 py-3 font-medium">Product Name</th>
-                                                        <th className="px-4 py-3 font-medium">Size</th>
-                                                        <th className="px-4 py-3 font-medium">Quantity</th>
+                                                        <th className="px-4 py-3 font-medium">{t('admin_messages.col_product')}</th>
+                                                        <th className="px-4 py-3 font-medium">{t('admin_messages.col_size')}</th>
+                                                        <th className="px-4 py-3 font-medium">{t('admin_messages.col_qty')}</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody className="divide-y divide-zinc-800/50">
@@ -483,7 +486,7 @@ export default function AdminMessages() {
                                         </div>
                                     ) : (
                                         <div className="border border-dashed border-zinc-800 bg-zinc-900/30 p-8 text-center">
-                                            <span className="text-zinc-500 text-sm">No items recorded.</span>
+                                            <span className="text-zinc-500 text-sm">{t('admin_messages.no_items')}</span>
                                         </div>
                                     )}
                                 </div>

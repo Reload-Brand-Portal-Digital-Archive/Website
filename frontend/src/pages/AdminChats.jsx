@@ -2,10 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { User, Send, Shield, Search } from 'lucide-react';
 import { notify } from '../lib/toast';
+import { useTranslation } from 'react-i18next';
 
 const API = import.meta.env.VITE_API_URL;
 
 export default function AdminChats() {
+    const { t } = useTranslation();
     const [chatSessions, setChatSessions] = useState([]);
     const [filteredSessions, setFilteredSessions] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
@@ -54,7 +56,7 @@ export default function AdminChats() {
             setChatSessions(res.data.chats);
         } catch (error) {
             console.error('Error fetching chat sessions:', error);
-            if (showLoading) notify.error('Failed to load chat sessions.');
+            if (showLoading) notify.error(t('admin_chats.failed_load_sessions'));
         } finally {
             if (showLoading) setLoadingSessions(false);
         }
@@ -79,7 +81,7 @@ export default function AdminChats() {
             ));
         } catch (error) {
             console.error('Error fetching messages:', error);
-            if (showLoading) notify.error('Failed to load messages.');
+            if (showLoading) notify.error(t('admin_chats.failed_load_messages'));
         } finally {
             if (showLoading) setLoadingMessages(false);
         }
@@ -117,7 +119,7 @@ export default function AdminChats() {
             fetchChatSessions(false); // Update last activity
         } catch (error) {
             console.error('Error sending message:', error);
-            notify.error('Failed to send message.');
+            notify.error(t('admin_chats.failed_send'));
             setMessages(prev => prev.filter(m => m.chat_id !== tempMsg.chat_id));
             setNewMessage(messageText);
         }
@@ -128,12 +130,12 @@ export default function AdminChats() {
             {/* Sidebar Users List */}
             <div className="w-80 border border-zinc-800 bg-zinc-900/40 flex flex-col overflow-hidden rounded-xl">
                 <div className="p-4 border-b border-zinc-800 shrink-0">
-                    <h2 className="font-bold text-lg mb-4">Conversations</h2>
+                    <h2 className="font-bold text-lg mb-4">{t('admin_chats.conversations')}</h2>
                     <div className="relative">
                         <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
                         <input 
                             type="text" 
-                            placeholder="Search users..." 
+                            placeholder={t('admin_chats.search_users')} 
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="w-full bg-zinc-950 border border-zinc-800 focus:border-zinc-500 outline-none h-10 pl-9 pr-4 text-sm text-zinc-100 rounded-md transition-colors"
@@ -148,7 +150,7 @@ export default function AdminChats() {
                         </div>
                     ) : filteredSessions.length === 0 ? (
                         <div className="p-8 text-center text-zinc-500 text-sm">
-                            No conversations found.
+                            {t('admin_chats.no_conversations')}
                         </div>
                     ) : (
                         <div className="divide-y divide-zinc-800">
@@ -215,7 +217,7 @@ export default function AdminChats() {
                                 </div>
                             ) : messages.length === 0 ? (
                                 <div className="flex justify-center items-center h-full text-zinc-500 text-sm">
-                                    No messages yet.
+                                    {t('admin_chats.no_messages')}
                                 </div>
                             ) : (
                                 messages.map((msg) => {
@@ -227,7 +229,7 @@ export default function AdminChats() {
                                                     {isAdmin ? <Shield className="w-3.5 h-3.5 text-amber-500" /> : <User className="w-3.5 h-3.5 text-zinc-400" />}
                                                 </div>
                                                 <span className="font-mono text-[10px] text-zinc-500 uppercase tracking-widest">
-                                                    {isAdmin ? 'Admin' : selectedUser.name}
+                                                    {isAdmin ? t('admin_chats.admin') : selectedUser.name}
                                                 </span>
                                                 <span className="font-mono text-[9px] text-zinc-700">
                                                     {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -256,7 +258,7 @@ export default function AdminChats() {
                                     type="text"
                                     value={newMessage}
                                     onChange={(e) => setNewMessage(e.target.value)}
-                                    placeholder="Type a message..."
+                                    placeholder={t('admin_chats.type_message')}
                                     className="w-full bg-zinc-900 border border-zinc-800 focus:border-zinc-500 outline-none h-12 pl-4 pr-16 text-sm text-zinc-100 rounded-md transition-colors"
                                 />
                                 <button
@@ -272,8 +274,8 @@ export default function AdminChats() {
                 ) : (
                     <div className="flex flex-col items-center justify-center h-full text-zinc-500">
                         <Shield className="w-16 h-16 mb-4 opacity-20" />
-                        <p className="text-lg font-medium text-zinc-400">Admin Chat Support</p>
-                        <p className="text-sm mt-2">Select a conversation from the sidebar to start chatting.</p>
+                        <p className="text-lg font-medium text-zinc-400">{t('admin_chats.support_title')}</p>
+                        <p className="text-sm mt-2">{t('admin_chats.support_desc')}</p>
                     </div>
                 )}
             </div>

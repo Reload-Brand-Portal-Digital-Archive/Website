@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { X, Search, ChevronLeft, ChevronRight, Filter, Activity, RefreshCw, Eye } from 'lucide-react';
 import axios from 'axios';
+import { useTranslation } from 'react-i18next';
 
 export default function AdminActivityLogModal({ isOpen, onClose, onSelectActivity }) {
+    const { t } = useTranslation();
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(false);
     const [page, setPage] = useState(1);
@@ -54,8 +56,8 @@ export default function AdminActivityLogModal({ isOpen, onClose, onSelectActivit
                             <Activity size={24} className="text-rose-500" />
                         </div>
                         <div>
-                            <h2 className="text-xl font-bold text-zinc-100">Log Aktivitas Admin</h2>
-                            <p className="text-sm text-zinc-500">Menampilkan riwayat perubahan sistem oleh administrator.</p>
+                            <h2 className="text-xl font-bold text-zinc-100">{t('admin_activity.title')}</h2>
+                            <p className="text-sm text-zinc-500">{t('admin_activity.subtitle')}</p>
                         </div>
                     </div>
                     <button 
@@ -71,7 +73,7 @@ export default function AdminActivityLogModal({ isOpen, onClose, onSelectActivit
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
                         <input 
                             type="text" 
-                            placeholder="Cari admin, entitas, atau tindakan..." 
+                            placeholder={t('admin_activity.search_placeholder')}
                             className="w-full bg-zinc-900 border border-zinc-800 rounded-lg pl-10 pr-4 py-2 text-sm text-zinc-200 focus:outline-none focus:ring-2 focus:ring-rose-500/50 focus:border-rose-500/50 transition-all"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
@@ -95,7 +97,7 @@ export default function AdminActivityLogModal({ isOpen, onClose, onSelectActivit
                                 <ChevronLeft size={20} />
                             </button>
                             <span className="text-xs font-medium text-zinc-400 px-3">
-                                Halaman {page} dari {pagination.totalPages}
+                                {t('admin_activity.page_info', { page, total: pagination.totalPages })}
                             </span>
                             <button 
                                 onClick={() => setPage(prev => Math.min(pagination.totalPages, prev + 1))}
@@ -112,11 +114,11 @@ export default function AdminActivityLogModal({ isOpen, onClose, onSelectActivit
                     <table className="w-full text-left border-collapse">
                         <thead className="sticky top-0 bg-zinc-900/80 backdrop-blur-sm border-b border-zinc-800 z-10">
                             <tr>
-                                <th className="px-6 py-4 text-xs font-bold text-zinc-500 uppercase tracking-wider">Waktu</th>
-                                <th className="px-6 py-4 text-xs font-bold text-zinc-500 uppercase tracking-wider">Admin</th>
-                                <th className="px-6 py-4 text-xs font-bold text-zinc-500 uppercase tracking-wider">Tindakan</th>
-                                <th className="px-6 py-4 text-xs font-bold text-zinc-500 uppercase tracking-wider">Entitas</th>
-                                <th className="px-6 py-4 text-xs font-bold text-zinc-500 uppercase tracking-wider text-right">Aksi</th>
+                                <th className="px-6 py-4 text-xs font-bold text-zinc-500 uppercase tracking-wider">{t('admin_activity.th_time')}</th>
+                                <th className="px-6 py-4 text-xs font-bold text-zinc-500 uppercase tracking-wider">{t('admin_activity.th_admin')}</th>
+                                <th className="px-6 py-4 text-xs font-bold text-zinc-500 uppercase tracking-wider">{t('admin_activity.th_action')}</th>
+                                <th className="px-6 py-4 text-xs font-bold text-zinc-500 uppercase tracking-wider">{t('admin_activity.th_entity')}</th>
+                                <th className="px-6 py-4 text-xs font-bold text-zinc-500 uppercase tracking-wider text-right">{t('admin_activity.th_options')}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-zinc-800/50">
@@ -124,14 +126,14 @@ export default function AdminActivityLogModal({ isOpen, onClose, onSelectActivit
                                 <tr>
                                     <td colSpan="5" className="px-6 py-20 text-center">
                                         <RefreshCw size={32} className="animate-spin text-rose-500 mx-auto mb-4" />
-                                        <p className="text-zinc-500">Memuat data log...</p>
+                                        <p className="text-zinc-500">{t('admin_activity.loading')}</p>
                                     </td>
                                 </tr>
                             ) : filteredLogs.length === 0 ? (
                                 <tr>
                                     <td colSpan="5" className="px-6 py-20 text-center">
                                         <Activity size={48} className="text-zinc-800 mx-auto mb-4 opacity-50" />
-                                        <p className="text-zinc-500">Tidak ada log aktivitas yang ditemukan.</p>
+                                        <p className="text-zinc-500">{t('admin_activity.no_logs')}</p>
                                     </td>
                                 </tr>
                             ) : (
@@ -185,14 +187,14 @@ export default function AdminActivityLogModal({ isOpen, onClose, onSelectActivit
 
                 <div className="p-6 border-t border-zinc-800 flex justify-between items-center text-sm text-zinc-500 bg-zinc-900/20">
                     <div>
-                        Menampilkan <span className="text-zinc-300">{filteredLogs.length}</span> dari <span className="text-zinc-300">{pagination.total}</span> aktivitas
+                        {t('admin_activity.showing')} <span className="text-zinc-300">{filteredLogs.length}</span> {t('admin_activity.of')} <span className="text-zinc-300">{pagination.total}</span> {t('admin_activity.activities')}
                     </div>
                     <div className="flex gap-4">
                         <button 
                             onClick={onClose}
                             className="px-6 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg transition-colors font-medium"
                         >
-                            Tutup
+                            {t('admin_activity.close')}
                         </button>
                     </div>
                 </div>

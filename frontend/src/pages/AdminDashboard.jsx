@@ -23,8 +23,10 @@ import AdminGeographicMap from '../components/ui/AdminGeographicMapV2';
 import RecentActivityLog from '../components/ui/RecentActivityLog';
 import AdminActivityLog from '../components/ui/AdminActivityLog';
 import SyncEcommerceModal from '../components/ui/SyncEcommerceModal';
+import { useTranslation } from 'react-i18next';
 
 export default function AdminDashboard() {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const [user, setUser] = useState(JSON.parse(localStorage.getItem('user') || '{}'));
 
@@ -81,16 +83,16 @@ export default function AdminDashboard() {
 
     const handleSyncEcommerce = async () => {
         setIsSyncing(true);
-        toast.info("Starting E-Commerce data sync...");
+        toast.info(t('admin_dashboard.sync_starting'));
         try {
             const response = await axios.post(import.meta.env.VITE_API_URL + '/api/settings/sync-ecommerce');
             if (response.data.success) {
-                toast.success("E-Commerce sync successful! Map updated.");
+                toast.success(t('admin_dashboard.sync_success'));
                 setMapRefreshTrigger(prev => prev + 1);
             }
         } catch (error) {
             console.error(error);
-            toast.error("An error occurred while processing E-Commerce data.");
+            toast.error(t('admin_dashboard.sync_error'));
         } finally {
             setIsSyncing(false);
         }
@@ -106,8 +108,8 @@ export default function AdminDashboard() {
         <div className="space-y-8 animate-in fade-in duration-500">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 pb-6 border-b border-zinc-800 gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Admin <span className="text-zinc-500 font-light">Dashboard</span></h1>
-                    <p className="text-zinc-400 text-sm mt-1">RELOAD website performance summary.</p>
+                    <h1 className="text-3xl font-bold tracking-tight" dangerouslySetInnerHTML={{ __html: t('admin_dashboard.title') }}></h1>
+                    <p className="text-zinc-400 text-sm mt-1">{t('admin_dashboard.desc')}</p>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3">
@@ -117,7 +119,7 @@ export default function AdminDashboard() {
                         className="flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 text-xs rounded-md transition-colors disabled:opacity-50 shadow-lg shadow-rose-900/20"
                     >
                         <RefreshCw size={14} className={isSyncing ? "animate-spin" : ""} />
-                        <span>{isSyncing ? "Syncing..." : "Sync E-Commerce"}</span>
+                        <span>{isSyncing ? t('admin_dashboard.syncing') : t('admin_dashboard.sync_ecommerce')}</span>
                     </button>
 
                     <SyncEcommerceModal 
@@ -128,7 +130,7 @@ export default function AdminDashboard() {
                     
                     {/* Preset buttons */}
                     <div className="bg-zinc-900 border border-zinc-800 rounded-md p-1 flex">
-                        {[['today', 'Today'], ['7d', '7 Days'], ['30d', '30 Days']].map(([key, label]) => (
+                        {[['today', t('admin_dashboard.today')], ['7d', t('admin_dashboard.days_7')], ['30d', t('admin_dashboard.days_30')]].map(([key, label]) => (
                             <button
                                 key={key}
                                 onClick={() => { setPreset(key); setIsPickerOpen(false); }}
@@ -148,7 +150,7 @@ export default function AdminDashboard() {
                             <CalendarDays size={12} />
                             {preset === 'custom' && customStart && customEnd
                                 ? `${customStart} — ${customEnd}`
-                                : 'Select Date'
+                                : t('admin_dashboard.select_date')
                             }
                         </button>
                     </div>
@@ -221,7 +223,7 @@ export default function AdminDashboard() {
                 return (
                     <div className="flex items-center justify-center h-[70vh] animate-in fade-in duration-500">
                         <div className="text-center">
-                            <h2 className="text-2xl font-semibold mb-2 capitalize">Page Not Available</h2>
+                            <h2 className="text-2xl font-semibold mb-2 capitalize">{t('admin_dashboard.page_not_available')}</h2>
                         </div>
                     </div>
                 );
@@ -249,7 +251,7 @@ export default function AdminDashboard() {
                         <Menu size={24} className={`transition-transform duration-300 ${!isSidebarOpen ? 'rotate-90' : 'rotate-0'}`} />
                     </button>
                     <div className="text-sm text-zinc-500 font-medium">
-                        Administrator / <span className="text-zinc-300 capitalize">{activeTab === 'profile' ? 'Profil Admin' : navigationItems.find(item => item.id === activeTab)?.label}</span>
+                        {t('admin_sidebar.administrator')} / <span className="text-zinc-300 capitalize">{activeTab === 'profile' ? t('admin_sidebar.admin_profile') : t(navigationItems.find(item => item.id === activeTab)?.labelKey)}</span>
                     </div>
                 </header>
 

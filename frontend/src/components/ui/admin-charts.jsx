@@ -5,6 +5,7 @@ import {
 } from 'recharts';
 import axios from 'axios';
 import { Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 // Fetch stats with optional date range
 async function fetchStats(dateRange = {}) {
@@ -77,6 +78,7 @@ function ChartWrapper({ title, subtitle, children, loading }) {
 
 /** Traffic Visitors — dari page_views (sesuai date range) */
 export const TrafficChart = ({ dateRange = {} }) => {
+    const { t } = useTranslation();
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -102,7 +104,7 @@ export const TrafficChart = ({ dateRange = {} }) => {
     }, [dateRange.startDate, dateRange.endDate]);
 
     return (
-        <ChartWrapper title="Traffic Visitors" subtitle="Page Views" loading={loading}>
+        <ChartWrapper title={t('admin_dashboard.traffic_visitors')} subtitle={t('admin_dashboard.page_views')} loading={loading}>
             <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={data}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#3f3f46" vertical={false} />
@@ -118,6 +120,7 @@ export const TrafficChart = ({ dateRange = {} }) => {
 
 /** User Growth — jumlah registrasi dari tabel users per hari (sesuai date range) */
 export const UserGrowthChart = ({ dateRange = {} }) => {
+    const { t } = useTranslation();
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -143,7 +146,7 @@ export const UserGrowthChart = ({ dateRange = {} }) => {
     }, [dateRange.startDate, dateRange.endDate]);
 
     return (
-        <ChartWrapper title="User Growth" subtitle="Daily Registrations" loading={loading}>
+        <ChartWrapper title={t('admin_dashboard.user_growth')} subtitle={t('admin_dashboard.daily_registrations')} loading={loading}>
             <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={data}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#3f3f46" vertical={false} />
@@ -158,6 +161,7 @@ export const UserGrowthChart = ({ dateRange = {} }) => {
 };
 
 export const SubscriberChart = ({ dateRange = {} }) => {
+    const { t } = useTranslation();
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -183,7 +187,7 @@ export const SubscriberChart = ({ dateRange = {} }) => {
     }, [dateRange.startDate, dateRange.endDate]);
 
     return (
-        <ChartWrapper title="Subscriber Trend" subtitle="Daily Newsletter" loading={loading}>
+        <ChartWrapper title={t('admin_dashboard.subscriber_trend')} subtitle={t('admin_dashboard.daily_newsletter')} loading={loading}>
             <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={data}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#3f3f46" vertical={false} />
@@ -199,6 +203,7 @@ export const SubscriberChart = ({ dateRange = {} }) => {
 
 /** External Clicks — Shopee vs TikTok per hari (sesuai date range) */
 export const ExternalClicksChart = ({ dateRange = {} }) => {
+    const { t } = useTranslation();
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -233,7 +238,7 @@ export const ExternalClicksChart = ({ dateRange = {} }) => {
     return (
         <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 flex flex-col pb-3">
             <h3 className="text-base font-medium text-zinc-100 mb-4">
-                External Store Clicks <span className="text-zinc-500 text-sm font-normal ml-1">(Per Day)</span>
+                {t('admin_dashboard.external_store_clicks')} <span className="text-zinc-500 text-sm font-normal ml-1">({t('admin_dashboard.per_day')})</span>
             </h3>
             <div className="h-[280px] w-full ">
                 {loading ? (
