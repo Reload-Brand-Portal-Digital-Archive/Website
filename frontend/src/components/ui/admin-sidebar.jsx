@@ -1,20 +1,24 @@
 import React from 'react';
 import { 
     LayoutDashboard, ShoppingBag, Layers, 
-    MessageSquare, Mail, Settings, Users, LogOut, Tag, Palette, Award, Menu
+    MessageSquare, Mail, Settings, Users, LogOut, X, Tag, Palette, Award, ExternalLink, Menu
 } from 'lucide-react';
 
 export const navigationItems = [
     { id: 'home', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'products', label: 'Produk', icon: ShoppingBag },
-    { id: 'collections', label: 'Koleksi', icon: Layers },
-    { id: 'categories', label: 'Kategori', icon: Tag },
+    { id: 'products', label: 'Product', icon: ShoppingBag },
+    { id: 'collections', label: 'Collection', icon: Layers },
+    { id: 'categories', label: 'Category', icon: Tag },
     { id: 'materials', label: 'Material', icon: Palette },
     { id: 'endorsements', label: 'Endorsement', icon: Award },
-    { id: 'messages', label: 'Pesanan Grosir', icon: MessageSquare },
+    { id: 'chats', label: 'Chats', icon: MessageSquare },
+    { id: 'messages', label: 'Wholesale Order', icon: MessageSquare },
     { id: 'newsletter', label: 'Newsletter', icon: Mail },
-    { id: 'settings', label: 'Pengaturan', icon: Settings },
+    { id: 'settings', label: 'Setting', icon: Settings },
 ];
+
+import axios from 'axios';
+const API = import.meta.env.VITE_API_URL;
 
 export default function AdminSidebar({
     isSidebarOpen,
@@ -24,6 +28,25 @@ export default function AdminSidebar({
     user,
     handleLogout
 }) {
+    const [unreadChatsCount, setUnreadChatsCount] = React.useState(0);
+    const token = localStorage.getItem('token');
+
+    React.useEffect(() => {
+        const fetchUnreadCount = async () => {
+            try {
+                const res = await axios.get(`${API}/api/chats/admin/unread-count`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                setUnreadChatsCount(res.data.unreadUsers);
+            } catch (error) {
+                console.error('Error fetching unread chat count', error);
+            }
+        };
+        fetchUnreadCount();
+        const interval = setInterval(fetchUnreadCount, 10000);
+        return () => clearInterval(interval);
+    }, [token]);
+
     return (
         <>
             <div 
@@ -56,6 +79,23 @@ export default function AdminSidebar({
                 </div>
 
                 <div className="flex-1 overflow-y-auto overflow-x-hidden py-6 px-3 flex flex-col gap-2 custom-scrollbar">
+                    {/* View Site — opens landing page in new tab */}
+                    <a
+                        href="/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="View Site"
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-md text-zinc-500 hover:bg-zinc-800 hover:text-zinc-100 transition-all duration-200 group mb-1"
+                    >
+                        <ExternalLink size={20} className="shrink-0 group-hover:text-zinc-100 transition-colors" />
+                        <span className={`font-medium whitespace-nowrap text-xs tracking-widest uppercase transition-all duration-300 ${isSidebarOpen ? "opacity-100 w-auto" : "opacity-0 w-0 md:hidden"}`}>
+                            View Site
+                        </span>
+                    </a>
+
+                    {/* Divider */}
+                    <div className={`border-t border-zinc-800 mb-2 ${isSidebarOpen ? "mx-0" : "mx-auto w-6"}`} />
+
                     {navigationItems.map((item) => {
                         const Icon = item.icon;
                         const isActive = activeTab === item.id;
@@ -78,10 +118,14 @@ export default function AdminSidebar({
                                 <Icon size={20} className={`shrink-0 ${isActive ? "text-rose-500" : "group-hover:text-zinc-100 transition-colors"}`} />
                                 <span className={`font-medium whitespace-nowrap transition-all duration-300 ${isSidebarOpen ? "opacity-100 w-auto" : "opacity-0 w-0 md:hidden"}`}>
                                     {item.label}
-                                </span>
-                                
+                                </span>                                
                                 {!isSidebarOpen && isActive && (
                                     <div className="absolute right-2 w-1.5 h-1.5 bg-rose-500 rounded-full shadow-[0_0_8px_rgba(244,63,94,0.6)]" />
+                                )}
+                                {item.id === 'chats' && unreadChatsCount > 0 && (
+                                    <div className={`absolute right-3 top-1/2 -translate-y-1/2 bg-rose-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full transition-all duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0 md:opacity-100 md:right-1'}`}>
+                                        {unreadChatsCount}
+                                    </div>
                                 )}
                             </button>
                         );
@@ -119,3 +163,4 @@ export default function AdminSidebar({
         </>
     );
 }
+

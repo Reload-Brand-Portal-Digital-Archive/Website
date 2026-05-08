@@ -4,13 +4,14 @@ import axios from 'axios';
 import { GoogleLogin } from '@react-oauth/google';
 // eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
-import { X } from 'lucide-react';
+import { X, Eye, EyeOff } from 'lucide-react';
 import { notify } from '../lib/toast';
 
 export default function Register() {
     const [formData, setFormData] = useState({ name: '', email: '', password: '' });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
 
     const handleChange = (e) => {
@@ -23,9 +24,20 @@ export default function Register() {
         setLoading(true);
 
         try {
+            // Step 1: Register the account
             await axios.post(import.meta.env.VITE_API_URL + '/api/auth/register', formData);
-            notify.success('Registration successful! Redirecting to login...');
-            setTimeout(() => navigate('/login'), 1500);
+
+            // Step 2: Auto-login with the same credentials
+            const loginRes = await axios.post(import.meta.env.VITE_API_URL + '/api/auth/login', {
+                email: formData.email,
+                password: formData.password,
+            });
+
+            localStorage.setItem('token', loginRes.data.token);
+            localStorage.setItem('user', JSON.stringify(loginRes.data.user));
+
+            notify.success('Account created! Welcome to Reload.');
+            navigate('/');
         } catch (err) {
             const errorMessage = err.response?.data?.message || 'Registration failed';
             setError(errorMessage);
@@ -34,6 +46,7 @@ export default function Register() {
             setLoading(false);
         }
     };
+
 
     const handleGoogleSuccess = async (credentialResponse) => {
         try {
@@ -130,8 +143,10 @@ export default function Register() {
                             name="name" 
                             onChange={handleChange} 
                             required
-                            className="w-full bg-transparent border-0 border-b border-zinc-700 py-3 text-zinc-50 font-mono text-sm uppercase placeholder:text-zinc-600 focus:outline-none focus:border-zinc-50 focus:ring-0 px-0 rounded-none transition-colors"
-                            placeholder="YOUR FULL NAME" 
+                            autoCapitalize="words"
+                            autoCorrect="off"
+                            className="w-full bg-transparent border-0 border-b border-zinc-700 py-3 text-zinc-50 font-mono text-sm placeholder:text-zinc-600 focus:outline-none focus:border-zinc-50 focus:ring-0 px-0 rounded-none transition-colors"
+                            placeholder="Your full name" 
                         />
                     </div>
                     
@@ -142,21 +157,34 @@ export default function Register() {
                             name="email" 
                             onChange={handleChange} 
                             required
-                            className="w-full bg-transparent border-0 border-b border-zinc-700 py-3 text-zinc-50 font-mono text-sm uppercase placeholder:text-zinc-600 focus:outline-none focus:border-zinc-50 focus:ring-0 px-0 rounded-none transition-colors"
-                            placeholder="YOUR@EMAIL.COM" 
+                            autoCapitalize="none"
+                            autoCorrect="off"
+                            className="w-full bg-transparent border-0 border-b border-zinc-700 py-3 text-zinc-50 font-mono text-sm placeholder:text-zinc-600 focus:outline-none focus:border-zinc-50 focus:ring-0 px-0 rounded-none transition-colors"
+                            placeholder="your@email.com" 
                         />
                     </div>
 
                     <div className="space-y-2">
                         <label className="block text-zinc-400 text-xs font-mono uppercase tracking-[0.1em]">Password</label>
-                        <input 
-                            type="password" 
-                            name="password" 
-                            onChange={handleChange} 
-                            required
-                            className="w-full bg-transparent border-0 border-b border-zinc-700 py-3 text-zinc-50 font-mono text-sm uppercase placeholder:text-zinc-600 focus:outline-none focus:border-zinc-50 focus:ring-0 px-0 rounded-none transition-colors"
-                            placeholder="••••••••" 
-                        />
+                        <div className="relative">
+                            <input 
+                                type={showPassword ? "text" : "password"} 
+                                name="password" 
+                                onChange={handleChange} 
+                                required
+                                autoCapitalize="none"
+                                autoCorrect="off"
+                                className="w-full bg-transparent border-0 border-b border-zinc-700 py-3 pr-10 text-zinc-50 font-mono text-sm placeholder:text-zinc-600 focus:outline-none focus:border-zinc-50 focus:ring-0 px-0 rounded-none transition-colors"
+                                placeholder="••••••••" 
+                            />
+                            <button
+                                type="button"
+                                className="absolute right-0 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors p-2"
+                                onClick={() => setShowPassword(!showPassword)}
+                            >
+                                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
+                        </div>
                     </div>
 
                     <motion.button 

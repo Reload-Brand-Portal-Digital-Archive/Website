@@ -93,7 +93,7 @@ export const TrafficChart = ({ dateRange = {} }) => {
             const formatted = allDates.map(dateObj => {
                 const dateKey = toLocalDateStr(dateObj);
                 return {
-                    name: dateObj.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric' }),
+                    name: dateObj.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' }),
                     visitors: dailyMap[dateKey] || 0
                 };
             });
@@ -134,7 +134,7 @@ export const UserGrowthChart = ({ dateRange = {} }) => {
             const formatted = allDates.map(dateObj => {
                 const dateKey = toLocalDateStr(dateObj);
                 return {
-                    name: dateObj.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric' }),
+                    name: dateObj.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' }),
                     registrations: dailyMap[dateKey] || 0
                 };
             });
@@ -143,7 +143,7 @@ export const UserGrowthChart = ({ dateRange = {} }) => {
     }, [dateRange.startDate, dateRange.endDate]);
 
     return (
-        <ChartWrapper title="User Growth" subtitle="Registrasi Harian" loading={loading}>
+        <ChartWrapper title="User Growth" subtitle="Daily Registrations" loading={loading}>
             <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={data}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#3f3f46" vertical={false} />
@@ -174,7 +174,7 @@ export const SubscriberChart = ({ dateRange = {} }) => {
             const formatted = allDates.map(dateObj => {
                 const dateKey = toLocalDateStr(dateObj);
                 return {
-                    name: dateObj.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric' }),
+                    name: dateObj.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' }),
                     subscribers: dailyMap[dateKey] || 0
                 };
             });
@@ -183,7 +183,7 @@ export const SubscriberChart = ({ dateRange = {} }) => {
     }, [dateRange.startDate, dateRange.endDate]);
 
     return (
-        <ChartWrapper title="Subscriber Trend" subtitle="Newsletter Harian" loading={loading}>
+        <ChartWrapper title="Subscriber Trend" subtitle="Daily Newsletter" loading={loading}>
             <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={data}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#3f3f46" vertical={false} />
@@ -220,7 +220,7 @@ export const ExternalClicksChart = ({ dateRange = {} }) => {
                 const dateKey = toLocalDateStr(dateObj);
                 const dayData = dailyMap[dateKey] || { Shopee: 0, TikTok: 0 };
                 return {
-                    name: dateObj.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric' }),
+                    name: dateObj.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' }),
                     Shopee: dayData.Shopee,
                     TikTok: dayData.TikTok,
                 };
@@ -233,7 +233,7 @@ export const ExternalClicksChart = ({ dateRange = {} }) => {
     return (
         <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 flex flex-col pb-3">
             <h3 className="text-base font-medium text-zinc-100 mb-4">
-                Klik Toko Eksternal <span className="text-zinc-500 text-sm font-normal ml-1">(Per Hari)</span>
+                External Store Clicks <span className="text-zinc-500 text-sm font-normal ml-1">(Per Day)</span>
             </h3>
             <div className="h-[280px] w-full ">
                 {loading ? (

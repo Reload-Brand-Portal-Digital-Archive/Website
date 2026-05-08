@@ -30,7 +30,7 @@ export default function AdminTracking() {
             }
         } catch (err) {
             console.error('Failed to fetch tracking stats:', err);
-            setError('Gagal memuat data tracking. Pastikan backend berjalan dan tabel page_views & link_clicks tersedia.');
+            setError('Failed to load tracking data. Please ensure the backend is running and the page_views & link_clicks tables are available.');
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -141,7 +141,7 @@ export default function AdminTracking() {
                                     </linearGradient>
                                 </defs>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
-                                <XAxis dataKey="date" stroke="#71717a" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => new Date(val).toLocaleDateString('id-ID', { weekday: 'short' })} />
+                                <XAxis dataKey="date" stroke="#71717a" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => new Date(val).toLocaleDateString('en-US', { weekday: 'short' })} />
                                 <YAxis stroke="#71717a" fontSize={10} tickLine={false} axisLine={false} />
                                 <Tooltip 
                                     contentStyle={{ backgroundColor: '#09090b', borderColor: '#27272a', borderRadius: '0px' }}
@@ -259,5 +259,5 @@ function StatCard({ title, value, icon: Icon, trend, color }) {
 
 function formatTime(timestamp) {
     const date = new Date(timestamp);
-    return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }

@@ -19,12 +19,12 @@ export default function ForgotPassword() {
         setLoading(true);
 
         try {
-            const loadingToastId = notify.loading('Mengirim email pemulihan...');
+            const loadingToastId = notify.loading('Sending recovery email...');
             const response = await axios.post(import.meta.env.VITE_API_URL + '/api/auth/forgot-password', { email });
             setMessage(response.data.message);
-            notify.update(loadingToastId, { render: 'Email pemulihan berhasil dikirim! Periksa inbox Anda', type: 'success', isLoading: false, autoClose: 4000 });
+            notify.update(loadingToastId, { render: 'Recovery email sent! Please check your inbox.', type: 'success', isLoading: false, autoClose: 4000 });
         } catch (err) {
-            const errorMessage = err.response?.data?.message || 'Terjadi kesalahan pada server';
+            const errorMessage = err.response?.data?.message || 'An error occurred on the server';
             setError(errorMessage);
             notify.error(errorMessage);
         } finally {
@@ -127,7 +127,7 @@ export default function ForgotPassword() {
                                     onChange={(e) => setEmail(e.target.value)}
                                     required
                                     className="peer w-full bg-transparent border-b border-zinc-800 py-4 text-zinc-50 font-mono text-sm placeholder:text-transparent focus:border-zinc-50 focus:outline-none transition-colors"
-                                    placeholder="Alamat Email"
+                                    placeholder="Email Address"
                                 />
                                 <label 
                                     htmlFor="email" 

@@ -26,7 +26,7 @@ export default function AdminNewsletter() {
             setStats(statsRes.data);
         } catch (error) {
             console.error('Error fetching newsletter data:', error);
-            notify.error('Gagal memuat data newsletter.');
+            notify.error('Failed to load newsletter data.');
         } finally {
             setLoading(false);
         }
@@ -38,30 +38,30 @@ export default function AdminNewsletter() {
 
     const handleDelete = async (id) => {
         const isConfirmed = await confirm({
-            title: 'Hapus Subscriber',
-            message: 'Yakin ingin menghapus subscriber ini? Tindakan ini tidak dapat dibatalkan.',
-            confirmText: 'Hapus',
-            cancelText: 'Batal'
+            title: 'Delete Subscriber',
+            message: 'Are you sure you want to delete this subscriber? This action cannot be undone.',
+            confirmText: 'Delete',
+            cancelText: 'Cancel'
         });
 
         if (isConfirmed) {
             try {
-                const loadingToastId = notify.loading('Menghapus subscriber...');
+                const loadingToastId = notify.loading('Deleting subscriber...');
                 const token = localStorage.getItem('token');
                 await axios.delete(`${import.meta.env.VITE_API_URL}/api/newsletter/${id}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
-                notify.update(loadingToastId, { render: 'Subscriber berhasil dihapus.', type: 'success', isLoading: false, autoClose: 3000 });
+                notify.update(loadingToastId, { render: 'Subscriber deleted.', type: 'success', isLoading: false, autoClose: 3000 });
                 fetchNewsletterData();
-            } catch (error) {
-                notify.error('Gagal menghapus subscriber.');
+            } catch {
+                notify.error('Failed to delete subscriber.');
             }
         }
     };
 
     const handleExport = async (format) => {
         try {
-            const loadingToastId = notify.loading(`Menyiapkan file export ${format.toUpperCase()}...`);
+            const loadingToastId = notify.loading(`Preparing ${format.toUpperCase()} export...`);
             const response = await axios.get(import.meta.env.VITE_API_URL + `/api/newsletter/export/${format}`, {
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
                 responseType: 'blob'
@@ -76,9 +76,9 @@ export default function AdminNewsletter() {
             link.click();
             link.parentNode.removeChild(link);
             
-            notify.update(loadingToastId, { render: `Berhasil mengekspor data ke ${format.toUpperCase()}!`, type: 'success', isLoading: false, autoClose: 3000 });
-        } catch (error) {
-            notify.error("Gagal mengekspor data. Pastikan server berjalan dengan baik.");
+            notify.update(loadingToastId, { render: `Data exported to ${format.toUpperCase()} successfully!`, type: 'success', isLoading: false, autoClose: 3000 });
+        } catch {
+            notify.error("Failed to export data. Make sure the server is running.");
         }
     };
 
@@ -96,9 +96,9 @@ export default function AdminNewsletter() {
                 <div>
                     <h2 className="text-2xl font-bold text-zinc-50 flex items-center gap-2">
                         <Mail className="text-rose-500" />
-                        Manajemen Newsletter
+                        Newsletter Management
                     </h2>
-                    <p className="text-zinc-400 text-sm mt-1">Kelola daftar email pelanggan dan pantau pertumbuhan.</p>
+                    <p className="text-zinc-400 text-sm mt-1">Manage subscriber email list and monitor growth.</p>
                 </div>
                 <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-2 sm:pb-0">
                     <button 
@@ -132,12 +132,12 @@ export default function AdminNewsletter() {
                         <span className="font-medium text-sm uppercase tracking-wider">Total Subscriber</span>
                     </div>
                     <div className="text-4xl font-bold text-white">
-                        {stats.total.toLocaleString('id-ID')}
+                        {stats.total.toLocaleString('en-US')}
                     </div>
                 </div>
 
                 <div className="md:col-span-2 bg-zinc-900 border border-zinc-800 rounded-lg p-6 h-[200px] flex flex-col">
-                    <span className="text-zinc-400 font-medium text-sm uppercase tracking-wider mb-4 block">Pertumbuhan Bulanan</span>
+                    <span className="text-zinc-400 font-medium text-sm uppercase tracking-wider mb-4 block">Monthly Growth</span>
                     <div className="flex-1 w-full min-h-0">
                         {stats.monthlyStats && stats.monthlyStats.length > 0 ? (
                             <ResponsiveContainer width="100%" height="100%">
@@ -165,7 +165,7 @@ export default function AdminNewsletter() {
                             </ResponsiveContainer>
                         ) : (
                             <div className="flex items-center justify-center h-full text-zinc-600 text-sm">
-                                Data belum cukup untuk grafik
+                                Not enough data for a chart
                             </div>
                         )}
                     </div>
@@ -177,17 +177,17 @@ export default function AdminNewsletter() {
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-zinc-950 border-b border-zinc-800 text-zinc-400 text-xs uppercase tracking-wider">
-                                <th className="p-4 font-medium">Alamat Email</th>
-                                <th className="p-4 font-medium">Status Pengguna</th>
-                                <th className="p-4 font-medium">Tanggal Berlangganan</th>
-                                <th className="p-4 font-medium text-right">Aksi</th>
+                                <th className="p-4 font-medium">Email Address</th>
+                                <th className="p-4 font-medium">User Status</th>
+                                <th className="p-4 font-medium">Subscribed On</th>
+                                <th className="p-4 font-medium text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-zinc-800">
                             {subscribers.length === 0 ? (
                                 <tr>
                                     <td colSpan="4" className="p-8 text-center text-zinc-500">
-                                        Tidak ada subscriber ditemukan.
+                                        No subscribers found.
                                     </td>
                                 </tr>
                             ) : (
@@ -199,16 +199,16 @@ export default function AdminNewsletter() {
                                         <td className="p-4">
                                             {sub.user_name ? (
                                                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                                                    Terdaftar
+                                                    Registered
                                                 </span>
                                             ) : (
                                                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-zinc-500/10 text-zinc-400 border border-zinc-500/20">
-                                                    Tamu
+                                                    Guest
                                                 </span>
                                             )}
                                         </td>
                                         <td className="p-4 text-zinc-400 text-sm">
-                                            {new Date(sub.created_at).toLocaleDateString('id-ID', {
+                                            {new Date(sub.created_at).toLocaleDateString('en-US', {
                                                 year: 'numeric', month: 'long', day: 'numeric'
                                             })}
                                         </td>
@@ -216,7 +216,7 @@ export default function AdminNewsletter() {
                                             <button
                                                 onClick={() => handleDelete(sub.newsletter_id)}
                                                 className="text-zinc-500 hover:text-red-500 transition-colors p-2 rounded-md hover:bg-zinc-800"
-                                                title="Hapus Subscriber"
+                                                title="Delete Subscriber"
                                             >
                                                 <Trash2 className="w-4 h-4" />
                                             </button>

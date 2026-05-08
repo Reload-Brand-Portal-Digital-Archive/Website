@@ -5,6 +5,68 @@ const { OAuth2Client } = require('google-auth-library');
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const nodemailer = require('nodemailer');
 
+const sendOtpForAdmin = async (user, res) => {
+    // Generate OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpHash = await bcrypt.hash(otp, 10);
+    
+    // Create temp token with 1 minute expiration
+    const tempToken = jwt.sign(
+        { id: user.user_id || user.id, role: user.role, otpHash }, 
+        process.env.JWT_SECRET, 
+        { expiresIn: '1m' }
+    );
+
+    // Send OTP via email
+    const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS
+        }
+    });
+
+    const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: user.email,
+        subject: '[RELOAD DISTRO] Kode OTP Login Anda',
+        html: `
+            <div style="background-color: #000000; padding: 40px 20px; font-family: 'Courier New', Consolas, monospace;">
+                <div style="max-width: 520px; margin: 0 auto; border: 1px solid #1a1a1a; padding: 0;">
+                    <div style="background-color: #0a0a0a; border-bottom: 1px solid #1a1a1a; padding: 20px 24px;">
+                        <span style="color: #ef4444; font-size: 11px; letter-spacing: 0.25em; text-transform: uppercase;">[ RELOAD DISTRO // SECURITY ]</span>
+                    </div>
+                    <div style="padding: 32px 24px;">
+                        <div style="margin-bottom: 28px;">
+                            <h1 style="color: #fafafa; font-size: 20px; margin: 0; text-transform: uppercase; letter-spacing: 0.08em; font-weight: bold;">Login OTP</h1>
+                        </div>
+                        <p style="color: #71717a; font-size: 12px; line-height: 1.6; margin: 0 0 24px 0;">
+                            Halo, <span style="color: #d4d4d8;">${user.name}</span>. Gunakan kode OTP di bawah ini untuk melanjutkan proses login Anda. Kode ini berlaku selama 1 menit.
+                        </p>
+                        <div style="margin-bottom: 32px; background-color: #1a1a1a; padding: 20px; text-align: center; border: 1px dashed #3f3f46;">
+                            <span style="color: #eab308; font-size: 24px; font-weight: bold; letter-spacing: 0.5em;">${otp}</span>
+                        </div>
+                        <p style="color: #3f3f46; font-size: 11px; line-height: 1.5; margin: 0;">
+                            Jika Anda tidak merasa melakukan login, abaikan email ini atau segera ubah password Anda.
+                        </p>
+                    </div>
+                    <div style="background-color: #0a0a0a; border-top: 1px solid #1a1a1a; padding: 16px 24px; text-align: center;">
+                        <span style="color: #27272a; font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase;">© ${new Date().getFullYear()} RELOAD DISTRO // ALL RIGHTS RESERVED</span>
+                    </div>
+                </div>
+            </div>
+        `
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    return res.json({
+        message: 'OTP telah dikirim ke email Anda!',
+        requireOtp: true,
+        tempToken: tempToken
+    });
+};
+
 exports.register = async (req, res) => {
     const { name, email, password } = req.body;
 
@@ -42,6 +104,10 @@ exports.login = async (req, res) => {
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
             return res.status(400).json({ message: 'Incorrect password!' });
+        }
+
+        if (user.role === 'admin') {
+            return await sendOtpForAdmin(user, res);
         }
 
         const payload = {
@@ -84,6 +150,10 @@ exports.googleLogin = async (req, res) => {
             user = { user_id: result.insertId, name, email, role: 'user' };
         } else if (!user.google_id) {
             await db.query('UPDATE users SET google_id = ? WHERE email = ?', [googleId, email]);
+        }
+
+        if (user.role === 'admin') {
+            return await sendOtpForAdmin(user, res);
         }
 
         const jwtToken = jwt.sign(
@@ -211,5 +281,51 @@ exports.resetPassword = async (req, res) => {
     } catch (error) {
         console.error('Reset Password Error:', error);
         res.status(500).json({ message: 'Terjadi kesalahan pada server' });
+    }
+};
+
+exports.verifyOtp = async (req, res) => {
+    const { tempToken, otp } = req.body;
+
+    if (!tempToken || !otp) {
+        return res.status(400).json({ message: 'Token atau OTP tidak valid' });
+    }
+
+    try {
+        const decoded = jwt.verify(tempToken, process.env.JWT_SECRET);
+        
+        // Verify OTP hash
+        const isMatch = await bcrypt.compare(otp, decoded.otpHash);
+        if (!isMatch) {
+            return res.status(401).json({ message: 'Kode OTP salah' });
+        }
+
+        // Fetch user from DB to send back user details
+        const [users] = await db.query('SELECT * FROM users WHERE user_id = ?', [decoded.id]);
+        const user = users[0];
+
+        if (!user) {
+            return res.status(404).json({ message: 'User tidak ditemukan' });
+        }
+
+        // Issue real JWT token
+        const jwtToken = jwt.sign(
+            { id: user.user_id, role: user.role },
+            process.env.JWT_SECRET,
+            { expiresIn: '1d' }
+        );
+
+        res.json({
+            message: 'OTP verified successfully!',
+            token: jwtToken,
+            user: { id: user.user_id, name: user.name, email: user.email, role: user.role, google_id: user.google_id || null }
+        });
+
+    } catch (error) {
+        console.error('Verify OTP Error:', error);
+        if (error.name === 'TokenExpiredError') {
+            return res.status(401).json({ message: 'Kode OTP sudah kedaluwarsa. Silakan login kembali.' });
+        }
+        res.status(401).json({ message: 'Token tidak valid' });
     }
 };

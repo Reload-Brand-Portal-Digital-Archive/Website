@@ -21,7 +21,7 @@ export const SummaryCard = ({ title, value, icon: Icon, trend, trendValue, loadi
             <div className="flex items-center text-xs mt-4">
                 <TrendingUp size={14} className="text-emerald-500 mr-1" />
                 <span className="text-emerald-500 font-medium">{trendValue}</span>
-                <span className="text-zinc-500 ml-2">vs periode sebelumnya</span>
+                <span className="text-zinc-500 ml-2">vs previous period</span>
             </div>
         )}
         <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-zinc-800 to-zinc-900 group-hover:from-zinc-600 transition-colors" />
@@ -64,28 +64,28 @@ export const DashboardSummaryCards = ({ dateRange = {} }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             <SummaryCard
                 title="Total Page Views"
-                value={loading ? '-' : Number(stats?.total_views || 0).toLocaleString('id-ID')}
+                value={loading ? '-' : Number(stats?.total_views || 0).toLocaleString('en-US')}
                 icon={Users}
                 trend={false}
                 loading={loading}
             />
             <SummaryCard
-                title="Klik Shopee"
-                value={loading ? '-' : Number(shopeeClicks).toLocaleString('id-ID')}
+                title="Shopee Clicks"
+                value={loading ? '-' : Number(shopeeClicks).toLocaleString('en-US')}
                 icon={MousePointerClick}
                 trend={false}
                 loading={loading}
             />
             <SummaryCard
-                title="Klik TikTok Shop"
-                value={loading ? '-' : Number(tiktokClicks).toLocaleString('id-ID')}
+                title="TikTok Shop Clicks"
+                value={loading ? '-' : Number(tiktokClicks).toLocaleString('en-US')}
                 icon={MousePointerClick}
                 trend={false}
                 loading={loading}
             />
             <SummaryCard
-                title="Total Klik Eksternal"
-                value={loading ? '-' : Number(totalClicks).toLocaleString('id-ID')}
+                title="Total External Clicks"
+                value={loading ? '-' : Number(totalClicks).toLocaleString('en-US')}
                 icon={MousePointerClick}
                 trend={false}
                 loading={loading}
