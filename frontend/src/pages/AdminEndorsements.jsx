@@ -160,7 +160,7 @@ export default function AdminEndorsements() {
                             <Loader2 className="animate-spin text-rose-500 mx-auto" />
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 items-start">
                             {endorsements.length === 0 ? (
                                 <div className="col-span-full bg-zinc-900 border border-zinc-800 rounded-lg p-12 text-center">
                                     <Award size={48} className="text-zinc-700 mx-auto mb-4" />
@@ -176,8 +176,8 @@ export default function AdminEndorsements() {
                                             key={item.id}
                                             className={`bg-zinc-900 border rounded-lg overflow-hidden group hover:border-zinc-600 transition-colors ${isActive ? 'border-zinc-800' : 'border-zinc-800/50 opacity-60'}`}
                                         >
-                                            {/* Image preview — aspect ratio from saved ratio_type */}
-                                            <div className={`bg-zinc-950 relative border-b border-zinc-800 overflow-hidden ${ratioLabel === '9:16' ? 'aspect-[9/16]' : 'aspect-[4/3]'}`}>
+                                            {/* Image preview — force 4:3 ratio in list view for uniformity */}
+                                            <div className="bg-zinc-950 relative border-b border-zinc-800 overflow-hidden aspect-[4/3]">
                                                 <img
                                                     src={`${import.meta.env.VITE_API_URL}${item.image_path}`}
                                                     alt={item.name}

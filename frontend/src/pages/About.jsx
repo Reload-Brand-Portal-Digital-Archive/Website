@@ -68,7 +68,7 @@ function HeroSection() {
               variant="outline"
               className="border-zinc-700 text-zinc-400 rounded-none font-mono text-[10px] tracking-widest uppercase px-3 py-1"
             >
-              About Subtitle Placeholder
+              About Us
             </Badge>
           </motion.div>
 
@@ -76,22 +76,21 @@ function HeroSection() {
             variants={fadeUp}
             className="font-sans text-[15vw] md:text-[8vw] text-zinc-50 font-black leading-[0.85] tracking-tighter uppercase"
           >
-            About Us<br />
-            <span className="text-zinc-600">Placeholder.</span>
+            RELOAD<br />
+            <span className="text-zinc-600">Culture.</span>
           </motion.h1>
 
           <motion.p
             variants={fadeUp}
             className="font-sans text-base md:text-lg text-zinc-400 max-w-[52ch] leading-relaxed"
           >
-            About page short description placeholder. This text will be replaced with the brand&apos;s
-            actual story — who we are, what we stand for, and why we make what we make.
+            Reload bukan sekadar merek pakaian; ini adalah manifestasi dari dedikasi mendalam terhadap kultur streetwear. Lahir dari perpaduan antara keahlian produksi tingkat tinggi dan visi yang berani, kami hadir untuk mendefinisikan ulang standar gaya jalanan melalui setiap jahitan.
           </motion.p>
 
           <motion.div variants={fadeUp} className="flex items-center gap-4 mt-2">
             <div className="h-px bg-zinc-800 w-8" />
             <span className="font-mono text-[10px] text-zinc-600 uppercase tracking-widest">
-              Est. Year Placeholder
+              EST. 2002
             </span>
           </motion.div>
         </motion.div>
@@ -105,9 +104,9 @@ function HeroSection() {
 // ─────────────────────────────────────────
 function BrandStorySection() {
   const paragraphs = [
-    'Brand story paragraph one placeholder. This is where the origin of the brand will be described — the founding moment, the original vision, and the people behind the first drop.',
-    'Brand story paragraph two placeholder. This section elaborates on how the brand evolved — what problems it set out to solve, the aesthetic direction it chose, and the community it sought to serve.',
-    'Brand story paragraph three placeholder. The closing paragraph reflects on where the brand stands today — its mission, its values, and its vision for the future of streetwear.',
+    'Berawal dari tahun 2002, fondasi Reload dibangun dari pengalaman panjang di balik layar industri pakaian streetwear dan distro terkemuka di Bandung. Berbekal jam terbang lebih dari satu dekade dalam menguasai detail produksi, konstruksi, dan kualitas garmen, pendiri kami, Agus Syahrudin, mengambil langkah berani pada awal era 2010-an untuk melahirkan entitas mandiri. Nama "Reload" dipilih sebagai simbol energi dan semangat bertenaga yang terinspirasi dari kultur musik yang solid.',
+    'Perjalanan awal kami bukan hanya tentang memproduksi pakaian, melainkan sebuah kolaborasi strategis antara dua pilar utama. Dengan menggabungkan mastery di bidang produksi bersama keahlian promosi yang tajam dari praktisi industri hiburan, Reload menciptakan gelombang antusiasme yang masif di pasar. Kami memfokuskan energi pada membangun brand awareness dan identitas visual terlebih dahulu, yang terbukti sukses mendatangkan lonjakan permintaan luar biasa dari komunitas di awal peluncurannya.',
+    'Kini, setelah melalui berbagai fase pendewasaan dan sebuah masa hiatus yang memberikan ruang untuk penyempurnaan visi, Reload kembali hadir (Reborn) dengan energi yang diperbarui. Kami tetap setia pada akar kami—menghadirkan koleksi yang tangguh dan ikonis, dari siluet kasual hingga basketball-style jerseys andalan kami—sambil terus berinovasi untuk mendominasi skena fesyen masa kini.',
   ];
 
   return (
@@ -126,13 +125,13 @@ function BrandStorySection() {
               [ BRAND STORY ]
             </span>
             <h2 className="text-4xl md:text-5xl lg:text-6xl font-black uppercase tracking-tighter leading-[0.9] text-zinc-50">
-              Brand Story<br />
-              <span className="text-zinc-600">Title Placeholder.</span>
+              Craftsmanship,<br />
+              <span className="text-zinc-600">Collaboration,<br />&amp; Culture.</span>
             </h2>
             <div className="flex items-center gap-4 mt-4">
               <div className="h-px bg-zinc-800 flex-1 max-w-[60px]" />
               <span className="font-mono text-[10px] text-zinc-600 uppercase tracking-widest">
-                Since Year Placeholder
+                SINCE 2002
               </span>
             </div>
           </motion.div>
@@ -164,21 +163,21 @@ function BrandStorySection() {
 const VALUES = [
   {
     index: '01',
-    title: 'Value Title Placeholder',
+    title: 'CRAFTSMANSHIP FIRST',
     description:
-      'Value description placeholder. A short explanation of what this principle means to the brand and how it is expressed in every product.',
+      'Berakar dari rumah produksi yang telah melayani berbagai merek legendaris sejak awal 2000-an, setiap potongan pakaian Reload dibuat dengan ketelitian tingkat tinggi. Kami memahami betul seni dari konstruksi garmen yang berkualitas.',
   },
   {
     index: '02',
-    title: 'Value Title Placeholder',
+    title: 'COMMUNITY & VISIBILITY',
     description:
-      'Value description placeholder. Describe the second core belief that shapes the brand identity, the creative process, and the community.',
+      'Kami percaya bahwa brand yang kuat dibangun dari komunikasi dan bagaimana Anda mengekspresikan diri. Melalui kampanye yang solid dan presensi visual yang berani, kami menjalin koneksi yang otentik dengan pemakai kami.',
   },
   {
     index: '03',
-    title: 'Value Title Placeholder',
+    title: 'RELENTLESS ENERGY',
     description:
-      'Value description placeholder. The third principle that connects the brand to its audience and distinguishes it in the market.',
+      'Terinspirasi dari nama kami sendiri, Reload merepresentasikan kekuatan untuk terus "memuat ulang" semangat dan kreativitas. Kami selalu siap beradaptasi dan menghadirkan inovasi segar di setiap era kultur fesyen.',
   },
 ];
 
@@ -237,24 +236,24 @@ function ValuesSection() {
 // ─────────────────────────────────────────
 const MILESTONES = [
   {
-    year: 'YEAR 01',
-    title: 'Milestone Title Placeholder',
-    description: 'Milestone description placeholder — the first key event in the brand\'s journey.',
+    year: '2002',
+    title: 'THE FOUNDATION',
+    description: 'Membangun pengalaman, keahlian teknis, dan reputasi sebagai pengrajin serta rumah produksi andalan untuk berbagai merek pakaian pionir di Bandung.',
   },
   {
-    year: 'YEAR 02',
-    title: 'Milestone Title Placeholder',
-    description: 'Milestone description placeholder — a significant expansion or product launch that shaped the brand.',
+    year: '2010',
+    title: 'THE INCEPTION & THE SURGE',
+    description: 'Merek Reload resmi dibentuk. Melalui perpaduan visi di bidang produksi dan keunggulan promosi, merek ini melakukan debutnya dan langsung menciptakan lonjakan antusiasme yang masif.',
   },
   {
-    year: 'YEAR 03',
-    title: 'Milestone Title Placeholder',
-    description: 'Milestone description placeholder — recognition, community growth, or a defining collaboration.',
+    year: '2012',
+    title: 'PEAK EXPANSION',
+    description: 'Skala produksi ditingkatkan secara besar-besaran untuk memenuhi ledakan permintaan dari pasar, mengukuhkan eksistensi dan kapabilitas Reload di skena mode.',
   },
   {
-    year: 'YEAR 04',
-    title: 'Milestone Title Placeholder',
-    description: 'Milestone description placeholder — the most recent landmark that represents where the brand stands today.',
+    year: '2025',
+    title: 'RELOAD REBORN',
+    description: 'Setelah melakukan refleksi dan pembaruan, Reload terlahir kembali dengan identitas yang lebih matang. Memadukan warisan orisinalitas masa lalu dengan visi modern untuk kembali mendominasi lanskap streetwear.',
   },
 ];
 
@@ -321,9 +320,11 @@ function TimelineSection() {
 // Section 5 — Team / Studio
 // ─────────────────────────────────────────
 const TEAM = [
-  { name: 'Team Member Name', title: 'Role / Title Placeholder' },
-  { name: 'Team Member Name', title: 'Role / Title Placeholder' },
-  { name: 'Team Member Name', title: 'Role / Title Placeholder' },
+  { 
+    name: 'Agus Syahrudin', 
+    title: 'Founder',
+    image: '/images/founder.jpg' // <-- Ganti nama file ini dengan nama file gambar Anda
+  }
 ];
 
 function TeamSection() {
@@ -335,18 +336,19 @@ function TeamSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-16"
+          className="mb-16 text-center md:text-left"
         >
           <span className="font-mono text-xs tracking-[0.3em] text-zinc-500 uppercase">
             [ TEAM &amp; STUDIO ]
           </span>
           <h2 className="mt-4 text-4xl md:text-5xl font-black uppercase tracking-tighter leading-none text-zinc-50">
-            The People<br />
-            <span className="text-zinc-600">Behind It.</span>
+            The People<br className="hidden md:block" />
+            <span className="text-zinc-600"> Behind It.</span>
           </h2>
         </motion.div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 md:gap-8">
+        {/* Changed grid to flex and centered since there's only 1 member */}
+        <div className="flex justify-center md:justify-start">
           {TEAM.map((member, i) => (
             <motion.div
               key={i}
@@ -354,18 +356,28 @@ function TeamSection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.2 }}
               transition={{ duration: 0.7, delay: i * 0.12, ease: [0.22, 1, 0.36, 1] }}
-              className="flex flex-col gap-4 group"
+              className="flex flex-col gap-4 group w-full max-w-sm"
             >
-              {/* Avatar placeholder */}
+              {/* Avatar placeholder or Image */}
               <div className="aspect-square bg-zinc-900 border border-zinc-800 group-hover:border-zinc-600 transition-colors overflow-hidden relative flex items-center justify-center">
-                <div className="flex flex-col items-center gap-2">
-                  <span className="font-mono text-[9px] text-zinc-700 uppercase tracking-widest">
-                    Team Photo
-                  </span>
-                  <span className="font-mono text-[8px] text-zinc-800 uppercase tracking-wider">
-                    1 : 1
+                <img 
+                  src={member.image} 
+                  alt={member.name}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    // Fallback visual jika gambar belum ada
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'flex';
+                  }}
+                />
+                
+                {/* Fallback box jika gambar error/tidak ditemukan */}
+                <div className="hidden flex-col items-center gap-2 absolute inset-0 justify-center bg-zinc-900">
+                  <span className="font-mono text-[9px] text-zinc-700 uppercase tracking-widest text-center px-4">
+                    Photo Not Found<br/><br/>Simpan gambar di:<br/>public/images/founder.jpg
                   </span>
                 </div>
+
                 {/* Corner accents */}
                 <div className="absolute top-3 left-3 w-4 h-4 border-t border-l border-zinc-700" />
                 <div className="absolute top-3 right-3 w-4 h-4 border-t border-r border-zinc-700" />
@@ -408,14 +420,14 @@ function CTASection() {
           transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
         >
           <span className="font-mono text-xs tracking-[0.3em] text-zinc-500 uppercase block mb-6">
-            [ CTA PLACEHOLDER ]
+            [ JOIN THE MOVEMENT ]
           </span>
           <h2 className="text-5xl md:text-[6vw] font-black leading-[0.85] tracking-tighter uppercase text-zinc-50">
-            CTA Heading<br />
-            <span className="text-zinc-600">Placeholder.</span>
+            Explore The<br />
+            <span className="text-zinc-600">Collection.</span>
           </h2>
           <p className="mt-6 text-zinc-400 text-base max-w-[48ch] leading-relaxed">
-            CTA supporting text placeholder. A short sentence inviting the user to explore the shop or latest collections.
+            Jelajahi rilisan terbaru dari Reload. Temukan desain ikonis dan jadilah bagian dari pergerakan kultur streetwear kami.
           </p>
         </motion.div>
 
