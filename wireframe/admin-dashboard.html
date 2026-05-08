@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Low-Fidelity Wireframe — Admin Dashboard</title>
+<style>
+  /* ─── RESET & BASE ─── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:      #0d0d0d;
+    --surface: #161616;
+    --card:    #1e1e1e;
+    --border:  #2a2a2a;
+    --muted:   #3a3a3a;
+    --text-lo: #4a4a4a;
+    --text-md: #787878;
+    --text-hi: #c0c0c0;
+    --text-wh: #e8e8e8;
+    --accent:  #505050;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text-hi);
+    font-family: 'Segoe UI', Arial, sans-serif;
+    font-size: 13px;
+    line-height: 1.4;
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ─── LABEL / ANNOTATION ─── */
+  .lf-label {
+    display: block;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-lo);
+    margin-bottom: 4px;
+  }
+
+  /* ─── PLACEHOLDER BOX ─── */
+  .ph {
+    background: var(--muted);
+    border-radius: 3px;
+  }
+  .ph-line { height: 10px; }
+  .ph-sm   { height: 16px; }
+  .ph-md   { height: 28px; }
+  .ph-icon { width: 20px; height: 20px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
+
+  /* ─────────────── SIDEBAR ─────────────── */
+  .sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+  }
+
+  .sidebar-logo {
+    height: 56px;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    border-bottom: 1px solid var(--border);
+    gap: 10px;
+  }
+  .sidebar-logo .ph-icon { border-radius: 4px; width: 28px; height: 28px; }
+  .sidebar-logo span { font-size: 15px; font-weight: 700; color: var(--text-wh); letter-spacing: 0.05em; }
+
+  .sidebar-nav {
+    flex: 1;
+    padding: 16px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    overflow-y: auto;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--text-md);
+    font-size: 12.5px;
+  }
+  .nav-item.active {
+    background: var(--card);
+    color: var(--text-wh);
+    border-left: 2px solid var(--text-hi);
+  }
+  .nav-item .ph-icon { width: 16px; height: 16px; border-radius: 3px; background: var(--muted); }
+
+  .sidebar-user {
+    padding: 14px 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .sidebar-user .ph-icon { width: 30px; height: 30px; }
+  .sidebar-user-info { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+
+  /* ─────────────── MAIN AREA ─────────────── */
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ─── TOPBAR ─── */
+  .topbar {
+    height: 56px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    flex-shrink: 0;
+    gap: 12px;
+  }
+  .topbar-left { display: flex; align-items: center; gap: 8px; }
+  .topbar-left .ph-icon { border-radius: 4px; width: 22px; height: 22px; }
+  .topbar-right { display: flex; align-items: center; gap: 10px; }
+
+  .btn-wf {
+    background: var(--muted);
+    border: none;
+    border-radius: 5px;
+    padding: 6px 14px;
+    color: var(--text-hi);
+    font-size: 11.5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .btn-wf.primary { background: var(--accent); color: var(--text-wh); }
+
+  .filter-group {
+    display: flex;
+    align-items: center;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .filter-btn {
+    padding: 5px 12px;
+    font-size: 11px;
+    color: var(--text-md);
+    border: none;
+    background: none;
+    cursor: pointer;
+    border-right: 1px solid var(--border);
+  }
+  .filter-btn:last-child { border-right: none; }
+  .filter-btn.active { background: var(--muted); color: var(--text-wh); }
+  .filter-btn.calendar { display: flex; align-items: center; gap: 4px; }
+
+  /* ─── CONTENT SCROLL ─── */
+  .content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  /* ─── PAGE HEADER ─── */
+  .page-header { display: flex; flex-direction: column; gap: 4px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+  .page-header h1 { font-size: 22px; font-weight: 700; color: var(--text-wh); }
+  .page-header p  { font-size: 12px; color: var(--text-md); }
+
+  /* ─── SUMMARY CARDS ─── */
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px;
+    position: relative;
+    overflow: hidden;
+  }
+  .card-label { font-size: 11px; color: var(--text-md); margin-bottom: 8px; }
+  .card-value { font-size: 26px; font-weight: 700; color: var(--text-wh); margin-bottom: 10px; }
+  .card-icon {
+    position: absolute;
+    top: 16px; right: 16px;
+    width: 36px; height: 36px;
+    background: var(--muted);
+    border-radius: 6px;
+  }
+  .card-bar {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--muted);
+  }
+
+  /* ─── SECTION TITLE ─── */
+  .section-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-md);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* ─── CHARTS ROW ─── */
+  .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .chart-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+  }
+  .chart-title { font-size: 13px; font-weight: 600; color: var(--text-wh); margin-bottom: 4px; }
+  .chart-subtitle { font-size: 10.5px; color: var(--text-md); margin-bottom: 16px; }
+
+  /* Fake line chart */
+  .fake-line-chart { position: relative; height: 140px; width: 100%; overflow: hidden; }
+  .fake-line-chart .grid-lines {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; justify-content: space-between;
+  }
+  .fake-line-chart .grid-line { width: 100%; height: 1px; background: var(--border); }
+  .fake-line-chart .line-svg {
+    position: absolute; inset: 0;
+  }
+  .x-axis { display: flex; justify-content: space-between; margin-top: 8px; }
+  .x-axis span { font-size: 10px; color: var(--text-lo); }
+
+  /* Fake bar chart */
+  .fake-bar-chart {
+    height: 120px;
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    padding-top: 10px;
+  }
+  .bar-group { flex: 1; display: flex; gap: 3px; align-items: flex-end; height: 100%; }
+  .bar {
+    flex: 1;
+    background: var(--muted);
+    border-radius: 3px 3px 0 0;
+    min-height: 8px;
+  }
+  .bar.b1 { height: 60%; }
+  .bar.b2 { height: 40%; }
+  .bar.b3 { height: 80%; }
+  .bar.b4 { height: 55%; }
+  .bar.b5 { height: 70%; }
+  .bar.b6 { height: 45%; }
+  .bar.b7 { height: 90%; }
+  .bar.alt { background: var(--accent); opacity: 0.7; }
+
+  /* Fake area chart */
+  .fake-area-chart { position: relative; height: 140px; overflow: hidden; }
+
+  /* ─── SECOND CHARTS ROW ─── */
+  .charts-bot { display: grid; grid-template-columns: 1fr 2fr; gap: 16px; }
+  .chart-box-sm { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 20px; }
+
+  /* Map placeholder */
+  .map-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0;
+    overflow: hidden;
+    position: relative;
+    height: 100%;
+    min-height: 240px;
+  }
+  .map-inner {
+    width: 100%; height: 100%;
+    background: repeating-linear-gradient(
+      -45deg,
+      var(--surface) 0px,
+      var(--surface) 6px,
+      var(--card) 6px,
+      var(--card) 12px
+    );
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .map-dots {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .map-dot {
+    position: absolute;
+    width: 8px; height: 8px;
+    background: var(--text-hi);
+    border-radius: 50%;
+    opacity: 0.6;
+  }
+  .map-label { font-size: 11px; color: var(--text-md); position: absolute; bottom: 12px; left: 0; right: 0; text-align: center; }
+
+  /* ─── TABLE ─── */
+  .table-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .table-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+  }
+  .table-header-title { font-size: 12.5px; font-weight: 600; color: var(--text-wh); display: flex; align-items: center; gap: 6px; }
+  .table-header-title .ph-icon { width: 14px; height: 14px; border-radius: 3px; }
+  .refresh-btn { width: 20px; height: 20px; border-radius: 50%; background: var(--muted); }
+
+  table { width: 100%; border-collapse: collapse; }
+  thead tr { background: var(--surface); }
+  thead th {
+    padding: 10px 18px;
+    text-align: left;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-md);
+    border-bottom: 1px solid var(--border);
+  }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--surface); }
+  tbody td { padding: 12px 18px; font-size: 12px; color: var(--text-hi); }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 600;
+    background: var(--muted);
+    color: var(--text-hi);
+  }
+  .badge-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-hi); }
+
+  .mono { font-family: 'Courier New', monospace; font-size: 11px; color: var(--text-md); }
+
+  /* ─── DATE RANGE MODAL (overlay) ─── */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.75);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+  }
+  .modal {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    width: 680px;
+    max-width: 95vw;
+    overflow: hidden;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.8);
+  }
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 22px;
+    border-bottom: 1px solid var(--border);
+  }
+  .modal-header h2 { font-size: 14px; font-weight: 600; color: var(--text-wh); display: flex; align-items: center; gap: 8px; }
+  .modal-header h2 .ph-icon { border-radius: 3px; background: var(--muted); }
+  .modal-close { width: 26px; height: 26px; background: var(--muted); border-radius: 5px; display: flex; align-items: center; justify-content: center; color: var(--text-md); font-size: 12px; cursor: pointer; }
+
+  .modal-body { display: flex; }
+
+  .modal-presets {
+    width: 150px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border);
+    padding: 16px 12px;
+  }
+  .preset-label { font-size: 9px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-lo); margin-bottom: 10px; }
+  .preset-btn {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    color: var(--text-md);
+    background: none;
+    border: none;
+    cursor: pointer;
+    margin-bottom: 2px;
+  }
+  .preset-btn:hover { background: var(--muted); color: var(--text-hi); }
+
+  .modal-cal { flex: 1; padding: 20px 22px; }
+  .cal-range-display { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .cal-field {
+    flex: 1;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    background: var(--surface);
+  }
+  .cal-field .lf-label { margin-bottom: 2px; }
+  .cal-field-val { font-size: 13px; color: var(--text-wh); }
+  .cal-arrow { color: var(--text-lo); font-size: 14px; }
+  .cal-hint { font-size: 10px; color: var(--text-lo); font-family: monospace; margin-bottom: 14px; }
+  .cal-months { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .cal-month {}
+  .cal-month-title { text-align: center; font-size: 13px; font-weight: 600; color: var(--text-wh); margin-bottom: 12px; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+  .cal-day-hdr { text-align: center; font-size: 9px; font-weight: 700; color: var(--text-lo); text-transform: uppercase; padding: 4px 0; }
+  .cal-day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11.5px;
+    color: var(--text-md);
+    border-radius: 50%;
+    cursor: pointer;
+  }
+  .cal-day:hover { background: var(--muted); color: var(--text-hi); }
+  .cal-day.in-range { background: var(--muted); border-radius: 0; color: var(--text-hi); }
+  .cal-day.selected { background: var(--accent); color: var(--text-wh); border-radius: 50%; font-weight: 700; }
+  .cal-day.today { border: 1px solid var(--text-md); color: var(--text-hi); }
+  .cal-day.blank { cursor: default; }
+
+  .modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 22px;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .modal-footer .reset { font-size: 12px; color: var(--text-md); cursor: pointer; }
+  .modal-footer .actions { display: flex; gap: 10px; }
+  .btn-cancel { padding: 7px 16px; border-radius: 8px; border: 1px solid var(--border); background: none; color: var(--text-md); font-size: 12px; cursor: pointer; }
+  .btn-apply { padding: 7px 18px; border-radius: 8px; border: none; background: var(--accent); color: var(--text-wh); font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+
+  /* ─── TOGGLE MODAL BUTTON ─── */
+  #toggle-modal {
+    position: fixed;
+    bottom: 24px; right: 24px;
+    background: var(--muted);
+    color: var(--text-wh);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-size: 12px;
+    cursor: pointer;
+    z-index: 200;
+    font-weight: 600;
+  }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--muted); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════
+     SIDEBAR
+════════════════════════════════════════ -->
+<aside class="sidebar">
+
+  <div class="sidebar-logo">
+    <div class="ph-icon"></div>
+    <span>RELOAD.</span>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-item active">
+      <div class="ph-icon"></div>
+      <span>Dashboard</span>
+    </div>
+    <div class="nav-item">
+      <div class="ph-icon"></div>
+      <span>Produk</span>
+    </div>
+    <div class="nav-item">
+      <div class="ph-icon"></div>
+      <span>Koleksi</span>
+    </div>
+    <div class="nav-item">
+      <div class="ph-icon"></div>
+      <span>Kategori</span>
+    </div>
+    <div class="nav-item">
+      <div class="ph-icon"></div>
+      <span>Material</span>
+    </div>
+    <div class="nav-item">
+      <div class="ph-icon"></div>
+      <span>Pesan</span>
+    </div>
+    <div class="nav-item">
+      <div class="ph-icon"></div>
+      <span>Newsletter</span>
+    </div>
+    <div class="nav-item">
+      <div class="ph-icon"></div>
+      <span>Pengaturan</span>
+    </div>
+  </nav>
+
+  <div class="sidebar-user">
+    <div class="ph-icon"></div>
+    <div class="sidebar-user-info">
+      <div class="ph ph-sm" style="width: 80px;"></div>
+      <div class="ph ph-line" style="width: 55px; margin-top: 4px;"></div>
+    </div>
+    <div class="ph-icon" style="width: 16px; height: 16px; border-radius: 3px;"></div>
+  </div>
+
+</aside><!-- end sidebar -->
+
+
+<!-- ════════════════════════════════════════
+     MAIN AREA
+════════════════════════════════════════ -->
+<div class="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="ph-icon"></div>
+      <span style="font-weight:600; color:var(--text-hi);">Admin Dashboard</span>
+    </div>
+    <div class="topbar-right">
+      <button class="btn-wf primary">⟳ &nbsp;Sinkronisasi E-Commerce</button>
+      <div class="filter-group">
+        <button class="filter-btn">Hari ini</button>
+        <button class="filter-btn active">7 Hari</button>
+        <button class="filter-btn">30 Hari</button>
+        <button class="filter-btn calendar" onclick="toggleModal()">📅 Pilih Tanggal</button>
+      </div>
+    </div>
+  </div><!-- end topbar -->
+
+
+  <!-- SCROLLABLE CONTENT -->
+  <div class="content">
+
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+      <h1>Admin <span style="color:var(--text-md); font-weight:300;">Dashboard</span></h1>
+      <p>Ringkasan statistik performa website RELOAD.</p>
+    </div>
+
+    <!-- ── SUMMARY CARDS ── -->
+    <span class="section-title">Ringkasan Statistik</span>
+    <div class="cards-grid">
+      <div class="card">
+        <div class="card-icon"></div>
+        <div class="card-label">Total Page Views</div>
+        <div class="card-value">—</div>
+        <div class="ph ph-line" style="width:80px;"></div>
+        <div class="card-bar"></div>
+      </div>
+      <div class="card">
+        <div class="card-icon"></div>
+        <div class="card-label">Klik Shopee</div>
+        <div class="card-value">—</div>
+        <div class="ph ph-line" style="width:60px;"></div>
+        <div class="card-bar"></div>
+      </div>
+      <div class="card">
+        <div class="card-icon"></div>
+        <div class="card-label">Klik TikTok Shop</div>
+        <div class="card-value">—</div>
+        <div class="ph ph-line" style="width:60px;"></div>
+        <div class="card-bar"></div>
+      </div>
+      <div class="card">
+        <div class="card-icon"></div>
+        <div class="card-label">Total Klik Eksternal</div>
+        <div class="card-value">—</div>
+        <div class="ph ph-line" style="width:70px;"></div>
+        <div class="card-bar"></div>
+      </div>
+    </div><!-- end cards -->
+
+    <!-- ── CHART ROW 1 ── -->
+    <span class="section-title">Tren Utama</span>
+    <div class="charts-row">
+
+      <!-- Traffic Visitors -->
+      <div class="chart-box">
+        <div class="chart-title">Traffic Visitors</div>
+        <div class="chart-subtitle">Page Views per hari (7 Hari)</div>
+        <div class="fake-line-chart">
+          <div class="grid-lines">
+            <div class="grid-line"></div>
+            <div class="grid-line"></div>
+            <div class="grid-line"></div>
+            <div class="grid-line"></div>
+            <div class="grid-line"></div>
+          </div>
+          <svg class="line-svg" viewBox="0 0 300 140" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="lg1" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#888" stop-opacity="0.25"/>
+                <stop offset="100%" stop-color="#888" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <polyline
+              points="0,110 42,90 85,70 128,100 171,45 214,60 257,30 300,20"
+              fill="none" stroke="#888" stroke-width="2.5"/>
+            <polygon
+              points="0,110 42,90 85,70 128,100 171,45 214,60 257,30 300,20 300,140 0,140"
+              fill="url(#lg1)"/>
+            <circle cx="0"   cy="110" r="3.5" fill="#888"/>
+            <circle cx="42"  cy="90"  r="3.5" fill="#888"/>
+            <circle cx="85"  cy="70"  r="3.5" fill="#888"/>
+            <circle cx="128" cy="100" r="3.5" fill="#888"/>
+            <circle cx="171" cy="45"  r="3.5" fill="#888"/>
+            <circle cx="214" cy="60"  r="3.5" fill="#888"/>
+            <circle cx="257" cy="30"  r="3.5" fill="#888"/>
+            <circle cx="300" cy="20"  r="3.5" fill="#888"/>
+          </svg>
+        </div>
+        <div class="x-axis">
+          <span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span>Sab</span><span>Min</span><span>Hari ini</span>
+        </div>
+      </div><!-- end traffic -->
+
+      <!-- User Growth -->
+      <div class="chart-box">
+        <div class="chart-title">User Growth</div>
+        <div class="chart-subtitle">Kumulatif akun terdaftar (per bulan)</div>
+        <div class="fake-area-chart">
+          <svg width="100%" height="140" viewBox="0 0 300 140" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="lg2" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#666" stop-opacity="0.35"/>
+                <stop offset="100%" stop-color="#666" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <polygon
+              points="0,130 60,115 120,100 180,75 240,45 300,15 300,140 0,140"
+              fill="url(#lg2)"/>
+            <polyline
+              points="0,130 60,115 120,100 180,75 240,45 300,15"
+              fill="none" stroke="#888" stroke-width="2.5"/>
+          </svg>
+        </div>
+        <div class="x-axis">
+          <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>Mei</span><span>Jun</span>
+        </div>
+      </div><!-- end user growth -->
+
+    </div><!-- end charts-row -->
+
+    <!-- ── CHART ROW 2 + MAP ── -->
+    <span class="section-title">Detail &amp; Peta</span>
+    <div class="charts-bot">
+
+      <!-- Left column -->
+      <div style="display:flex; flex-direction:column; gap:14px;">
+
+        <!-- Subscriber -->
+        <div class="chart-box-sm">
+          <div class="chart-title" style="font-size:12.5px;">Subscriber Trend</div>
+          <div style="margin-top:12px; display:flex; align-items:center; justify-content:center; height:80px; color:var(--text-lo); font-size:11px; border: 1px dashed var(--border); border-radius:5px;">
+            Data newsletter belum tersedia
+          </div>
+        </div>
+
+        <!-- External Clicks -->
+        <div class="chart-box-sm">
+          <div class="chart-title" style="font-size:12.5px;">Klik Toko Eksternal</div>
+          <div style="font-size:10px; color:var(--text-md); margin-bottom:10px;">Shopee vs TikTok per hari</div>
+          <div class="fake-bar-chart">
+            <div class="bar-group"><div class="bar b1"></div><div class="bar b1 alt" style="height:25%"></div></div>
+            <div class="bar-group"><div class="bar b2"></div><div class="bar b2 alt" style="height:30%"></div></div>
+            <div class="bar-group"><div class="bar b3"></div><div class="bar b3 alt" style="height:50%"></div></div>
+            <div class="bar-group"><div class="bar b4"></div><div class="bar b4 alt" style="height:35%"></div></div>
+            <div class="bar-group"><div class="bar b5"></div><div class="bar b5 alt" style="height:45%"></div></div>
+            <div class="bar-group"><div class="bar b6"></div><div class="bar b6 alt" style="height:20%"></div></div>
+            <div class="bar-group"><div class="bar b7"></div><div class="bar b7 alt" style="height:60%"></div></div>
+          </div>
+          <div class="x-axis" style="margin-top:6px;">
+            <span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span>Sab</span><span>Min</span>
+          </div>
+          <div style="display:flex; gap:12px; margin-top:10px;">
+            <div style="display:flex; align-items:center; gap:5px; font-size:10px; color:var(--text-md);">
+              <div style="width:10px; height:10px; background:var(--muted); border-radius:2px;"></div> Shopee
+            </div>
+            <div style="display:flex; align-items:center; gap:5px; font-size:10px; color:var(--text-md);">
+              <div style="width:10px; height:10px; background:var(--accent); border-radius:2px; opacity:0.7;"></div> TikTok
+            </div>
+          </div>
+        </div>
+
+      </div><!-- end left col -->
+
+      <!-- Geographic Map -->
+      <div class="map-box">
+        <div class="map-inner">
+          <div class="map-dots">
+            <div class="map-dot" style="top:30%; left:50%;"></div>
+            <div class="map-dot" style="top:42%; left:60%;"></div>
+            <div class="map-dot" style="top:55%; left:45%;"></div>
+            <div class="map-dot" style="top:38%; left:35%;"></div>
+            <div class="map-dot" style="top:65%; left:55%; opacity:0.3;"></div>
+            <div class="map-dot" style="top:25%; left:65%; opacity:0.4;"></div>
+            <div class="map-dot" style="top:50%; left:70%; opacity:0.5;"></div>
+          </div>
+          <span class="lf-label" style="position:relative; z-index:1;">Peta Distribusi Pengunjung</span>
+          <span style="font-size:10px; color:var(--text-lo); position:relative; z-index:1;">Indonesia · Leaflet Map</span>
+        </div>
+      </div>
+
+    </div><!-- end charts-bot -->
+
+    <!-- ── RECENT ORDERS TABLE ── -->
+    <span class="section-title">Live Activity</span>
+    <div class="table-box">
+      <div class="table-header">
+        <div class="table-header-title">
+          <div class="ph-icon"></div>
+          Pesanan Terbaru (Klik ke Toko)
+        </div>
+        <div class="refresh-btn"></div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Platform</th>
+            <th>IP Address</th>
+            <th style="text-align:right;">Waktu</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="badge"><span class="badge-dot"></span>Shopee</span></td>
+            <td class="mono">::1</td>
+            <td style="text-align:right;" class="mono">03 Apr, 09:51</td>
+          </tr>
+          <tr>
+            <td><span class="badge"><span class="badge-dot"></span>TikTok Shop</span></td>
+            <td class="mono">::1</td>
+            <td style="text-align:right;" class="mono">03 Apr, 09:48</td>
+          </tr>
+          <tr>
+            <td><span class="badge"><span class="badge-dot"></span>Shopee</span></td>
+            <td class="mono">192.168.1.5</td>
+            <td style="text-align:right;" class="mono">03 Apr, 09:40</td>
+          </tr>
+          <tr>
+            <td><span class="badge"><span class="badge-dot"></span>TikTok Shop</span></td>
+            <td class="mono">192.168.1.5</td>
+            <td style="text-align:right;" class="mono">03 Apr, 09:32</td>
+          </tr>
+          <tr>
+            <td><span class="badge"><span class="badge-dot"></span>Shopee</span></td>
+            <td class="mono">::1</td>
+            <td style="text-align:right;" class="mono">03 Apr, 09:21</td>
+          </tr>
+        </tbody>
+      </table>
+    </div><!-- end table -->
+
+    <div style="height:16px;"></div>
+
+  </div><!-- end content -->
+
+</div><!-- end main -->
+
+
+<!-- ════════════════════════════════════════
+     DATE RANGE PICKER MODAL WIREFRAME
+════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-overlay" style="display:none;">
+  <div class="modal">
+    <div class="modal-header">
+      <h2><div class="ph-icon" style="width:16px;height:16px;"></div> Pilih Rentang Tanggal</h2>
+      <div class="modal-close" onclick="toggleModal()">✕</div>
+    </div>
+
+    <div class="modal-body">
+      <!-- Presets -->
+      <div class="modal-presets">
+        <div class="preset-label">Cepat Pilih</div>
+        <button class="preset-btn">Hari ini</button>
+        <button class="preset-btn">7 Hari</button>
+        <button class="preset-btn">30 Hari</button>
+        <button class="preset-btn">Bulan ini</button>
+        <button class="preset-btn">Bulan lalu</button>
+      </div>
+
+      <!-- Calendar -->
+      <div class="modal-cal">
+
+        <!-- Range display -->
+        <div class="cal-range-display">
+          <div class="cal-field">
+            <span class="lf-label">Dari</span>
+            <span class="cal-field-val">01 Apr 2026</span>
+          </div>
+          <span class="cal-arrow">→</span>
+          <div class="cal-field">
+            <span class="lf-label">Sampai</span>
+            <span class="cal-field-val" style="color:var(--text-md);">Pilih tanggal...</span>
+          </div>
+        </div>
+
+        <div class="cal-hint">↗ Pilih tanggal mulai terlebih dahulu</div>
+
+        <div class="cal-months">
+          <!-- Month 1 -->
+          <div class="cal-month">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+              <button style="background:var(--muted); border:none; border-radius:5px; color:var(--text-md); padding:4px 8px; cursor:pointer;">‹</button>
+              <span class="cal-month-title" style="margin-bottom:0;">April 2026</span>
+              <div></div>
+            </div>
+            <div class="cal-grid">
+              <div class="cal-day-hdr">Min</div><div class="cal-day-hdr">Sen</div><div class="cal-day-hdr">Sel</div>
+              <div class="cal-day-hdr">Rab</div><div class="cal-day-hdr">Kam</div><div class="cal-day-hdr">Jum</div><div class="cal-day-hdr">Sab</div>
+
+              <div class="cal-day blank"></div>
+              <div class="cal-day">1</div><div class="cal-day selected">2</div>
+              <div class="cal-day in-range">3</div><div class="cal-day in-range">4</div>
+              <div class="cal-day in-range">5</div><div class="cal-day in-range">6</div>
+              <div class="cal-day in-range">7</div><div class="cal-day in-range">8</div>
+              <div class="cal-day in-range">9</div><div class="cal-day in-range">10</div>
+              <div class="cal-day today">11</div><div class="cal-day">12</div><div class="cal-day">13</div>
+              <div class="cal-day">14</div><div class="cal-day">15</div><div class="cal-day">16</div>
+              <div class="cal-day">17</div><div class="cal-day">18</div><div class="cal-day">19</div>
+              <div class="cal-day">20</div><div class="cal-day">21</div><div class="cal-day">22</div>
+              <div class="cal-day">23</div><div class="cal-day">24</div><div class="cal-day">25</div>
+              <div class="cal-day">26</div><div class="cal-day">27</div><div class="cal-day">28</div>
+              <div class="cal-day">29</div><div class="cal-day">30</div>
+            </div>
+          </div>
+
+          <!-- Month 2 -->
+          <div class="cal-month">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+              <div></div>
+              <span class="cal-month-title" style="margin-bottom:0;">Mei 2026</span>
+              <button style="background:var(--muted); border:none; border-radius:5px; color:var(--text-md); padding:4px 8px; cursor:pointer;">›</button>
+            </div>
+            <div class="cal-grid">
+              <div class="cal-day-hdr">Min</div><div class="cal-day-hdr">Sen</div><div class="cal-day-hdr">Sel</div>
+              <div class="cal-day-hdr">Rab</div><div class="cal-day-hdr">Kam</div><div class="cal-day-hdr">Jum</div><div class="cal-day-hdr">Sab</div>
+
+              <div class="cal-day blank"></div><div class="cal-day blank"></div><div class="cal-day blank"></div>
+              <div class="cal-day blank"></div><div class="cal-day">1</div><div class="cal-day">2</div><div class="cal-day">3</div>
+              <div class="cal-day">4</div><div class="cal-day">5</div><div class="cal-day">6</div>
+              <div class="cal-day">7</div><div class="cal-day">8</div><div class="cal-day">9</div><div class="cal-day">10</div>
+              <div class="cal-day">11</div><div class="cal-day">12</div><div class="cal-day">13</div>
+              <div class="cal-day">14</div><div class="cal-day">15</div><div class="cal-day">16</div><div class="cal-day">17</div>
+              <div class="cal-day">18</div><div class="cal-day">19</div><div class="cal-day">20</div>
+              <div class="cal-day">21</div><div class="cal-day">22</div><div class="cal-day">23</div><div class="cal-day">24</div>
+              <div class="cal-day">25</div><div class="cal-day">26</div><div class="cal-day">27</div>
+              <div class="cal-day">28</div><div class="cal-day">29</div><div class="cal-day">30</div><div class="cal-day">31</div>
+            </div>
+          </div>
+
+        </div><!-- end cal-months -->
+      </div><!-- end modal-cal -->
+    </div><!-- end modal-body -->
+
+    <div class="modal-footer">
+      <span class="reset">Reset</span>
+      <div class="actions">
+        <button class="btn-cancel" onclick="toggleModal()">Batal</button>
+        <button class="btn-apply">✓ &nbsp;Terapkan</button>
+      </div>
+    </div>
+  </div><!-- end modal -->
+</div><!-- end modal-overlay -->
+
+<!-- Toggle modal button -->
+<button id="toggle-modal" onclick="toggleModal()">📅 Preview Modal Kalender</button>
+
+<script>
+  function toggleModal() {
+    const overlay = document.getElementById('modal-overlay');
+    overlay.style.display = overlay.style.display === 'none' ? 'flex' : 'none';
+  }
+</script>
+
+</body>
+</html>

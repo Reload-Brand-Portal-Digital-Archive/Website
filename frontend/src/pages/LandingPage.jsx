@@ -13,6 +13,7 @@ import Navbar from "../components/ui/Navbar"
 import SplashScreen from "../components/ui/SplashScreen"
 import EndorsementCarousel from "../components/ui/EndorsementCarousel"
 import NewsletterSignup from "../components/NewsletterSignup"
+import { useSettings } from "../context/SettingsContext"
 
 const staggerContainer = {
   hidden: {},
@@ -28,6 +29,16 @@ const fadeIn = {
 }
 
 function HeroSection() {
+  const { settings } = useSettings();
+
+  const heroHeadline = settings?.hero_headline || "New Arrivals.";
+  const words = heroHeadline.split(" ");
+  const lastWord = words.length > 1 ? words.pop() : "";
+  const firstPart = words.join(" ");
+
+  const heroSubheadline = settings?.hero_subheadline || "Everyday streetwear built for comfort, movement, and style.";
+  const heroImage = settings?.hero_banner_image ? `${import.meta.env.VITE_API_URL}/${settings.hero_banner_image}` : heroModel;
+
   return (
     <header className="relative w-full min-h-[100dvh] bg-zinc-950 overflow-hidden pt-21">
       <div
@@ -50,17 +61,17 @@ function HeroSection() {
 
           <motion.h1
             variants={fadeUp}
-            className="font-sans text-[13vw] md:text-[7vw] text-zinc-50 font-black leading-[0.85] tracking-tighter uppercase"
+            className="font-sans text-[13vw] md:text-[7vw] text-zinc-50 font-black leading-[0.85] tracking-tighter uppercase whitespace-pre-wrap"
           >
-            New{"\n"}
-            <span className="text-zinc-600">Arrivals.</span>
+            {firstPart ? <>{firstPart}{"\n"}</> : ""}
+            <span className="text-zinc-600">{lastWord || heroHeadline}</span>
           </motion.h1>
 
           <motion.p
             variants={fadeUp}
             className="font-sans text-base text-zinc-400 max-w-[38ch] leading-relaxed"
           >
-            Everyday streetwear built for comfort, movement, and style.
+            {heroSubheadline}
           </motion.p>
 
           <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-3 mt-2">
@@ -99,8 +110,8 @@ function HeroSection() {
           className="order-1 md:order-2 col-span-1 md:col-span-7 h-[55vw] md:h-full relative bg-zinc-900 overflow-hidden"
         >
           <img
-            src={heroModel}
-            alt="Reload Distro - New Arrivals"
+            src={heroImage}
+            alt={heroHeadline}
             className="absolute inset-0 w-full h-full object-cover object-top"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-zinc-950/60" />
@@ -395,6 +406,8 @@ function MaterialIntegritySection() {
 }
 
 function ShopCTASection() {
+  const { settings } = useSettings();
+  
   return (
     <section className="w-full bg-zinc-950 border-b border-zinc-900 font-sans overflow-hidden">
       <div className="max-w-[1600px] mx-auto px-6 md:px-12 py-32 md:py-48 flex flex-col justify-between gap-24 min-h-[60vh]">
@@ -421,7 +434,7 @@ function ShopCTASection() {
         >
           <motion.a
             whileTap={{ scale: 0.97 }}
-            href="https://tiktok.com"
+            href={settings?.tiktok_shop_url || "https://tiktok.com"}
             target="_blank"
             rel="noopener noreferrer"
             className="group flex items-center justify-center gap-3 h-14 px-8 bg-transparent border border-emerald-600/60 text-emerald-400 font-mono text-xs uppercase tracking-widest hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition-all"
@@ -431,7 +444,7 @@ function ShopCTASection() {
           </motion.a>
           <motion.a
             whileTap={{ scale: 0.97 }}
-            href="https://shopee.co.id"
+            href={settings?.shopee_shop_url || "https://shopee.co.id"}
             target="_blank"
             rel="noopener noreferrer"
             className="group flex items-center justify-center gap-3 h-14 px-8 bg-transparent border border-orange-600/60 text-orange-400 font-mono text-xs uppercase tracking-widest hover:bg-orange-600 hover:text-white hover:border-orange-600 transition-all"
@@ -448,14 +461,16 @@ function ShopCTASection() {
 
 
 function FooterSection() {
+  const { settings } = useSettings();
+
   return (
     <footer className="w-full bg-zinc-950 text-zinc-50 px-6 md:px-12 pt-24 pb-8 border-t border-zinc-900 font-sans">
       <div className="max-w-[1600px] mx-auto">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-10 mb-24">
           <div className="flex flex-col gap-3">
             <span className="text-xs uppercase font-mono text-zinc-500 mb-2">[ SHOP ]</span>
-            <a href="https://tiktok.com" target="_blank" rel="noopener noreferrer" className="text-sm text-zinc-400 hover:text-zinc-50 transition-colors">Shop on TikTok</a>
-            <a href="https://shopee.co.id" target="_blank" rel="noopener noreferrer" className="text-sm text-zinc-400 hover:text-zinc-50 transition-colors">Shop on Shopee</a>
+            <a href={settings?.tiktok_shop_url || "https://tiktok.com"} target="_blank" rel="noopener noreferrer" className="text-sm text-zinc-400 hover:text-zinc-50 transition-colors">Shop on TikTok</a>
+            <a href={settings?.shopee_shop_url || "https://shopee.co.id"} target="_blank" rel="noopener noreferrer" className="text-sm text-zinc-400 hover:text-zinc-50 transition-colors">Shop on Shopee</a>
             <a href="#" className="text-sm text-zinc-400 hover:text-zinc-50 transition-colors">Shipping &amp; Returns</a>
           </div>
 
@@ -477,9 +492,14 @@ function FooterSection() {
 
           <div className="flex flex-col gap-3">
             <span className="text-xs uppercase font-mono text-zinc-500 mb-2">[ CONTACT ]</span>
-            <a href="mailto:hello@reload.xyz" className="text-sm font-mono text-zinc-400 hover:text-zinc-50 transition-colors uppercase tracking-widest">
-              HELLO@RELOAD.XYZ
+            <a href={settings?.contact_email ? `mailto:${settings.contact_email}` : "mailto:hello@reload.xyz"} className="text-sm font-mono text-zinc-400 hover:text-zinc-50 transition-colors uppercase tracking-widest break-all">
+              {settings?.contact_email || "HELLO@RELOAD.XYZ"}
             </a>
+            {settings?.whatsapp_number && (
+              <a href={`https://wa.me/${settings.whatsapp_number.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="text-sm font-mono text-zinc-400 hover:text-zinc-50 transition-colors uppercase tracking-widest">
+                WA: {settings.whatsapp_number}
+              </a>
+            )}
             <div className="flex items-center gap-4 mt-2">
               <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="text-zinc-500 hover:text-zinc-50 transition-colors" aria-label="Instagram">
                 <Instagram className="w-4 h-4" />

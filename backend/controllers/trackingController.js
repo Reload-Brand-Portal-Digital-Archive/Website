@@ -91,15 +91,14 @@ exports.getTrackingStats = async (req, res) => {
             dateParams = [];
         }
 
-        // Total Page Views (full, ignores date range — shows all-time totals)
-        const [totalViews] = await db.query('SELECT COUNT(*) as count FROM page_views');
+        const [totalViews] = await db.query(`SELECT COUNT(*) as count FROM page_views WHERE ${dateCondition}`, dateParams);
         
-        // Total Link Clicks (split by platform — all-time)
         const [platformClicks] = await db.query(`
             SELECT platform, COUNT(*) as count 
             FROM link_clicks 
+            WHERE ${dateCondition}
             GROUP BY platform
-        `);
+        `, dateParams);
 
         // Traffic visitors per day (filtered by date range)
         const [dailyVisits] = await db.query(`
@@ -139,20 +138,21 @@ exports.getTrackingStats = async (req, res) => {
             ORDER BY date ASC
         `, dateParams);
 
-        // Latest Activities (Combined)
         const [latestViews] = await db.query(`
             SELECT 'page_view' as type, url as identifier, client_id as ip_address, created_at 
             FROM page_views 
+            WHERE ${dateCondition}
             ORDER BY created_at DESC 
             LIMIT 5
-        `);
+        `, dateParams);
 
         const [latestClicks] = await db.query(`
             SELECT 'link_click' as type, platform as identifier, client_id as ip_address, created_at 
             FROM link_clicks 
+            WHERE ${dateCondition}
             ORDER BY created_at DESC 
             LIMIT 5
-        `);
+        `, dateParams);
 
         res.status(200).json({
             success: true,
