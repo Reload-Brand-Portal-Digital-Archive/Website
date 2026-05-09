@@ -414,7 +414,19 @@ export default function SystemSettings() {
                 initialData={settings.about_page_content ? JSON.parse(settings.about_page_content) : null}
                 onSave={handleSaveAboutContent}
                 isSaving={isSavingAbout}
-                founderImageUrl={settings.about_founder_image ? import.meta.env.VITE_API_URL + '/' + settings.about_founder_image : null}
+                founderImageUrls={(() => {
+                    const urls = [];
+                    const apiUrl = import.meta.env.VITE_API_URL;
+                    for (let i = 0; i < 3; i++) {
+                        const key = `about_founder_image_${i}`;
+                        if (settings[key]) {
+                            urls.push(apiUrl + '/' + settings[key]);
+                        } else if (i === 0 && settings.about_founder_image) {
+                            urls.push(apiUrl + '/' + settings.about_founder_image);
+                        }
+                    }
+                    return urls.length > 0 ? urls : null;
+                })()}
             />
         </div>
     );
