@@ -13,8 +13,15 @@ const Navbar = () => {
   const { t } = useTranslation();
   const [scrolled, setScrolled] = useState(false)
   const [user, setUser] = useState(() => {
-    const loggedInUser = localStorage.getItem('user')
-    return loggedInUser ? JSON.parse(loggedInUser) : null
+    try {
+      const loggedInUser = localStorage.getItem('user')
+      if (loggedInUser && loggedInUser !== 'undefined') {
+        return JSON.parse(loggedInUser)
+      }
+    } catch (e) {
+      console.error('Error parsing user from localStorage:', e)
+    }
+    return null
   })
   const navigate = useNavigate()
   const location = useLocation()

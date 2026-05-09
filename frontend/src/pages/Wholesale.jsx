@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Search, Trash2, CheckCircle2, ChevronRight } from 'lucide-react';
 import { toast } from 'react-toastify';
@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 
 export default function Wholesale() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState(true);
   const location = useLocation();
 
@@ -103,9 +104,11 @@ export default function Wholesale() {
         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
         const res = await axios.post(apiUrl + '/api/wholesale', payload);
         if (res.data.order_id) {
-            toast.success(t('wholesale.submit_success'));
+            toast.success(t('wholesale.submit_success_chat'));
             setSelectedItems([]);
             setFormData({...formData, address: '', message: '', shop_name: ''});
+            // Redirect to chat so buyer can see the order card and talk to admin
+            setTimeout(() => navigate('/contact'), 1500);
         }
     } catch (err) {
         console.error("Submit error:", err);

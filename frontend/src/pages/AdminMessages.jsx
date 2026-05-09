@@ -49,11 +49,19 @@ export default function AdminMessages() {
         'Dalam proses penyiapan barang':      t('admin_messages.status_processing'),
         'Barang siap untuk diambil di gudang':t('admin_messages.status_ready'),
         'Pesanan selesai':                    t('admin_messages.status_completed'),
+        'pending_discussion':                 t('admin_messages.status_pending_discussion'),
+        'in_discussion':                      t('admin_messages.status_in_discussion'),
+        'confirmed':                          t('admin_messages.status_confirmed'),
+        'rejected':                           t('admin_messages.status_rejected'),
     };
 
     // Filter options: value = DB key, label = display
     const statuses = [
         { value: 'All',                                  label: t('admin_messages.status_all') },
+        { value: 'pending_discussion',                   label: t('admin_messages.status_pending_discussion') },
+        { value: 'in_discussion',                        label: t('admin_messages.status_in_discussion') },
+        { value: 'confirmed',                            label: t('admin_messages.status_confirmed') },
+        { value: 'rejected',                             label: t('admin_messages.status_rejected') },
         { value: 'Belum Dibaca',                         label: t('admin_messages.status_unread') },
         { value: 'Dibaca',                               label: t('admin_messages.status_read') },
         { value: 'Dalam proses penyiapan barang',        label: t('admin_messages.status_processing') },
@@ -61,11 +69,24 @@ export default function AdminMessages() {
         { value: 'Pesanan selesai',                      label: t('admin_messages.status_completed') },
     ];
 
-    const updatableStatuses = [
-        { value: 'Dibaca',                               label: t('admin_messages.status_mark_read') },
-        { value: 'Dalam proses penyiapan barang',        label: t('admin_messages.status_processing') },
-        { value: 'Barang siap untuk diambil di gudang',  label: t('admin_messages.status_ready') },
-        { value: 'Pesanan selesai',                      label: t('admin_messages.status_completed') },
+    const statusGroups = [
+        {
+            label: "Tahap Diskusi & Keputusan",
+            options: [
+                { value: 'pending_discussion',                   label: t('admin_messages.status_pending_discussion') },
+                { value: 'in_discussion',                        label: t('admin_messages.status_in_discussion') },
+                { value: 'confirmed',                            label: t('admin_messages.status_confirmed') },
+                { value: 'rejected',                             label: t('admin_messages.status_rejected') }
+            ]
+        },
+        {
+            label: "Tahap Pemenuhan (Fulfillment)",
+            options: [
+                { value: 'Dalam proses penyiapan barang',        label: t('admin_messages.status_processing') },
+                { value: 'Barang siap untuk diambil di gudang',  label: t('admin_messages.status_ready') },
+                { value: 'Pesanan selesai',                      label: t('admin_messages.status_completed') }
+            ]
+        }
     ];
 
     useEffect(() => {
@@ -164,11 +185,15 @@ export default function AdminMessages() {
 
     const getStatusStyles = (status) => {
         switch (status) {
-            case 'Belum Dibaca': return 'bg-rose-500 text-white font-bold';
-            case 'Dibaca': return 'bg-zinc-800 text-zinc-300 border border-zinc-700';
-            case 'Dalam proses penyiapan barang': return 'bg-amber-500/10 text-amber-500 border border-amber-500/50';
-            case 'Barang siap untuk diambil di gudang': return 'bg-blue-500/10 text-blue-500 border border-blue-500/50';
-            case 'Pesanan selesai': return 'bg-emerald-500 text-black font-bold';
+            case 'pending_discussion': return 'bg-amber-500/10 text-amber-400 border border-amber-500/40';
+            case 'in_discussion':     return 'bg-blue-500/10 text-blue-400 border border-blue-500/40';
+            case 'confirmed':         return 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 font-bold';
+            case 'rejected':          return 'bg-rose-500/10 text-rose-400 border border-rose-500/40';
+            case 'Belum Dibaca':      return 'bg-rose-500 text-white font-bold';
+            case 'Dibaca':            return 'bg-zinc-800 text-zinc-300 border border-zinc-700';
+            case 'Dalam proses penyiapan barang':        return 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/40';
+            case 'Barang siap untuk diambil di gudang':  return 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/40';
+            case 'Pesanan selesai':   return 'bg-emerald-500 text-emerald-950 font-bold';
             default: return 'bg-zinc-800 text-zinc-400';
         }
     };
@@ -406,10 +431,27 @@ export default function AdminMessages() {
                                             <select 
                                                 value={selectedOrder.status}
                                                 onChange={(e) => handleUpdateStatus(e.target.value)}
-                                                className="bg-zinc-900 border border-zinc-700 text-zinc-100 text-sm px-4 py-2 outline-none cursor-pointer w-full md:w-64"
+                                                className="bg-zinc-900 border border-zinc-700 text-zinc-100 text-sm px-4 py-2 outline-none cursor-pointer w-full md:w-64 disabled:opacity-50"
                                             >
-                                                {updatableStatuses.map(s => (
-                                                    <option key={s.value} value={s.value}>{s.label}</option>
+                                                {statusGroups.map((group, idx) => (
+                                                    <optgroup key={idx} label={group.label} className="bg-zinc-800 text-zinc-400 font-mono text-[10px] uppercase tracking-widest">
+                                                        {group.options.map(s => {
+                                                            // Disable going back to discussion phase if already confirmed, rejected, or beyond
+                                                            const pastDiscussion = ['confirmed', 'rejected', 'Dalam proses penyiapan barang', 'Barang siap untuk diambil di gudang', 'Pesanan selesai'].includes(selectedOrder.status);
+                                                            const isDiscussionOption = s.value === 'pending_discussion' || s.value === 'in_discussion';
+                                                            
+                                                            return (
+                                                                <option 
+                                                                    key={s.value} 
+                                                                    value={s.value}
+                                                                    disabled={pastDiscussion && isDiscussionOption}
+                                                                    className={`text-sm normal-case tracking-normal font-sans ${pastDiscussion && isDiscussionOption ? "text-zinc-600" : "text-zinc-100"}`}
+                                                                >
+                                                                    {s.label}
+                                                                </option>
+                                                            );
+                                                        })}
+                                                    </optgroup>
                                                 ))}
                                             </select>
                                         </div>
@@ -446,12 +488,31 @@ export default function AdminMessages() {
                                         
                                         <div className="space-y-4">
                                             <h3 className="text-xs font-mono uppercase text-zinc-500 border-b border-zinc-800 pb-2 mb-4">{t('admin_messages.notes')}</h3>
-                                            <div className="bg-zinc-900 border border-zinc-800 p-4 h-full min-h-[120px]">
+                                            <div className="bg-zinc-900 border border-zinc-800 p-4 min-h-[80px]">
                                                 <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider block mb-2">{selectedOrder.inquiry_type}</span>
+                                                {selectedOrder.shop_name && (
+                                                    <p className="text-[10px] text-zinc-500 mb-1">
+                                                        <span className="uppercase tracking-wider">{t('admin_messages.shop_name')}:</span>{' '}
+                                                        <span className="text-zinc-300">{selectedOrder.shop_name}</span>
+                                                    </p>
+                                                )}
                                                 <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap">
                                                     {selectedOrder.message ? selectedOrder.message : <span className="italic text-zinc-600">{t('admin_messages.no_notes')}</span>}
                                                 </p>
                                             </div>
+                                            {/* Confirmation data */}
+                                            {selectedOrder.shipping_cost != null && (
+                                                <div className="bg-zinc-900 border border-emerald-500/20 p-3">
+                                                    <span className="text-[9px] font-mono text-emerald-500 uppercase tracking-wider block mb-1">{t('admin_messages.shipping_cost')}</span>
+                                                    <p className="text-emerald-400 font-semibold">Rp {Number(selectedOrder.shipping_cost).toLocaleString('id-ID')}</p>
+                                                </div>
+                                            )}
+                                            {selectedOrder.admin_note && (
+                                                <div className="bg-zinc-900 border border-zinc-700 p-3">
+                                                    <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-wider block mb-1">{t('admin_messages.admin_note')}</span>
+                                                    <p className="text-zinc-300 text-sm">{selectedOrder.admin_note}</p>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
 

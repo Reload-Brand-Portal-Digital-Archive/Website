@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { motion } from 'framer-motion';
-import { Send, User, Shield } from 'lucide-react';
+import { Send, User, Shield, Package, CheckCircle2, XCircle, Clock, MessageSquare } from 'lucide-react';
 import Navbar from '../components/ui/Navbar';
 import { notify } from '../lib/toast';
 import { useTranslation } from 'react-i18next';
@@ -20,6 +20,126 @@ const itemVariants = {
     hidden: { opacity: 0, y: 16 },
     show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 110, damping: 22 } }
 };
+
+// ── Wholesale Order Card (renders inside the buyer's chat) ──────────────────
+function WholesaleOrderCard({ metadata, messageType }) {
+    if (!metadata) return null;
+
+    const statusConfig = {
+        'pending_discussion': { label: 'Pending Discussion', color: 'text-amber-400 border-amber-500/40 bg-amber-500/10' },
+        'in_discussion':      { label: 'In Discussion',      color: 'text-blue-400 border-blue-500/40 bg-blue-500/10' },
+        'confirmed':          { label: 'Confirmed',          color: 'text-emerald-400 border-emerald-500/40 bg-emerald-500/10' },
+        'rejected':           { label: 'Rejected',           color: 'text-rose-400 border-rose-500/40 bg-rose-500/10' },
+    };
+
+    const isConfirmed = messageType === 'wholesale_confirmed';
+    const isRejected  = messageType === 'wholesale_rejected';
+
+    // Confirmation/rejection card
+    if (isConfirmed || isRejected) {
+        return (
+            <div className={`border rounded-none p-4 max-w-[85%] md:max-w-[70%] ${
+                isConfirmed
+                    ? 'bg-emerald-500/10 border-emerald-500/30'
+                    : 'bg-rose-500/10 border-rose-500/30'
+            }`}>
+                <div className="flex items-center gap-2 mb-3">
+                    {isConfirmed
+                        ? <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                        : <XCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                    }
+                    <span className={`font-mono text-[10px] uppercase tracking-widest font-bold ${isConfirmed ? 'text-emerald-400' : 'text-rose-400'}`}>
+                        Order #{metadata.order_id} — {isConfirmed ? 'Confirmed' : 'Rejected'}
+                    </span>
+                </div>
+                {isConfirmed && metadata.shipping_cost != null && (
+                    <div className="text-sm text-zinc-200">
+                        <span className="text-zinc-500 text-[10px] uppercase tracking-wider block">Shipping Cost</span>
+                        <span className="font-semibold text-emerald-300">
+                            Rp {Number(metadata.shipping_cost).toLocaleString('id-ID')}
+                        </span>
+                    </div>
+                )}
+                {metadata.admin_note && (
+                    <div className="mt-2 text-sm text-zinc-300 leading-relaxed">
+                        <span className="text-zinc-500 text-[10px] uppercase tracking-wider block mb-1">Note</span>
+                        {metadata.admin_note}
+                    </div>
+                )}
+            </div>
+        );
+    }
+
+    // Wholesale order submission card
+    const statusInfo = statusConfig[metadata.status] || statusConfig['pending_discussion'];
+    return (
+        <div className="border border-zinc-700 bg-zinc-900/60 p-4 max-w-[85%] md:max-w-[70%] w-full">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-3 border-b border-zinc-800 pb-3">
+                <div className="flex items-center gap-2">
+                    <Package className="w-4 h-4 text-amber-500 shrink-0" />
+                    <span className="font-mono text-[10px] uppercase tracking-widest text-zinc-400">
+                        Wholesale Order #{metadata.order_id}
+                    </span>
+                </div>
+                <span className={`inline-flex px-2 py-0.5 text-[9px] font-mono uppercase tracking-widest border ${statusInfo.color}`}>
+                    {statusInfo.label}
+                </span>
+            </div>
+
+            {/* Details */}
+            <div className="space-y-2 text-xs">
+                {metadata.shop_name && (
+                    <div>
+                        <span className="text-zinc-500 uppercase tracking-widest text-[9px]">Shop</span>
+                        <p className="text-zinc-200 font-medium">{metadata.shop_name}</p>
+                    </div>
+                )}
+                <div>
+                    <span className="text-zinc-500 uppercase tracking-widest text-[9px]">Inquiry Type</span>
+                    <p className="text-zinc-200">{metadata.inquiry_type}</p>
+                </div>
+                {metadata.address && (
+                    <div>
+                        <span className="text-zinc-500 uppercase tracking-widest text-[9px]">Address</span>
+                        <p className="text-zinc-200 leading-relaxed">{metadata.address}</p>
+                    </div>
+                )}
+                {metadata.message && (
+                    <div>
+                        <span className="text-zinc-500 uppercase tracking-widest text-[9px]">Notes</span>
+                        <p className="text-zinc-300 italic">{metadata.message}</p>
+                    </div>
+                )}
+                {/* Items */}
+                {metadata.items && metadata.items.length > 0 && (
+                    <div>
+                        <span className="text-zinc-500 uppercase tracking-widest text-[9px] block mb-1">
+                            Items ({metadata.items.length})
+                        </span>
+                        <div className="space-y-1">
+                            {metadata.items.map((item, idx) => (
+                                <div key={idx} className="flex items-center justify-between bg-zinc-800/60 px-2 py-1.5 border border-zinc-800">
+                                    <span className="text-zinc-200 font-medium truncate max-w-[160px]">{item.product_name_snapshot}</span>
+                                    <div className="flex items-center gap-2 shrink-0 ml-2">
+                                        <span className="text-zinc-500 font-mono">{item.size}</span>
+                                        <span className="bg-zinc-700 text-white text-[10px] px-1.5 py-0.5 font-mono">×{item.quantity}</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            <div className="mt-3 pt-2 border-t border-zinc-800">
+                <p className="text-[9px] font-mono text-zinc-600 uppercase tracking-widest flex items-center gap-1">
+                    <MessageSquare className="w-3 h-3" /> Our admin will review and respond soon.
+                </p>
+            </div>
+        </div>
+    );
+}
 
 export default function Contact() {
     const { t } = useTranslation();
@@ -86,6 +206,7 @@ export default function Contact() {
             chat_id: 'temp-' + Date.now(),
             message: messageText,
             sender: 'user',
+            message_type: 'text',
             created_at: new Date().toISOString()
         };
         setMessages(prev => [...prev, tempMsg]);
@@ -103,6 +224,11 @@ export default function Contact() {
             setNewMessage(messageText);
         }
     };
+
+    const isWholesaleMsg = (msg) =>
+        msg.message_type === 'wholesale_order' ||
+        msg.message_type === 'wholesale_confirmed' ||
+        msg.message_type === 'wholesale_rejected';
 
     return (
         <div className="bg-zinc-950 min-h-screen text-zinc-50 font-sans selection:bg-zinc-800 selection:text-white flex flex-col relative overflow-hidden">
@@ -155,6 +281,48 @@ export default function Contact() {
                         ) : (
                             messages.map((msg) => {
                                 const isUser = msg.sender === 'user';
+                                const isSystem = msg.sender === 'system';
+                                const isWholesale = isWholesaleMsg(msg);
+
+                                // ── Wholesale system message: full-width card ──
+                                if (isSystem && isWholesale) {
+                                    return (
+                                        <div key={msg.chat_id} className="flex flex-col items-start">
+                                            <WholesaleOrderCard
+                                                metadata={msg.metadata}
+                                                messageType={msg.message_type}
+                                            />
+                                            <span className="font-mono text-[9px] text-zinc-700 mt-1">
+                                                {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </span>
+                                        </div>
+                                    );
+                                }
+
+                                // ── Admin wholesale_confirmed / wholesale_rejected message ──
+                                if (!isUser && isWholesale) {
+                                    return (
+                                        <div key={msg.chat_id} className="flex flex-col items-start">
+                                            <div className="flex items-center gap-2 mb-1.5">
+                                                <div className="w-6 h-6 rounded bg-zinc-800 border border-zinc-700 flex items-center justify-center shrink-0">
+                                                    <Shield className="w-3.5 h-3.5 text-amber-500" />
+                                                </div>
+                                                <span className="font-mono text-[10px] text-zinc-500 uppercase tracking-widest">
+                                                    {t('contact.admin')}
+                                                </span>
+                                                <span className="font-mono text-[9px] text-zinc-700">
+                                                    {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                </span>
+                                            </div>
+                                            <WholesaleOrderCard
+                                                metadata={msg.metadata}
+                                                messageType={msg.message_type}
+                                            />
+                                        </div>
+                                    );
+                                }
+
+                                // ── Regular text message ──
                                 return (
                                     <div key={msg.chat_id} className={`flex flex-col ${isUser ? 'items-end' : 'items-start'}`}>
                                         <div className={`flex items-center gap-2 mb-1.5 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
