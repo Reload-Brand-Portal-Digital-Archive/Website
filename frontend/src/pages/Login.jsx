@@ -226,26 +226,6 @@ export default function Login() {
                                 />
                             </div>
                         </div>
-                        <div className="relative">
-                            <input 
-                                type={showPassword ? "text" : "password"} 
-                                name="password" 
-                                onChange={handleChange} 
-                                required
-                                autoCapitalize="none"
-                                autoCorrect="off"
-                                className="w-full bg-transparent border-0 border-b border-zinc-700 py-3 pr-10 text-zinc-50 font-mono text-sm placeholder:text-zinc-600 focus:outline-none focus:border-zinc-50 focus:ring-0 px-0 rounded-none transition-colors"
-                                placeholder="••••••••" 
-                            />
-                            <button
-                                type="button"
-                                className="absolute right-0 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors p-2"
-                                onClick={() => setShowPassword(!showPassword)}
-                            >
-                                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                            </button>
-                        </div>
-                    </div>
                         <motion.button
                             whileHover={{ scale: timeLeft === 0 ? 1 : 0.98 }}
                             whileTap={{ scale: timeLeft === 0 ? 1 : 0.95 }}
