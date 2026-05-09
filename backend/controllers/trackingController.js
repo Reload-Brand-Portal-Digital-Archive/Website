@@ -177,13 +177,12 @@ exports.getTrackingStats = async (req, res) => {
  */
 exports.recordGpsLocation = async (req, res) => {
     const { latitude, longitude, client_id } = req.body;
-    const ip_address = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
 
     if (latitude == null || longitude == null) {
         return res.status(400).json({ success: false, message: 'Latitude and longitude are required' });
     }
 
-    const trackerId = client_id || ip_address;
+    const trackerId = client_id || ('anon-' + Date.now().toString(36));
 
     try {
         // Ambil data GPS yang sudah tersimpan di site_settings
@@ -206,11 +205,10 @@ exports.recordGpsLocation = async (req, res) => {
             // Update koordinat visitor yang sudah ada
             locations[existingIndex].latitude = latitude;
             locations[existingIndex].longitude = longitude;
-            locations[existingIndex].ip_address = ip_address;
             locations[existingIndex].updated_at = now;
         } else {
             // Tambah visitor baru
-            locations.push({ client_id: trackerId, latitude, longitude, ip_address, created_at: now, updated_at: now });
+            locations.push({ client_id: trackerId, latitude, longitude, created_at: now, updated_at: now });
         }
 
         // Simpan kembali ke site_settings
