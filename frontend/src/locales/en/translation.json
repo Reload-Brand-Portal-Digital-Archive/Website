@@ -707,6 +707,7 @@
     "select_warning": "Please select at least one product.",
     "submit_success": "Wholesale order submitted successfully! We will review it soon.",
     "submit_error": "Failed to submit order. Please try again.",
+    "active_order_error": "You already have an active wholesale order. Please wait for admin to review it. Redirecting to chat...",
     "login_required": "Login Required",
     "login_desc": "You have to log in first to access the Wholesale ordering page.",
     "go_to_login": "Go to Login",

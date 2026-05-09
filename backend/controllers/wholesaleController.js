@@ -28,6 +28,24 @@ exports.createWholesaleOrder = async (req, res) => {
         const orderStatus = 'pending_discussion';
         const userId = user_id || null;
 
+        // 0. Block if user already has an active (pending/in-discussion) order
+        if (userId) {
+            const [active] = await connection.query(
+                `SELECT order_id FROM wholesale_orders
+                 WHERE user_id = ? AND status IN ('pending_discussion','in_discussion')
+                 LIMIT 1`,
+                [userId]
+            );
+            if (active.length > 0) {
+                await connection.release();
+                return res.status(409).json({
+                    error: 'active_order_exists',
+                    message: 'You already have an active wholesale order. Please wait for admin to review it.',
+                    order_id: active[0].order_id
+                });
+            }
+        }
+
         // 1. Insert wholesale order (including shop_name fix)
         const [result] = await connection.query(
             `INSERT INTO wholesale_orders
@@ -135,7 +153,18 @@ exports.createWholesaleOrder = async (req, res) => {
 exports.getAllOrders = async (req, res) => {
     try {
         const [orders] = await db.query(
-            'SELECT * FROM wholesale_orders ORDER BY created_at DESC'
+            `SELECT wo.*,
+                    COALESCE(oi.total_qty, 0)    AS total_qty,
+                    COALESCE(oi.total_items, 0)  AS total_items
+             FROM wholesale_orders wo
+             LEFT JOIN (
+                 SELECT order_id,
+                        SUM(quantity)  AS total_qty,
+                        COUNT(*)       AS total_items
+                 FROM order_items
+                 GROUP BY order_id
+             ) oi ON oi.order_id = wo.order_id
+             ORDER BY wo.created_at DESC`
         );
         res.status(200).json(orders);
     } catch (error) {

@@ -1,24 +1,88 @@
 const pool = require('../config/database');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
-// ─── Send a message ───────────────────────────────────────────────────────────
+// ─── Multer config for chat file uploads ─────────────────────────────────────
+const chatUploadDir = path.join(__dirname, '../uploads/chat');
+if (!fs.existsSync(chatUploadDir)) fs.mkdirSync(chatUploadDir, { recursive: true });
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => cb(null, chatUploadDir),
+    filename:    (req, file, cb) => {
+        const ext  = path.extname(file.originalname);
+        const name = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+        cb(null, name);
+    }
+});
+
+const fileFilter = (req, file, cb) => {
+    const allowed = [
+        'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+        'application/pdf',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'text/plain'
+    ];
+    allowed.includes(file.mimetype) ? cb(null, true) : cb(new Error('File type not allowed'));
+};
+
+exports.chatUpload = multer({
+    storage,
+    fileFilter,
+    limits: { fileSize: 10 * 1024 * 1024 } // 10 MB
+}).single('file');
+
+// ─── Upload file and return URL ───────────────────────────────────────────────
+exports.uploadFile = (req, res) => {
+    exports.chatUpload(req, res, (err) => {
+        if (err) {
+            return res.status(400).json({ success: false, message: err.message });
+        }
+        if (!req.file) {
+            return res.status(400).json({ success: false, message: 'No file uploaded' });
+        }
+        const fileUrl  = `/uploads/chat/${req.file.filename}`;
+        const isImage  = req.file.mimetype.startsWith('image/');
+        res.json({
+            success:      true,
+            url:          fileUrl,
+            originalName: req.file.originalname,
+            mimeType:     req.file.mimetype,
+            size:         req.file.size,
+            isImage
+        });
+    });
+};
+
+// ─── Send a message (text or file) ───────────────────────────────────────────
 exports.sendMessage = async (req, res) => {
-    const { message, sender } = req.body;
+    const { message, sender, file_url, file_name, file_mime, message_type } = req.body;
     let userId;
 
     if (sender === 'user') {
         userId = req.user.id;
     } else if (sender === 'admin') {
-        userId = req.body.userId; // Admin sends to a specific user
+        userId = req.body.userId;
     }
 
-    if (!userId || !message || !sender) {
+    // file messages may have empty message text
+    const isFile   = !!file_url;
+    const msgText  = message || (isFile ? (file_name || 'File') : null);
+    const msgType  = message_type || (isFile ? (file_mime?.startsWith('image/') ? 'image' : 'file') : 'text');
+
+    if (!userId || !msgText || !sender) {
         return res.status(400).json({ success: false, message: 'Missing required fields' });
     }
 
     try {
+        const metadata = isFile
+            ? JSON.stringify({ file_url, file_name: file_name || 'File', file_mime: file_mime || 'application/octet-stream' })
+            : null;
+
         const [result] = await pool.query(
-            'INSERT INTO chats (user_id, message, sender, message_type) VALUES (?, ?, ?, ?)',
-            [userId, message, sender, 'text']
+            'INSERT INTO chats (user_id, message, sender, message_type, metadata) VALUES (?, ?, ?, ?, ?)',
+            [userId, msgText, sender, msgType, metadata]
         );
         res.status(201).json({ success: true, message: 'Message sent', chatId: result.insertId });
     } catch (error) {
@@ -31,7 +95,6 @@ exports.sendMessage = async (req, res) => {
 exports.getMessages = async (req, res) => {
     let userId = req.user.id;
 
-    // Admin can specify a target userId
     if (req.user.role === 'admin' && req.params.userId) {
         userId = req.params.userId;
     }
@@ -45,7 +108,6 @@ exports.getMessages = async (req, res) => {
             [userId]
         );
 
-        // Parse metadata JSON for each row
         const messages = rows.map(row => ({
             ...row,
             metadata: row.metadata

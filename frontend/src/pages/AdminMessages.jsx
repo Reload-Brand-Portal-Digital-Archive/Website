@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Package, Search, ChevronRight, X, Phone, Mail, MapPin, Inbox, Calendar, User, CalendarDays } from 'lucide-react';
+import { Package, Search, ChevronRight, X, Phone, Mail, MapPin, Inbox, Calendar, User, CalendarDays, Loader2, ShoppingBag } from 'lucide-react';
 import DateRangePickerModal from '../components/ui/DateRangePickerModal';
 import axios from 'axios';
 import { notify } from '../lib/toast';
@@ -11,6 +11,8 @@ export default function AdminMessages() {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('All');
+    const [userFilter, setUserFilter] = useState('All');
+    const [updatingStatus, setUpdatingStatus] = useState(false);
     const [preset, setPreset] = useState('all');
     const [customStart, setCustomStart] = useState('');
     const [customEnd, setCustomEnd] = useState('');
@@ -96,7 +98,14 @@ export default function AdminMessages() {
     // Reset pagination when filters change
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchTerm, statusFilter, preset, customStart, customEnd]);
+    }, [searchTerm, statusFilter, userFilter, preset, customStart, customEnd]);
+
+    // Unique users derived from orders (for filter dropdown)
+    const uniqueUsers = [...new Map(
+        orders
+            .filter(o => o.user_id && o.name)
+            .map(o => [o.user_id, { id: o.user_id, name: o.name, email: o.email }])
+    ).values()].sort((a, b) => a.name.localeCompare(b.name));
 
     const fetchOrders = async () => {
         try {
@@ -136,6 +145,7 @@ export default function AdminMessages() {
 
     const handleUpdateStatus = async (newStatus) => {
         if (!selectedOrder) return;
+        setUpdatingStatus(true);
         try {
             await axios.put(`${import.meta.env.VITE_API_URL}/api/wholesale/${selectedOrder.order_id}/status`, 
                 { status: newStatus },
@@ -147,6 +157,8 @@ export default function AdminMessages() {
         } catch (error) {
             console.error('Error updating status:', error);
             notify.error(t('admin_messages.failed_update_status'));
+        } finally {
+            setUpdatingStatus(false);
         }
     };
 
@@ -155,6 +167,7 @@ export default function AdminMessages() {
             (order.name && order.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
             (order.order_id && order.order_id.toString().includes(searchTerm));
         const matchesStatus = statusFilter === 'All' || order.status === statusFilter;
+        const matchesUser   = userFilter === 'All' || String(order.user_id) === userFilter;
         
         let matchesDate = true;
         const { startDate, endDate } = dateRange;
@@ -174,8 +187,15 @@ export default function AdminMessages() {
             }
         }
         
-        return matchesSearch && matchesStatus && matchesDate;
+        return matchesSearch && matchesStatus && matchesUser && matchesDate;
     });
+
+    // Stats for selected user
+    const userStats = userFilter !== 'All' ? {
+        totalOrders:  filteredOrders.length,
+        totalQty:     filteredOrders.reduce((s, o) => s + Number(o.total_qty || 0), 0),
+        totalItems:   filteredOrders.reduce((s, o) => s + Number(o.total_items || 0), 0),
+    } : null;
 
     // Pagination calculations
     const indexOfLastOrder = currentPage * ordersPerPage;
@@ -251,20 +271,51 @@ export default function AdminMessages() {
                     </div>
                 </div>
                 
-                <div className="w-full md:w-auto flex items-center gap-3">
+                <div className="w-full md:w-auto flex items-center gap-2">
                     <span className="text-sm text-zinc-400 whitespace-nowrap min-w-max">{t('admin_messages.filter_status')}</span>
                     <select 
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value)}
-                        className="bg-zinc-950 border border-zinc-700 text-zinc-200 text-sm px-3 py-2 outline-none w-full cursor-pointer"
+                        className="bg-zinc-950 border border-zinc-700 text-zinc-200 text-sm px-3 py-2 outline-none cursor-pointer"
                     >
                         {statuses.map(s => (
                             <option key={s.value} value={s.value}>{s.label}</option>
                         ))}
                     </select>
                 </div>
+                {/* Filter by user */}
+                <div className="w-full md:w-auto flex items-center gap-2">
+                    <User size={14} className="text-zinc-500 shrink-0" />
+                    <select
+                        value={userFilter}
+                        onChange={(e) => setUserFilter(e.target.value)}
+                        className="bg-zinc-950 border border-zinc-700 text-zinc-200 text-sm px-3 py-2 outline-none cursor-pointer max-w-[200px]"
+                    >
+                        <option value="All">All Users</option>
+                        {uniqueUsers.map(u => (
+                            <option key={u.id} value={String(u.id)}>{u.name}</option>
+                        ))}
+                    </select>
+                </div>
             </div>
             
+            {/* User stats banner (shown when user filter active) */}
+            {userStats && (
+                <div className="flex flex-wrap gap-4 bg-blue-500/5 border border-blue-500/20 px-5 py-3 text-sm">
+                    <div className="flex items-center gap-2">
+                        <User size={14} className="text-blue-400" />
+                        <span className="font-mono text-blue-400 font-semibold">
+                            {uniqueUsers.find(u => String(u.id) === userFilter)?.name || 'User'}
+                        </span>
+                    </div>
+                    <div className="flex items-center gap-4 text-zinc-400 font-mono text-xs">
+                        <span>Total pesanan: <strong className="text-zinc-200">{userStats.totalOrders}</strong></span>
+                        <span>Total produk dipesan: <strong className="text-zinc-200">{userStats.totalItems}</strong> jenis</span>
+                        <span>Total qty: <strong className="text-zinc-200">{userStats.totalQty}</strong> pcs</span>
+                    </div>
+                </div>
+            )}
+
             {/* Date Range Modal */}
             {isPickerOpen && (
                 <DateRangePickerModal
@@ -299,6 +350,7 @@ export default function AdminMessages() {
                                     <th className="px-5 py-4 font-medium">{t('admin_messages.col_date')}</th>
                                     <th className="px-5 py-4 font-medium">{t('admin_messages.col_name')}</th>
                                     <th className="px-5 py-4 font-medium">{t('admin_messages.col_status')}</th>
+                                    <th className="px-5 py-4 font-medium text-center">Total Qty</th>
                                     <th className="px-5 py-4 font-medium text-right">{t('admin_messages.col_actions')}</th>
                                 </tr>
                             </thead>
@@ -319,6 +371,16 @@ export default function AdminMessages() {
                                             <span className={`inline-flex px-2 py-1 text-[10px] uppercase font-mono tracking-widest ${getStatusStyles(order.status)}`}>
                                                 {getStatusLabel(order.status)}
                                             </span>
+                                        </td>
+                                        <td className="px-5 py-4 text-center">
+                                            {Number(order.total_qty) > 0 ? (
+                                                <div className="flex flex-col items-center">
+                                                    <span className="font-mono text-zinc-200 font-semibold text-sm">{order.total_qty}</span>
+                                                    <span className="text-[9px] font-mono text-zinc-600 uppercase tracking-widest">{order.total_items} sku</span>
+                                                </div>
+                                            ) : (
+                                                <span className="text-zinc-600 text-xs">—</span>
+                                            )}
                                         </td>
                                         <td className="px-5 py-4 text-right">
                                             <button 
@@ -428,32 +490,39 @@ export default function AdminMessages() {
                                         </div>
                                         <div className="flex flex-col md:items-end gap-1">
                                             <label className="text-[10px] font-mono text-zinc-500 uppercase">{t('admin_messages.update_status')}</label>
-                                            <select 
-                                                value={selectedOrder.status}
-                                                onChange={(e) => handleUpdateStatus(e.target.value)}
-                                                className="bg-zinc-900 border border-zinc-700 text-zinc-100 text-sm px-4 py-2 outline-none cursor-pointer w-full md:w-64 disabled:opacity-50"
-                                            >
-                                                {statusGroups.map((group, idx) => (
-                                                    <optgroup key={idx} label={group.label} className="bg-zinc-800 text-zinc-400 font-mono text-[10px] uppercase tracking-widest">
-                                                        {group.options.map(s => {
-                                                            // Disable going back to discussion phase if already confirmed, rejected, or beyond
-                                                            const pastDiscussion = ['confirmed', 'rejected', 'Dalam proses penyiapan barang', 'Barang siap untuk diambil di gudang', 'Pesanan selesai'].includes(selectedOrder.status);
-                                                            const isDiscussionOption = s.value === 'pending_discussion' || s.value === 'in_discussion';
-                                                            
-                                                            return (
-                                                                <option 
-                                                                    key={s.value} 
-                                                                    value={s.value}
-                                                                    disabled={pastDiscussion && isDiscussionOption}
-                                                                    className={`text-sm normal-case tracking-normal font-sans ${pastDiscussion && isDiscussionOption ? "text-zinc-600" : "text-zinc-100"}`}
-                                                                >
-                                                                    {s.label}
-                                                                </option>
-                                                            );
-                                                        })}
-                                                    </optgroup>
-                                                ))}
-                                            </select>
+                                            <div className="relative">
+                                                <select 
+                                                    value={selectedOrder.status}
+                                                    onChange={(e) => handleUpdateStatus(e.target.value)}
+                                                    disabled={updatingStatus}
+                                                    className="bg-zinc-900 border border-zinc-700 text-zinc-100 text-sm px-4 py-2 outline-none cursor-pointer w-full md:w-64 disabled:opacity-50 disabled:cursor-not-allowed pr-10"
+                                                >
+                                                    {statusGroups.map((group, idx) => (
+                                                        <optgroup key={idx} label={group.label} className="bg-zinc-800 text-zinc-400 font-mono text-[10px] uppercase tracking-widest">
+                                                            {group.options.map(s => {
+                                                                const pastDiscussion = ['confirmed', 'rejected', 'Dalam proses penyiapan barang', 'Barang siap untuk diambil di gudang', 'Pesanan selesai'].includes(selectedOrder.status);
+                                                                const isDiscussionOption = s.value === 'pending_discussion' || s.value === 'in_discussion';
+                                                                return (
+                                                                    <option 
+                                                                        key={s.value} 
+                                                                        value={s.value}
+                                                                        disabled={pastDiscussion && isDiscussionOption}
+                                                                        className={`text-sm normal-case tracking-normal font-sans ${pastDiscussion && isDiscussionOption ? "text-zinc-600" : "text-zinc-100"}`}
+                                                                    >
+                                                                        {s.label}
+                                                                    </option>
+                                                                );
+                                                            })}
+                                                        </optgroup>
+                                                    ))}
+                                                </select>
+                                                {updatingStatus && (
+                                                    <div className="absolute inset-0 flex items-center justify-center bg-zinc-900/80 pointer-events-none">
+                                                        <Loader2 size={16} className="animate-spin text-white" />
+                                                        <span className="ml-2 text-xs text-zinc-300 font-mono">Saving...</span>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
 

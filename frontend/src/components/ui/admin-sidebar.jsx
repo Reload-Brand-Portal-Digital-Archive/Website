@@ -1,6 +1,6 @@
 import React from 'react';
 import { 
-    LayoutDashboard, ShoppingBag, Layers, 
+    LayoutDashboard, ShoppingBag, ShoppingCart, Layers, 
     MessageSquare, Mail, Settings, Users, LogOut, X, Tag, Palette, Award, ExternalLink, Menu
 } from 'lucide-react';
 
@@ -14,7 +14,7 @@ export const navigationItems = [
     { id: 'materials', labelKey: 'admin_sidebar.material', icon: Palette },
     { id: 'endorsements', labelKey: 'admin_sidebar.endorsement', icon: Award },
     { id: 'chats', labelKey: 'admin_sidebar.chats', icon: MessageSquare },
-    { id: 'messages', labelKey: 'admin_sidebar.wholesale_order', icon: MessageSquare },
+    { id: 'messages', labelKey: 'admin_sidebar.wholesale_order', icon: ShoppingCart },
     { id: 'newsletter', labelKey: 'admin_sidebar.newsletter', icon: Mail },
     { id: 'settings', labelKey: 'admin_sidebar.setting', icon: Settings },
 ];

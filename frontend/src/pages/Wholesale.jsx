@@ -112,7 +112,12 @@ export default function Wholesale() {
         }
     } catch (err) {
         console.error("Submit error:", err);
-        toast.error(t('wholesale.submit_error'));
+        if (err.response?.status === 409 && err.response?.data?.error === 'active_order_exists') {
+            toast.error(t('wholesale.active_order_error') || 'You already have an active wholesale order. Please wait for admin to review it first.');
+            setTimeout(() => navigate('/contact'), 2000);
+        } else {
+            toast.error(t('wholesale.submit_error'));
+        }
     } finally {
         setIsSubmitting(false);
     }

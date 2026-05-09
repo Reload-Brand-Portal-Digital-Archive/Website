@@ -669,6 +669,7 @@
     "select_warning": "Harap pilih minimal satu produk.",
     "submit_success": "Pesanan grosir berhasil dikirim! Kami akan segera meninjaunya.",
     "submit_error": "Gagal mengirim pesanan. Silakan coba lagi.",
+    "active_order_error": "Anda sudah memiliki pesanan grosir yang aktif. Harap tunggu admin meninjau pesanan tersebut. Mengalihkan ke obrolan...",
     "login_required": "Diperlukan Login",
     "login_desc": "Anda harus masuk terlebih dahulu untuk mengakses halaman pemesanan Grosir.",
     "go_to_login": "Ke Halaman Login",

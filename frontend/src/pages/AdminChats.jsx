@@ -1,10 +1,42 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { User, Send, Shield, Search, Package, CheckCircle2, XCircle, Clock, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { User, Send, Shield, Search, Package, CheckCircle2, XCircle, Clock, AlertCircle, ChevronDown, ChevronUp, Paperclip, Download, X, FileText } from 'lucide-react';
 import { notify } from '../lib/toast';
 import { useTranslation } from 'react-i18next';
 
 const API = import.meta.env.VITE_API_URL;
+
+// ── File / Image bubble ─────────────────────────────────────────────────────
+function FileBubble({ metadata, isAdmin }) {
+    if (!metadata?.file_url) return null;
+    const src     = `${import.meta.env.VITE_API_URL}${metadata.file_url}`;
+    const isImage = metadata.file_mime?.startsWith('image/');
+    const name    = metadata.file_name || 'File';
+    if (isImage) {
+        return (
+            <a href={src} target="_blank" rel="noopener noreferrer"
+               className={`block max-w-[220px] rounded overflow-hidden border ${isAdmin ? 'border-rose-700' : 'border-zinc-700'}`}>
+                <img src={src} alt={name} className="w-full h-auto object-cover hover:opacity-90 transition-opacity" />
+                <p className="text-[9px] font-mono text-zinc-500 px-2 py-1 truncate">{name}</p>
+            </a>
+        );
+    }
+    return (
+        <a href={src} download={name} target="_blank" rel="noopener noreferrer"
+           className={`flex items-center gap-3 p-3 border max-w-[220px] hover:opacity-80 transition-opacity ${
+               isAdmin ? 'bg-rose-700/40 border-rose-700 text-zinc-100' : 'bg-zinc-800 border-zinc-700 text-zinc-200'
+           }`}>
+            <div className="w-8 h-8 flex items-center justify-center rounded bg-zinc-700 shrink-0">
+                <FileText className="w-4 h-4" />
+            </div>
+            <div className="min-w-0 flex-1">
+                <p className="text-xs font-medium truncate">{name}</p>
+                <p className="text-[9px] font-mono opacity-60">Download</p>
+            </div>
+            <Download className="w-3.5 h-3.5 shrink-0 opacity-60" />
+        </a>
+    );
+}
 
 // ── Wholesale Order Card ──────────────────────────────────────────────────────
 function WholesaleOrderCard({ metadata, messageType }) {
@@ -189,9 +221,14 @@ export default function AdminChats() {
     const [selectedUser, setSelectedUser] = useState(null);
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
+    const [filePreview, setFilePreview] = useState(null);
+    const [uploading, setUploading]     = useState(false);
+    const fileInputRef = useRef(null);
     const [loadingSessions, setLoadingSessions] = useState(true);
     const [loadingMessages, setLoadingMessages] = useState(false);
+    const [showScrollBtn, setShowScrollBtn]     = useState(false);
     const messagesEndRef = useRef(null);
+    const chatBoxRef     = useRef(null);
     const token = localStorage.getItem('token');
 
     useEffect(() => {
@@ -203,7 +240,11 @@ export default function AdminChats() {
         return () => clearInterval(interval);
     }, [selectedUser]);
 
-    useEffect(() => { scrollToBottom(); }, [messages]);
+    // Scroll only on initial message load for a new user selection
+    useEffect(() => {
+        if (loadingMessages === false && messages.length > 0) scrollToBottom();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [loadingMessages]);
 
     useEffect(() => {
         if (!searchQuery.trim()) {
@@ -257,12 +298,59 @@ export default function AdminChats() {
         fetchMessages(user.user_id);
     };
 
-    const scrollToBottom = () => {
+    const scrollToBottom = () =>
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+
+    const handleChatScroll = () => {
+        const box = chatBoxRef.current;
+        if (!box) return;
+        const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 100;
+        setShowScrollBtn(!nearBottom);
+    };
+
+    const handleFileSelect = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const isImage = file.type.startsWith('image/');
+        setFilePreview({ file, url: isImage ? URL.createObjectURL(file) : null, isImage, name: file.name });
+        e.target.value = '';
+    };
+
+    const clearFilePreview = () => {
+        if (filePreview?.url) URL.revokeObjectURL(filePreview.url);
+        setFilePreview(null);
+    };
+
+    const sendFile = async () => {
+        if (!filePreview || !selectedUser) return;
+        setUploading(true);
+        try {
+            const form = new FormData();
+            form.append('file', filePreview.file);
+            const { data } = await axios.post(`${API}/api/chats/admin/upload`, form, {
+                headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+            });
+            await axios.post(`${API}/api/chats/send`, {
+                message: filePreview.name, sender: 'admin',
+                userId: selectedUser.user_id,
+                file_url: data.url, file_name: data.originalName,
+                file_mime: data.mimeType,
+                message_type: data.isImage ? 'image' : 'file'
+            }, { headers: { Authorization: `Bearer ${token}` } });
+            clearFilePreview();
+            fetchMessages(selectedUser.user_id, false);
+            fetchChatSessions(false);
+        } catch (err) {
+            console.error(err);
+            notify.error(t('admin_chats.failed_send'));
+        } finally {
+            setUploading(false);
+        }
     };
 
     const handleSendMessage = async (e) => {
         e.preventDefault();
+        if (filePreview) { sendFile(); return; }
         if (!newMessage.trim() || !selectedUser) return;
         const messageText = newMessage.trim();
         setNewMessage('');
@@ -368,7 +456,7 @@ export default function AdminChats() {
             </div>
 
             {/* Chat Area */}
-            <div className="flex-1 border border-zinc-800 bg-zinc-900/40 flex flex-col overflow-hidden rounded-xl">
+            <div className="flex-1 border border-zinc-800 bg-zinc-900/40 flex flex-col overflow-hidden rounded-xl relative">
                 {selectedUser ? (
                     <>
                         {/* Header */}
@@ -393,7 +481,11 @@ export default function AdminChats() {
                         </div>
 
                         {/* Messages */}
-                        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                        <div
+                            ref={chatBoxRef}
+                            onScroll={handleChatScroll}
+                            className="flex-1 overflow-y-auto p-6 space-y-6"
+                        >
                             {loadingMessages ? (
                                 <div className="flex justify-center items-center h-full">
                                     <div className="w-8 h-8 rounded-full border-2 border-zinc-700 border-t-white animate-spin" />
@@ -436,6 +528,7 @@ export default function AdminChats() {
                                         );
                                     }
 
+                                    const isFileMsg = msg.message_type === 'image' || msg.message_type === 'file';
                                     return (
                                         <div key={msg.chat_id} className={`flex flex-col ${isAdmin ? 'items-end' : 'items-start'}`}>
                                             <div className={`flex items-center gap-2 mb-1.5 ${isAdmin ? 'flex-row-reverse' : 'flex-row'}`}>
@@ -449,19 +542,36 @@ export default function AdminChats() {
                                                     {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                 </span>
                                             </div>
-                                            <div className={`max-w-[85%] md:max-w-[70%] p-4 text-sm font-sans leading-relaxed break-words ${
-                                                isAdmin
-                                                    ? 'bg-rose-600 text-white rounded-l-xl rounded-br-xl'
-                                                    : 'bg-zinc-800 text-zinc-100 rounded-r-xl rounded-bl-xl border border-zinc-700'
-                                            }`}>
-                                                {msg.message}
-                                            </div>
+                                            {isFileMsg ? (
+                                                <FileBubble metadata={msg.metadata} isAdmin={isAdmin} />
+                                            ) : (
+                                                <div className={`max-w-[85%] md:max-w-[70%] p-4 text-sm font-sans leading-relaxed break-words ${
+                                                    isAdmin
+                                                        ? 'bg-rose-600 text-white rounded-l-xl rounded-br-xl'
+                                                        : 'bg-zinc-800 text-zinc-100 rounded-r-xl rounded-bl-xl border border-zinc-700'
+                                                }`}>
+                                                    {msg.message}
+                                                </div>
+                                            )}
                                         </div>
                                     );
                                 })
                             )}
                             <div ref={messagesEndRef} />
                         </div>
+
+                        {/* Scroll to bottom button */}
+                        {showScrollBtn && (
+                            <button
+                                onClick={scrollToBottom}
+                                className="absolute bottom-36 right-6 z-20 w-9 h-9 bg-zinc-800 border border-zinc-600 text-zinc-300 hover:bg-zinc-700 hover:text-white rounded-full flex items-center justify-center shadow-lg transition-all animate-in fade-in slide-in-from-bottom-2 duration-200"
+                                title="Jump to latest"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M12 5v14M5 12l7 7 7-7"/>
+                                </svg>
+                            </button>
+                        )}
 
                         {/* Admin Confirmation Panel */}
                         <ConfirmationPanel
@@ -471,22 +581,45 @@ export default function AdminChats() {
                             t={t}
                         />
 
+                        {/* File Preview Strip */}
+                        {filePreview && (
+                            <div className="px-4 py-2 bg-zinc-900 border-t border-zinc-800 flex items-center gap-3">
+                                {filePreview.isImage
+                                    ? <img src={filePreview.url} alt="" className="h-12 w-12 object-cover rounded border border-zinc-700" />
+                                    : <div className="h-12 w-12 bg-zinc-800 border border-zinc-700 rounded flex items-center justify-center"><FileText className="w-5 h-5 text-zinc-400" /></div>
+                                }
+                                <p className="text-xs font-mono text-zinc-300 truncate flex-1">{filePreview.name}</p>
+                                <button onClick={clearFilePreview} className="w-6 h-6 flex items-center justify-center rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-400 shrink-0">
+                                    <X className="w-3 h-3" />
+                                </button>
+                            </div>
+                        )}
+
                         {/* Chat Input */}
                         <div className="p-4 bg-zinc-950 border-t border-zinc-800 shrink-0">
-                            <form onSubmit={handleSendMessage} className="relative flex items-center">
+                            <input ref={fileInputRef} type="file" accept="image/*,.pdf,.docx,.xlsx,.txt" className="hidden" onChange={handleFileSelect} />
+                            <form onSubmit={handleSendMessage} className="flex items-center gap-2">
+                                <button type="button" onClick={() => fileInputRef.current?.click()}
+                                    className="w-9 h-12 flex items-center justify-center text-zinc-500 hover:text-zinc-200 transition-colors shrink-0">
+                                    <Paperclip className="w-4 h-4" />
+                                </button>
                                 <input
                                     type="text"
                                     value={newMessage}
                                     onChange={e => setNewMessage(e.target.value)}
-                                    placeholder={t('admin_chats.type_message')}
-                                    className="w-full bg-zinc-900 border border-zinc-800 focus:border-zinc-500 outline-none h-12 pl-4 pr-16 text-sm text-zinc-100 rounded-md transition-colors"
+                                    placeholder={filePreview ? 'Press send to upload...' : t('admin_chats.type_message')}
+                                    disabled={!!filePreview}
+                                    className="flex-1 bg-zinc-900 border border-zinc-800 focus:border-zinc-500 outline-none h-12 px-4 text-sm text-zinc-100 rounded-md transition-colors disabled:opacity-50"
                                 />
                                 <button
                                     type="submit"
-                                    disabled={!newMessage.trim()}
-                                    className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-zinc-800 text-zinc-300 rounded hover:bg-zinc-700 hover:text-white disabled:opacity-50 flex items-center justify-center transition-colors"
+                                    disabled={(!newMessage.trim() && !filePreview) || uploading}
+                                    className="w-10 h-12 bg-zinc-800 text-zinc-300 rounded hover:bg-zinc-700 hover:text-white disabled:opacity-40 flex items-center justify-center transition-colors shrink-0"
                                 >
-                                    <Send className="w-4 h-4" />
+                                    {uploading
+                                        ? <div className="w-4 h-4 border-2 border-zinc-600 border-t-zinc-300 rounded-full animate-spin" />
+                                        : <Send className="w-4 h-4" />
+                                    }
                                 </button>
                             </form>
                         </div>
