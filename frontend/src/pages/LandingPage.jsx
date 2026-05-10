@@ -14,6 +14,7 @@ import SplashScreen from "../components/ui/SplashScreen"
 import EndorsementCarousel from "../components/ui/EndorsementCarousel"
 import NewsletterSignup from "../components/NewsletterSignup"
 import { useSettings } from "../context/SettingsContext"
+import GpsPermissionBanner from "../components/ui/GpsPermissionBanner"
 
 const staggerContainer = {
   hidden: {},
@@ -535,6 +536,7 @@ function FooterSection() {
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-50 font-sans cursor-default selection:bg-white selection:text-black">
+      <GpsPermissionBanner />
       <SplashScreen />
       <Navbar />
       <HeroSection />

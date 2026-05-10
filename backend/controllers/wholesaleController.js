@@ -271,3 +271,15 @@ exports.updateOrderStatus = async (req, res) => {
         res.status(500).json({ error: 'Internal Server Error' });
     }
 };
+
+exports.getUnreadOrdersCount = async (req, res) => {
+    try {
+        const [result] = await db.query(
+            "SELECT COUNT(*) as count FROM wholesale_orders WHERE status = 'Belum Dibaca'"
+        );
+        res.status(200).json({ success: true, count: result[0].count });
+    } catch (error) {
+        console.error('Error fetching unread orders count:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+};

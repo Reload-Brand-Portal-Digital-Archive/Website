@@ -8,6 +8,7 @@ const { verifyToken, isAdmin } = require('../middlewares/authMiddleware');
 router.post('/', wholesaleController.createWholesaleOrder);
 
 // Dashboard routes
+router.get('/unread-count', verifyToken, isAdmin, wholesaleController.getUnreadOrdersCount);
 router.get('/', verifyToken, isAdmin, wholesaleController.getAllOrders);
 router.get('/:id', verifyToken, isAdmin, wholesaleController.getOrderById);
 router.put('/:id/status', verifyToken, isAdmin, wholesaleController.updateOrderStatus);
