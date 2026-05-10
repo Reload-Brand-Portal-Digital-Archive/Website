@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { ShoppingBag, Clock, RefreshCw } from 'lucide-react';
 import axios from 'axios';
+import { useTranslation } from 'react-i18next';
 
 const PLATFORM_STYLE = {
     shopee: { label: 'Shopee', color: 'text-orange-400 bg-orange-500/10' },
@@ -8,6 +9,7 @@ const PLATFORM_STYLE = {
 };
 
 export default function RecentActivityLog({ dateRange = {} }) {
+    const { t } = useTranslation();
     const [clicks, setClicks] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -45,7 +47,7 @@ export default function RecentActivityLog({ dateRange = {} }) {
             <div className="flex items-center justify-between p-5 border-b border-zinc-800">
                 <h3 className="text-sm font-semibold text-zinc-100 flex items-center gap-2">
                     <ShoppingBag size={16} className="text-rose-500" />
-                    Recent Store Clicks
+                    {t('admin_dashboard.recent_store_clicks')}
                 </h3>
                 <button onClick={fetchData} className="text-zinc-500 hover:text-zinc-300 transition-colors" title="Refresh">
                     <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
@@ -58,16 +60,16 @@ export default function RecentActivityLog({ dateRange = {} }) {
                 </div>
             ) : clicks.length === 0 ? (
                 <div className="p-8 text-center text-zinc-600 text-sm">
-                    No store clicks recorded yet.
+                    {t('admin_dashboard.no_store_clicks')}
                 </div>
             ) : (
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead>
                             <tr className="text-[11px] uppercase tracking-wider text-zinc-500 border-b border-zinc-800">
-                                <th className="px-5 py-3 text-left font-medium">Platform</th>
-                                <th className="px-5 py-3 text-left font-medium">IP Address</th>
-                                <th className="px-5 py-3 text-right font-medium">Time</th>
+                                <th className="px-5 py-3 text-left font-medium">{t('admin_dashboard.platform')}</th>
+                                <th className="px-5 py-3 text-left font-medium">{t('admin_dashboard.ip_address')}</th>
+                                <th className="px-5 py-3 text-right font-medium">{t('admin_dashboard.time')}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-zinc-800/60">

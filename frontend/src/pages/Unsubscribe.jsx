@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import { Terminal, ShieldAlert, ArrowLeft } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export default function Unsubscribe() {
+    const { t } = useTranslation();
     const [searchParams] = useSearchParams();
     const urlEmail = searchParams.get('email') || '';
     const [manualEmail, setManualEmail] = useState('');
@@ -17,7 +19,7 @@ export default function Unsubscribe() {
         e.preventDefault();
         
         if (!displayEmail) {
-            setErrorMessage('EMAIL_REQUIRED_EXCEPTION');
+            setErrorMessage(t('unsubscribe.email_required'));
             setStatus('error');
             return;
         }
@@ -29,7 +31,7 @@ export default function Unsubscribe() {
             await axios.get(`${import.meta.env.VITE_API_URL}/api/newsletter/unsubscribe?email=${encodeURIComponent(displayEmail)}`);
             setStatus('success');
         } catch (error) {
-            setErrorMessage(error.response?.data?.message || 'UNAUTHORIZED_ACCESS_DENIED');
+            setErrorMessage(error.response?.data?.message || t('unsubscribe.unauthorized'));
             setStatus('error');
         } finally {
             setLoading(false);
@@ -44,17 +46,17 @@ export default function Unsubscribe() {
                 <div className="max-w-xl w-full border border-red-900/50 bg-black/50 p-8 md:p-12 text-center relative z-10 backdrop-blur-sm">
                     <ShieldAlert className="w-16 h-16 text-red-500 mx-auto mb-6" />
                     <h1 className="text-2xl md:text-4xl font-black text-red-500 uppercase tracking-tighter mb-4 font-sans">
-                        ACCESS REVOKED
+                        {t('unsubscribe.access_revoked')}
                     </h1>
                     <p className="text-zinc-400 font-mono text-sm tracking-widest uppercase mb-8">
-                        YOU HAVE LEFT THE UNDERGROUND.
+                        {t('unsubscribe.left_underground')}
                     </p>
                     <Link 
                         to="/"
                         className="inline-flex items-center gap-2 text-zinc-500 hover:text-white transition-colors font-mono text-xs uppercase tracking-widest"
                     >
                         <ArrowLeft className="w-4 h-4" />
-                        RETURN TO SURFACE
+                        {t('unsubscribe.return_surface')}
                     </Link>
                 </div>
             </div>
@@ -68,14 +70,14 @@ export default function Unsubscribe() {
             <div className="max-w-xl w-full relative z-10">
                 <Link to="/" className="inline-flex items-center gap-2 text-zinc-600 hover:text-white mb-12 transition-colors font-mono text-xs uppercase tracking-widest">
                     <ArrowLeft className="w-4 h-4" />
-                    [ ABORT SEQUENCE ]
+                    {t('unsubscribe.abort_sequence')}
                 </Link>
 
                 <div className="border border-zinc-800 bg-zinc-900/50 p-8 md:p-12 backdrop-blur-sm shadow-2xl shadow-black">
                     <div className="flex items-center gap-3 mb-8 border-b border-zinc-800 pb-4">
                         <Terminal className="w-5 h-5 text-red-500" />
                         <h2 className="font-mono text-xs md:text-sm tracking-[0.2em] text-zinc-400 uppercase">
-                            Connection Termination
+                            {t('unsubscribe.termination')}
                         </h2>
                     </div>
 
@@ -83,7 +85,7 @@ export default function Unsubscribe() {
                         {urlEmail ? (
                             <div className="space-y-4">
                                 <p className="font-mono text-sm text-zinc-300 leading-relaxed uppercase tracking-wider">
-                                    Are you sure you want to stop receiving secret drop info for <br/>
+                                    {t('unsubscribe.confirm_prompt')} <br/>
                                     <span className="text-red-400 font-bold bg-red-950/30 px-2 py-1 border border-red-900/50 mt-2 inline-block">
                                         {urlEmail}
                                     </span> ?
@@ -92,7 +94,7 @@ export default function Unsubscribe() {
                         ) : (
                             <div className="space-y-4">
                                 <label className="font-mono text-[10px] text-zinc-500 uppercase tracking-[0.15em] block">
-                                    Target Email Override
+                                    {t('unsubscribe.email_override')}
                                 </label>
                                 <input
                                     type="email"
@@ -101,7 +103,7 @@ export default function Unsubscribe() {
                                         setManualEmail(e.target.value);
                                         setStatus('idle');
                                     }}
-                                    placeholder="ENTER_EMAIL@DOMAIN.COM"
+                                    placeholder={t('unsubscribe.email_placeholder')}
                                     className="w-full bg-black border border-zinc-800 focus:border-red-500 outline-none h-12 px-4 text-sm text-red-100 font-mono transition-colors placeholder:text-zinc-700"
                                     required
                                 />
@@ -125,10 +127,10 @@ export default function Unsubscribe() {
                                 {loading ? (
                                     <>
                                         <div className="w-4 h-4 border-2 border-zinc-900 border-t-transparent group-hover:border-white group-hover:border-t-transparent rounded-full animate-spin"></div>
-                                        EXECUTING...
+                                        {t('unsubscribe.executing')}
                                     </>
                                 ) : (
-                                    '[ REVOKE ACCESS ]'
+                                    t('unsubscribe.revoke_access')
                                 )}
                             </span>
                         </button>

@@ -41,6 +41,33 @@ exports.getWholesaleOrders = async (req, res) => {
     }
 };
 
+exports.markWholesaleOrdersAsRead = async (req, res) => {
+    const userId = req.user.id;
+    try {
+        await db.query('UPDATE wholesale_orders SET has_unread_updates = FALSE WHERE user_id = ?', [userId]);
+        res.status(200).json({ success: true });
+    } catch (error) {
+        console.error('Error marking orders as read:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+};
+
+exports.getNotifications = async (req, res) => {
+    const userId = req.user.id;
+    try {
+        const [chatRows] = await db.query('SELECT COUNT(*) as unreadChats FROM chats WHERE user_id = ? AND sender = "admin" AND is_read = FALSE', [userId]);
+        const [orderRows] = await db.query('SELECT COUNT(*) as unreadOrders FROM wholesale_orders WHERE user_id = ? AND has_unread_updates = TRUE', [userId]);
+
+        res.status(200).json({
+            unreadChats: chatRows[0].unreadChats > 0,
+            unreadOrders: orderRows[0].unreadOrders > 0
+        });
+    } catch (error) {
+        console.error('Error fetching notifications:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+};
+
 exports.updateProfile = async (req, res) => {
     const userId = req.user.id;
     const { name, currentPassword, newPassword } = req.body;

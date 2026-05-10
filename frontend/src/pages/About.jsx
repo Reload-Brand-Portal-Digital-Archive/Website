@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent } from '@/components/ui/card';
 import Navbar from '../components/ui/Navbar';
+import { useTranslation } from 'react-i18next';
+import { useSettings } from '../context/SettingsContext';
 
 // ─────────────────────────────────────────
 // Animation Variants
@@ -34,7 +36,7 @@ const noiseBg = `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='htt
 // ─────────────────────────────────────────
 // Section 1 — Hero About
 // ─────────────────────────────────────────
-function HeroSection() {
+function HeroSection({ t }) {
   return (
     <section className="relative w-full min-h-[100dvh] bg-zinc-950 overflow-hidden flex items-end pb-24 pt-40">
       {/* Noise overlay */}
@@ -60,7 +62,7 @@ function HeroSection() {
           className="flex flex-col gap-8 max-w-4xl"
         >
           <motion.span variants={fadeUp} className="font-mono text-xs tracking-[0.3em] text-zinc-500 uppercase">
-            [ ABOUT RELOAD ]
+            {t('about.hero_badge')}
           </motion.span>
 
           <motion.div variants={fadeUp} className="flex items-start gap-4 flex-wrap">
@@ -68,7 +70,7 @@ function HeroSection() {
               variant="outline"
               className="border-zinc-700 text-zinc-400 rounded-none font-mono text-[10px] tracking-widest uppercase px-3 py-1"
             >
-              About Us
+              {t('about.hero_tag')}
             </Badge>
           </motion.div>
 
@@ -76,21 +78,21 @@ function HeroSection() {
             variants={fadeUp}
             className="font-sans text-[15vw] md:text-[8vw] text-zinc-50 font-black leading-[0.85] tracking-tighter uppercase"
           >
-            RELOAD<br />
-            <span className="text-zinc-600">Culture.</span>
+            {t('about.hero_title_1')}<br />
+            <span className="text-zinc-600">{t('about.hero_title_2')}</span>
           </motion.h1>
 
           <motion.p
             variants={fadeUp}
             className="font-sans text-base md:text-lg text-zinc-400 max-w-[52ch] leading-relaxed"
           >
-            Reload bukan sekadar merek pakaian; ini adalah manifestasi dari dedikasi mendalam terhadap kultur streetwear. Lahir dari perpaduan antara keahlian produksi tingkat tinggi dan visi yang berani, kami hadir untuk mendefinisikan ulang standar gaya jalanan melalui setiap jahitan.
+            {t('about.hero_desc')}
           </motion.p>
 
           <motion.div variants={fadeUp} className="flex items-center gap-4 mt-2">
             <div className="h-px bg-zinc-800 w-8" />
             <span className="font-mono text-[10px] text-zinc-600 uppercase tracking-widest">
-              EST. 2002
+              {t('about.hero_est')}
             </span>
           </motion.div>
         </motion.div>
@@ -102,11 +104,11 @@ function HeroSection() {
 // ─────────────────────────────────────────
 // Section 2 — Brand Story
 // ─────────────────────────────────────────
-function BrandStorySection() {
+function BrandStorySection({ t }) {
   const paragraphs = [
-    'Berawal dari tahun 2002, fondasi Reload dibangun dari pengalaman panjang di balik layar industri pakaian streetwear dan distro terkemuka di Bandung. Berbekal jam terbang lebih dari satu dekade dalam menguasai detail produksi, konstruksi, dan kualitas garmen, pendiri kami, Agus Syahrudin, mengambil langkah berani pada awal era 2010-an untuk melahirkan entitas mandiri. Nama "Reload" dipilih sebagai simbol energi dan semangat bertenaga yang terinspirasi dari kultur musik yang solid.',
-    'Perjalanan awal kami bukan hanya tentang memproduksi pakaian, melainkan sebuah kolaborasi strategis antara dua pilar utama. Dengan menggabungkan mastery di bidang produksi bersama keahlian promosi yang tajam dari praktisi industri hiburan, Reload menciptakan gelombang antusiasme yang masif di pasar. Kami memfokuskan energi pada membangun brand awareness dan identitas visual terlebih dahulu, yang terbukti sukses mendatangkan lonjakan permintaan luar biasa dari komunitas di awal peluncurannya.',
-    'Kini, setelah melalui berbagai fase pendewasaan dan sebuah masa hiatus yang memberikan ruang untuk penyempurnaan visi, Reload kembali hadir (Reborn) dengan energi yang diperbarui. Kami tetap setia pada akar kami—menghadirkan koleksi yang tangguh dan ikonis, dari siluet kasual hingga basketball-style jerseys andalan kami—sambil terus berinovasi untuk mendominasi skena fesyen masa kini.',
+    t('about.story_p1'),
+    t('about.story_p2'),
+    t('about.story_p3'),
   ];
 
   return (
@@ -122,16 +124,16 @@ function BrandStorySection() {
             className="md:col-span-5 flex flex-col gap-6 md:sticky md:top-36"
           >
             <span className="font-mono text-xs tracking-[0.3em] text-zinc-500 uppercase">
-              [ BRAND STORY ]
+              {t('about.story_badge')}
             </span>
             <h2 className="text-4xl md:text-5xl lg:text-6xl font-black uppercase tracking-tighter leading-[0.9] text-zinc-50">
-              Craftsmanship,<br />
-              <span className="text-zinc-600">Collaboration,<br />&amp; Culture.</span>
+              {t('about.story_title_1')}<br />
+              <span className="text-zinc-600">{t('about.story_title_2')}<br />{t('about.story_title_3')}</span>
             </h2>
             <div className="flex items-center gap-4 mt-4">
               <div className="h-px bg-zinc-800 flex-1 max-w-[60px]" />
               <span className="font-mono text-[10px] text-zinc-600 uppercase tracking-widest">
-                SINCE 2002
+                {t('about.story_since')}
               </span>
             </div>
           </motion.div>
@@ -160,28 +162,26 @@ function BrandStorySection() {
 // ─────────────────────────────────────────
 // Section 3 — Values / Principles
 // ─────────────────────────────────────────
-const VALUES = [
-  {
-    index: '01',
-    title: 'CRAFTSMANSHIP FIRST',
-    description:
-      'Berakar dari rumah produksi yang telah melayani berbagai merek legendaris sejak awal 2000-an, setiap potongan pakaian Reload dibuat dengan ketelitian tingkat tinggi. Kami memahami betul seni dari konstruksi garmen yang berkualitas.',
-  },
-  {
-    index: '02',
-    title: 'COMMUNITY & VISIBILITY',
-    description:
-      'Kami percaya bahwa brand yang kuat dibangun dari komunikasi dan bagaimana Anda mengekspresikan diri. Melalui kampanye yang solid dan presensi visual yang berani, kami menjalin koneksi yang otentik dengan pemakai kami.',
-  },
-  {
-    index: '03',
-    title: 'RELENTLESS ENERGY',
-    description:
-      'Terinspirasi dari nama kami sendiri, Reload merepresentasikan kekuatan untuk terus "memuat ulang" semangat dan kreativitas. Kami selalu siap beradaptasi dan menghadirkan inovasi segar di setiap era kultur fesyen.',
-  },
-];
 
-function ValuesSection() {
+function ValuesSection({ t }) {
+  const VALUES = [
+    {
+      index: '01',
+      title: t('about.value_1_title'),
+      description: t('about.value_1_desc'),
+    },
+    {
+      index: '02',
+      title: t('about.value_2_title'),
+      description: t('about.value_2_desc'),
+    },
+    {
+      index: '03',
+      title: t('about.value_3_title'),
+      description: t('about.value_3_desc'),
+    },
+  ];
+
   return (
     <section className="w-full bg-zinc-950 font-sans">
       <div className="max-w-[1600px] mx-auto px-6 md:px-12 py-24 md:py-36">
@@ -193,11 +193,11 @@ function ValuesSection() {
           className="mb-16"
         >
           <span className="font-mono text-xs tracking-[0.3em] text-zinc-500 uppercase">
-            [ VALUES &amp; PRINCIPLES ]
+            {t('about.values_badge')}
           </span>
           <h2 className="mt-4 text-4xl md:text-5xl font-black uppercase tracking-tighter leading-none text-zinc-50">
-            What We<br />
-            <span className="text-zinc-600">Stand For.</span>
+            {t('about.values_title_1')}<br />
+            <span className="text-zinc-600">{t('about.values_title_2')}</span>
           </h2>
         </motion.div>
 
@@ -234,30 +234,31 @@ function ValuesSection() {
 // ─────────────────────────────────────────
 // Section 4 — Timeline / Milestones
 // ─────────────────────────────────────────
-const MILESTONES = [
-  {
-    year: '2002',
-    title: 'THE FOUNDATION',
-    description: 'Membangun pengalaman, keahlian teknis, dan reputasi sebagai pengrajin serta rumah produksi andalan untuk berbagai merek pakaian pionir di Bandung.',
-  },
-  {
-    year: '2010',
-    title: 'THE INCEPTION & THE SURGE',
-    description: 'Merek Reload resmi dibentuk. Melalui perpaduan visi di bidang produksi dan keunggulan promosi, merek ini melakukan debutnya dan langsung menciptakan lonjakan antusiasme yang masif.',
-  },
-  {
-    year: '2012',
-    title: 'PEAK EXPANSION',
-    description: 'Skala produksi ditingkatkan secara besar-besaran untuk memenuhi ledakan permintaan dari pasar, mengukuhkan eksistensi dan kapabilitas Reload di skena mode.',
-  },
-  {
-    year: '2025',
-    title: 'RELOAD REBORN',
-    description: 'Setelah melakukan refleksi dan pembaruan, Reload terlahir kembali dengan identitas yang lebih matang. Memadukan warisan orisinalitas masa lalu dengan visi modern untuk kembali mendominasi lanskap streetwear.',
-  },
-];
 
-function TimelineSection() {
+function TimelineSection({ t }) {
+  const MILESTONES = [
+    {
+      year: '2002',
+      title: t('about.milestone_1_title'),
+      description: t('about.milestone_1_desc'),
+    },
+    {
+      year: '2010',
+      title: t('about.milestone_2_title'),
+      description: t('about.milestone_2_desc'),
+    },
+    {
+      year: '2012',
+      title: t('about.milestone_3_title'),
+      description: t('about.milestone_3_desc'),
+    },
+    {
+      year: '2025',
+      title: t('about.milestone_4_title'),
+      description: t('about.milestone_4_desc'),
+    },
+  ];
+
   return (
     <section className="w-full bg-zinc-900 border-y border-zinc-800 font-sans">
       <div className="max-w-[1600px] mx-auto px-6 md:px-12 py-24 md:py-36">
@@ -269,10 +270,10 @@ function TimelineSection() {
           className="mb-16"
         >
           <span className="font-mono text-xs tracking-[0.3em] text-zinc-500 uppercase">
-            [ MILESTONES ]
+            {t('about.timeline_badge')}
           </span>
           <h2 className="mt-4 text-4xl md:text-5xl font-black uppercase tracking-tighter leading-none text-zinc-50">
-            Our <span className="text-zinc-600">Journey.</span>
+            {t('about.timeline_title_1')}<span className="text-zinc-600">{t('about.timeline_title_2')}</span>
           </h2>
         </motion.div>
 
@@ -319,15 +320,19 @@ function TimelineSection() {
 // ─────────────────────────────────────────
 // Section 5 — Team / Studio
 // ─────────────────────────────────────────
-const TEAM = [
-  { 
-    name: 'Agus Syahrudin', 
-    title: 'Founder',
-    image: '/images/founder.jpg' // <-- Ganti nama file ini dengan nama file gambar Anda
-  }
-];
 
-function TeamSection() {
+function TeamSection({ t, founderImage, founderName }) {
+  const displayName = founderName || 'Agus Syahrudin';
+  const displayImage = founderImage || '/images/founder.jpg';
+
+  const TEAM = [
+    { 
+      name: displayName, 
+      title: t('about.founder_title'),
+      image: displayImage
+    }
+  ];
+
   return (
     <section className="w-full bg-zinc-950 font-sans">
       <div className="max-w-[1600px] mx-auto px-6 md:px-12 py-24 md:py-36">
@@ -339,11 +344,11 @@ function TeamSection() {
           className="mb-16 text-center md:text-left"
         >
           <span className="font-mono text-xs tracking-[0.3em] text-zinc-500 uppercase">
-            [ TEAM &amp; STUDIO ]
+            {t('about.team_badge')}
           </span>
           <h2 className="mt-4 text-4xl md:text-5xl font-black uppercase tracking-tighter leading-none text-zinc-50">
-            The People<br className="hidden md:block" />
-            <span className="text-zinc-600"> Behind It.</span>
+            {t('about.team_title_1')}<br className="hidden md:block" />
+            <span className="text-zinc-600">{t('about.team_title_2')}</span>
           </h2>
         </motion.div>
 
@@ -365,7 +370,6 @@ function TeamSection() {
                   alt={member.name}
                   className="w-full h-full object-cover"
                   onError={(e) => {
-                    // Fallback visual jika gambar belum ada
                     e.target.style.display = 'none';
                     e.target.nextSibling.style.display = 'flex';
                   }}
@@ -374,7 +378,7 @@ function TeamSection() {
                 {/* Fallback box jika gambar error/tidak ditemukan */}
                 <div className="hidden flex-col items-center gap-2 absolute inset-0 justify-center bg-zinc-900">
                   <span className="font-mono text-[9px] text-zinc-700 uppercase tracking-widest text-center px-4">
-                    Photo Not Found<br/><br/>Simpan gambar di:<br/>public/images/founder.jpg
+                    {t('about.photo_not_found')}<br/><br/>{t('about.save_image_at')}<br/>public/images/founder.jpg
                   </span>
                 </div>
 
@@ -409,7 +413,7 @@ function TeamSection() {
 // ─────────────────────────────────────────
 // Section 6 — CTA
 // ─────────────────────────────────────────
-function CTASection() {
+function CTASection({ t }) {
   return (
     <section className="w-full bg-zinc-900 border-t border-zinc-800 font-sans overflow-hidden">
       <div className="max-w-[1600px] mx-auto px-6 md:px-12 py-32 md:py-48 flex flex-col gap-16">
@@ -420,14 +424,14 @@ function CTASection() {
           transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
         >
           <span className="font-mono text-xs tracking-[0.3em] text-zinc-500 uppercase block mb-6">
-            [ JOIN THE MOVEMENT ]
+            {t('about.cta_badge')}
           </span>
           <h2 className="text-5xl md:text-[6vw] font-black leading-[0.85] tracking-tighter uppercase text-zinc-50">
-            Explore The<br />
-            <span className="text-zinc-600">Collection.</span>
+            {t('about.cta_title_1')}<br />
+            <span className="text-zinc-600">{t('about.cta_title_2')}</span>
           </h2>
           <p className="mt-6 text-zinc-400 text-base max-w-[48ch] leading-relaxed">
-            Jelajahi rilisan terbaru dari Reload. Temukan desain ikonis dan jadilah bagian dari pergerakan kultur streetwear kami.
+            {t('about.cta_desc')}
           </p>
         </motion.div>
 
@@ -444,14 +448,14 @@ function CTASection() {
             to="/shop"
             className="group inline-flex items-center gap-3 h-14 px-8 bg-zinc-50 text-zinc-950 font-mono text-xs uppercase tracking-widest hover:bg-zinc-200 transition-colors"
           >
-            Shop Now
+            {t('about.shop_now')}
             <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
           </Link>
           <Link
             to="/collections"
             className="group inline-flex items-center gap-3 h-14 px-8 bg-transparent border border-zinc-700 text-zinc-300 font-mono text-xs uppercase tracking-widest hover:border-zinc-400 hover:text-white transition-all"
           >
-            Collections
+            {t('nav.collections')}
             <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
           </Link>
         </motion.div>
@@ -464,6 +468,28 @@ function CTASection() {
 // Page Export
 // ─────────────────────────────────────────
 export default function About() {
+  const { t, i18n } = useTranslation();
+  const { settings } = useSettings();
+
+  const aboutContent = React.useMemo(() => {
+    try {
+      return settings?.about_page_content ? JSON.parse(settings.about_page_content) : null;
+    } catch {
+      return null;
+    }
+  }, [settings?.about_page_content]);
+
+  const tAbout = React.useCallback((key) => {
+    if (key.startsWith('about.')) {
+      const fieldKey = key.replace('about.', '');
+      const customValue = aboutContent?.[i18n.language]?.[fieldKey];
+      if (customValue && customValue.trim() !== '') {
+        return customValue;
+      }
+    }
+    return t(key);
+  }, [aboutContent, i18n.language, t]);
+  
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-50 font-sans cursor-default selection:bg-white selection:text-black">
       {/* Site-wide noise texture */}
@@ -478,12 +504,16 @@ export default function About() {
       <Navbar />
 
       <main className="relative z-10">
-        <HeroSection />
-        <BrandStorySection />
-        <ValuesSection />
-        <TimelineSection />
-        <TeamSection />
-        <CTASection />
+        <HeroSection t={tAbout} />
+        <BrandStorySection t={tAbout} />
+        <ValuesSection t={tAbout} />
+        <TimelineSection t={tAbout} />
+        <TeamSection 
+          t={tAbout} 
+          founderImage={settings?.about_founder_image ? import.meta.env.VITE_API_URL + '/' + settings.about_founder_image : null}
+          founderName={aboutContent?.founder_name}
+        />
+        <CTASection t={tAbout} />
       </main>
     </div>
   );

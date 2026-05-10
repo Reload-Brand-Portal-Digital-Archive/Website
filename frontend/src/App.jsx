@@ -23,6 +23,7 @@ import ShopDetail from './pages/ShopDetail';
 import Wholesale from './pages/Wholesale';
 import ProtectedRoute from './components/ProtectedRoute';
 import UserProfile from './pages/UserProfile';
+import UserOrders from './pages/UserOrders';
 import Contact from './pages/Contact';
 import NotFound from './pages/NotFound';
 import About from './pages/About';
@@ -97,6 +98,7 @@ function App() {
           <Route path="/unsubscribe" element={<Unsubscribe />} />
           <Route element={<ProtectedRoute requireAdmin={false} />}>
             <Route path="/profile" element={<UserProfile />} />
+            <Route path="/orders" element={<UserOrders />} />
             <Route path="/contact" element={<Contact />} />
           </Route>
           <Route element={<ProtectedRoute requireAdmin={true} />}>

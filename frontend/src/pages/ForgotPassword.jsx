@@ -5,8 +5,10 @@ import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ArrowRight } from 'lucide-react';
 import { notify } from '../lib/toast';
+import { useTranslation } from 'react-i18next';
 
 export default function ForgotPassword() {
+    const { t } = useTranslation();
     const [email, setEmail] = useState('');
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
@@ -19,12 +21,12 @@ export default function ForgotPassword() {
         setLoading(true);
 
         try {
-            const loadingToastId = notify.loading('Sending recovery email...');
+            const loadingToastId = notify.loading(t('forgot_password.sending'));
             const response = await axios.post(import.meta.env.VITE_API_URL + '/api/auth/forgot-password', { email });
             setMessage(response.data.message);
-            notify.update(loadingToastId, { render: 'Recovery email sent! Please check your inbox.', type: 'success', isLoading: false, autoClose: 4000 });
+            notify.update(loadingToastId, { render: t('forgot_password.sent_success'), type: 'success', isLoading: false, autoClose: 4000 });
         } catch (err) {
-            const errorMessage = err.response?.data?.message || 'An error occurred on the server';
+            const errorMessage = err.response?.data?.message || t('forgot_password.server_error');
             setError(errorMessage);
             notify.error(errorMessage);
         } finally {
@@ -77,7 +79,7 @@ export default function ForgotPassword() {
                                 RELOAD
                             </motion.h1>
                             <motion.span variants={itemVariants} className="text-[10px] uppercase font-mono tracking-widest text-zinc-500 mt-1 block">
-                                [ RECOVER ACCESS ]
+                                {t('forgot_password.recover_badge')}
                             </motion.span>
                         </div>
                         <motion.div variants={itemVariants}>
@@ -88,9 +90,9 @@ export default function ForgotPassword() {
                     </div>
 
                     <motion.div variants={itemVariants} className="mb-10">
-                        <h2 className="text-3xl font-bold text-white tracking-tight uppercase leading-none mb-4">SYSTEM<br/>OVERRIDE.</h2>
+                        <h2 className="text-3xl font-bold text-white tracking-tight uppercase leading-none mb-4">{t('forgot_password.title_1')}<br/>{t('forgot_password.title_2')}</h2>
                         <p className="text-zinc-400 text-sm leading-relaxed max-w-[30ch]">
-                            Enter your registered email to receive designated deployment instructions.
+                            {t('forgot_password.subtitle')}
                         </p>
                     </motion.div>
 
@@ -133,7 +135,7 @@ export default function ForgotPassword() {
                                     htmlFor="email" 
                                     className="absolute left-0 top-4 text-xs font-mono uppercase tracking-widest text-zinc-600 transition-all peer-focus:-top-3 peer-focus:text-[10px] peer-focus:text-zinc-400 peer-valid:-top-3 peer-valid:text-[10px] peer-valid:text-zinc-400 pointer-events-none"
                                 >
-                                    REGISTERED EMAIL_
+                                    {t('forgot_password.email_label')}
                                 </label>
                             </div>
                         </motion.div>
@@ -147,7 +149,7 @@ export default function ForgotPassword() {
                                 className="w-full relative group bg-zinc-50 text-zinc-950 font-bold h-14 rounded-none flex items-center justify-center overflow-hidden transition-all disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest text-xs"
                             >
                                 <span className="relative z-10 flex items-center gap-2 group-hover:gap-4 transition-all">
-                                    {loading ? 'INITIATING...' : 'SEND RECOVERY LINK'}
+                                    {loading ? t('forgot_password.initiating') : t('forgot_password.submit')}
                                     {!loading && <ArrowRight className="w-4 h-4" />}
                                 </span>
                                 <div className="absolute inset-0 bg-white translate-y-[100%] group-hover:translate-y-0 transition-transform duration-300 ease-in-out z-0" />
@@ -157,7 +159,7 @@ export default function ForgotPassword() {
 
                     <motion.div variants={itemVariants} className="mt-10 flex flex-col gap-4 text-center">
                         <Link to="/login" className="text-xs uppercase font-mono tracking-widest text-zinc-500 hover:text-zinc-50 transition-colors">
-                            REVERT TO LOGIN
+                            {t('forgot_password.revert')}
                         </Link>
                     </motion.div>
                 </div>

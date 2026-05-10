@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Search, Trash2, CheckCircle2, ChevronRight } from 'lucide-react';
 import { toast } from 'react-toastify';
 import Navbar from '../components/ui/Navbar';
+import { useTranslation } from 'react-i18next';
 
 export default function Wholesale() {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState(true);
   const location = useLocation();
 
@@ -79,7 +82,7 @@ export default function Wholesale() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (selectedItems.length === 0) {
-      toast.warning("Please select at least one product.");
+      toast.warning(t('wholesale.select_warning'));
       return;
     }
     
@@ -101,13 +104,20 @@ export default function Wholesale() {
         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
         const res = await axios.post(apiUrl + '/api/wholesale', payload);
         if (res.data.order_id) {
-            toast.success('Wholesale order submitted successfully! We will review it soon.');
+            toast.success(t('wholesale.submit_success_chat'));
             setSelectedItems([]);
             setFormData({...formData, address: '', message: '', shop_name: ''});
+            // Redirect to chat so buyer can see the order card and talk to admin
+            setTimeout(() => navigate('/contact'), 1500);
         }
     } catch (err) {
         console.error("Submit error:", err);
-        toast.error('Failed to submit order. Please try again.');
+        if (err.response?.status === 409 && err.response?.data?.error === 'active_order_exists') {
+            toast.error(t('wholesale.active_order_error') || 'You already have an active wholesale order. Please wait for admin to review it first.');
+            setTimeout(() => navigate('/contact'), 2000);
+        } else {
+            toast.error(t('wholesale.submit_error'));
+        }
     } finally {
         setIsSubmitting(false);
     }
@@ -139,16 +149,16 @@ export default function Wholesale() {
       {!isLoggedIn && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-zinc-950/80 backdrop-blur-sm">
           <div className="max-w-md w-full bg-zinc-900 border border-zinc-800 p-8 text-center shadow-2xl animate-in fade-in zoom-in duration-300">
-            <h2 className="text-xl font-medium text-white mb-3">Login Required</h2>
+            <h2 className="text-xl font-medium text-white mb-3">{t('wholesale.login_required')}</h2>
             <p className="text-zinc-400 text-sm mb-8">
-              You have to log in first to access the Wholesale ordering page.
+              {t('wholesale.login_desc')}
             </p>
             <div className="flex flex-col gap-4">
               <Link to="/login" state={{ from: location.pathname }} className="w-full inline-flex items-center justify-center bg-white text-zinc-950 hover:bg-zinc-200 transition-colors h-10 px-4 text-sm font-medium">
-                Go to Login
+                {t('wholesale.go_to_login')}
               </Link>
               <Link to="/" className="w-full inline-flex items-center justify-center bg-transparent border border-zinc-700 text-zinc-300 hover:bg-zinc-800 transition-colors h-10 px-4 text-sm font-medium">
-                Back to Home
+                {t('wholesale.back_to_home')}
               </Link>
             </div>
           </div>
@@ -157,17 +167,17 @@ export default function Wholesale() {
 
       <main className={`flex-1 pt-32 px-6 md:px-12 transition-all duration-500 max-w-[1400px] w-full mx-auto ${!isLoggedIn ? 'blur-md brightness-50 pointer-events-none' : ''}`}>
         <div className="mb-12">
-            <span className="font-mono text-xs tracking-[0.3em] text-zinc-400 uppercase">[ B2B PORTAL ]</span>
-            <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tighter mt-4 mb-4">Wholesale <span className="text-zinc-600">Orders</span></h1>
+            <span className="font-mono text-xs tracking-[0.3em] text-zinc-400 uppercase">{t('wholesale.b2b_badge')}</span>
+            <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tighter mt-4 mb-4">{t('wholesale.title_1')} <span className="text-zinc-600">{t('wholesale.title_2')}</span></h1>
             
             <div className="bg-zinc-900/60 border border-zinc-800 text-zinc-300 p-6 mt-8">
-              <h2 className="text-sm font-mono tracking-widest text-white uppercase mb-3 border-b border-zinc-800 pb-2">How to order</h2>
+              <h2 className="text-sm font-mono tracking-widest text-white uppercase mb-3 border-b border-zinc-800 pb-2">{t('wholesale.how_to_order')}</h2>
               <ol className="text-xs leading-relaxed space-y-2 font-sans font-medium text-zinc-400 pt-2">
-                <li><strong className="text-zinc-200">1.</strong> Browse or search the catalog below.</li>
-                <li><strong className="text-zinc-200">2.</strong> Click on the size badges under a product to add it to your cart. Click again to remove it.</li>
-                <li><strong className="text-zinc-200">3.</strong> Remove items from the Cart panel on the right if needed.</li>
-                <li><strong className="text-zinc-200">4.</strong> Fill out your shipping and contact details in the Checkout details.</li>
-                <li><strong className="text-zinc-200">5.</strong> Submit your wholesale order request for our team to review.</li>
+                <li><strong className="text-zinc-200">1.</strong> {t('wholesale.step_1').substring(3)}</li>
+                <li><strong className="text-zinc-200">2.</strong> {t('wholesale.step_2').substring(3)}</li>
+                <li><strong className="text-zinc-200">3.</strong> {t('wholesale.step_3').substring(3)}</li>
+                <li><strong className="text-zinc-200">4.</strong> {t('wholesale.step_4').substring(3)}</li>
+                <li><strong className="text-zinc-200">5.</strong> {t('wholesale.step_5').substring(3)}</li>
               </ol>
             </div>
         </div>
@@ -180,7 +190,7 @@ export default function Wholesale() {
                     <Search className="w-4 h-4 text-zinc-500" />
                     <input 
                         type="text" 
-                        placeholder="Search products..." 
+                        placeholder={t('wholesale.search_placeholder')}
                         className="bg-transparent border-none outline-none text-sm text-zinc-100 placeholder:text-zinc-600 w-full h-8"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
@@ -199,7 +209,7 @@ export default function Wholesale() {
                                     <img src={getImageUrl(product.primary_image || (product.images && product.images.length > 0 ? product.images[0] : null))} alt={product.name} className="w-full h-full object-cover" />
                                     {!isAvailable && (
                                         <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-                                            <span className="text-white font-mono text-xs font-bold tracking-widest rotate-[-15deg] uppercase border border-white px-2 py-1">Sold Out</span>
+                                            <span className="text-white font-mono text-xs font-bold tracking-widest rotate-[-15deg] uppercase border border-white px-2 py-1">{t('wholesale.sold_out')}</span>
                                         </div>
                                     )}
                                     {isProductInCart && (
@@ -236,7 +246,7 @@ export default function Wholesale() {
                     })}
                     {filteredProducts.length === 0 && (
                         <div className="col-span-full py-12 text-center border border-zinc-800 border-dashed">
-                            <span className="text-zinc-600 font-mono text-xs uppercase">No products found</span>
+                            <span className="text-zinc-600 font-mono text-xs uppercase">{t('wholesale.no_products')}</span>
                         </div>
                     )}
                 </div>
@@ -245,11 +255,11 @@ export default function Wholesale() {
             {/* RIGHT COLUMN: TABLE & FORM */}
             <div className="lg:col-span-5 flex flex-col gap-8 sticky top-32">
                 <div className="bg-zinc-900/40 border border-zinc-800 p-6 flex flex-col">
-                    <h2 className="text-sm font-mono tracking-widest text-zinc-400 capitalize border-b border-zinc-800 pb-4 mb-4">Selected Products</h2>
+                    <h2 className="text-sm font-mono tracking-widest text-zinc-400 capitalize border-b border-zinc-800 pb-4 mb-4">{t('wholesale.selected_products')}</h2>
                     
                     {selectedItems.length === 0 ? (
                         <div className="py-8 text-center bg-zinc-950 border border-dashed border-zinc-800">
-                            <span className="text-xs text-zinc-600 font-mono">Cart is empty</span>
+                            <span className="text-xs text-zinc-600 font-mono">{t('wholesale.cart_empty')}</span>
                         </div>
                     ) : (
                         <div className="flex flex-col gap-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
@@ -257,7 +267,7 @@ export default function Wholesale() {
                                 <div key={item.id} className="flex items-center gap-3 bg-zinc-950 border border-zinc-800 p-3">
                                     <div className="flex-1 min-w-0">
                                         <p className="text-xs font-semibold text-white uppercase truncate">{item.product.name}</p>
-                                        <p className="text-[10px] font-mono text-zinc-500 mt-1">Size: {item.size}</p>
+                                        <p className="text-[10px] font-mono text-zinc-500 mt-1">{t('wholesale.size_label')} {item.size === 'One Size' ? t('wholesale.one_size') : item.size}</p>
                                     </div>
                                     <div className="flex items-center gap-3">
                                         <button 
@@ -274,45 +284,45 @@ export default function Wholesale() {
                 </div>
 
                 <form onSubmit={handleSubmit} className="bg-zinc-900/40 border border-zinc-800 p-6 flex flex-col gap-4">
-                    <h2 className="text-sm font-mono tracking-widest text-zinc-400 capitalize border-b border-zinc-800 pb-4 mb-2">Checkout Details</h2>
+                    <h2 className="text-sm font-mono tracking-widest text-zinc-400 capitalize border-b border-zinc-800 pb-4 mb-2">{t('wholesale.checkout_details')}</h2>
                     
                     <div className="flex flex-col gap-1.5">
-                        <label className="text-[10px] font-mono text-zinc-500 uppercase">Shop Name</label>
+                        <label className="text-[10px] font-mono text-zinc-500 uppercase">{t('wholesale.shop_name')}</label>
                         <input required name="shop_name" value={formData.shop_name} onChange={handleFormChange} type="text" className="bg-zinc-950 border border-zinc-800 focus:border-zinc-600 outline-none h-10 px-3 text-xs text-zinc-200" />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="flex flex-col gap-1.5">
-                            <label className="text-[10px] font-mono text-zinc-500 uppercase">Buyer Name</label>
+                            <label className="text-[10px] font-mono text-zinc-500 uppercase">{t('wholesale.buyer_name')}</label>
                             <input required name="name" value={formData.name} onChange={handleFormChange} type="text" className="bg-zinc-950 border border-zinc-800 focus:border-zinc-600 outline-none h-10 px-3 text-xs text-zinc-200" />
                         </div>
                         <div className="flex flex-col gap-1.5">
-                            <label className="text-[10px] font-mono text-zinc-500 uppercase">Phone</label>
+                            <label className="text-[10px] font-mono text-zinc-500 uppercase">{t('wholesale.phone')}</label>
                             <input required name="phone" value={formData.phone} onChange={handleFormChange} type="tel" className="bg-zinc-950 border border-zinc-800 focus:border-zinc-600 outline-none h-10 px-3 text-xs text-zinc-200" />
                         </div>
                     </div>
                     
                     <div className="flex flex-col gap-1.5">
-                        <label className="text-[10px] font-mono text-zinc-500 uppercase">Email</label>
+                        <label className="text-[10px] font-mono text-zinc-500 uppercase">{t('wholesale.email')}</label>
                         <input required name="email" value={formData.email} onChange={handleFormChange} type="email" className="bg-zinc-950 border border-zinc-800 focus:border-zinc-600 outline-none h-10 px-3 text-xs text-zinc-200" />
                     </div>
 
                     <div className="flex flex-col gap-1.5">
-                        <label className="text-[10px] font-mono text-zinc-500 uppercase">Inquiry Type</label>
+                        <label className="text-[10px] font-mono text-zinc-500 uppercase">{t('wholesale.inquiry_type')}</label>
                         <select required name="inquiry_type" value={formData.inquiry_type} onChange={handleFormChange} className="bg-zinc-950 border border-zinc-800 focus:border-zinc-600 outline-none h-10 px-3 text-xs text-zinc-200 cursor-pointer appearance-none rounded-none">
-                            <option value="Bulk Purchase">Bulk Purchase</option>
-                            <option value="Collaboration">Collaboration</option>
-                            <option value="Sponsorship">Sponsorship</option>
+                            <option value="Bulk Purchase">{t('wholesale.bulk_purchase')}</option>
+                            <option value="Collaboration">{t('wholesale.collaboration')}</option>
+                            <option value="Sponsorship">{t('wholesale.sponsorship')}</option>
                         </select>
                     </div>
 
                     <div className="flex flex-col gap-1.5">
-                        <label className="text-[10px] font-mono text-zinc-500 uppercase">Shipping Address</label>
+                        <label className="text-[10px] font-mono text-zinc-500 uppercase">{t('wholesale.shipping_address')}</label>
                         <textarea required name="address" value={formData.address} onChange={handleFormChange} rows="3" className="bg-zinc-950 border border-zinc-800 focus:border-zinc-600 outline-none py-2 px-3 text-xs text-zinc-200 resize-none"></textarea>
                     </div>
 
                     <div className="flex flex-col gap-1.5">
-                        <label className="text-[10px] font-mono text-zinc-500 uppercase">Additional Message (Optional)</label>
+                        <label className="text-[10px] font-mono text-zinc-500 uppercase">{t('wholesale.message')}</label>
                         <textarea name="message" value={formData.message} onChange={handleFormChange} rows="2" className="bg-zinc-950 border border-zinc-800 focus:border-zinc-600 outline-none py-2 px-3 text-xs text-zinc-200 resize-none"></textarea>
                     </div>
 
@@ -321,7 +331,7 @@ export default function Wholesale() {
                         disabled={isSubmitting || selectedItems.length === 0}
                         className="mt-4 flex items-center justify-between w-full bg-white text-black hover:bg-zinc-200 disabled:bg-zinc-800 disabled:text-zinc-600 disabled:hover:bg-zinc-800 font-sans tracking-wide text-xs uppercase h-12 px-6 transition-colors"
                     >
-                        <span>{isSubmitting ? 'Processing...' : 'Submit Wholesale Order'}</span>
+                        <span>{isSubmitting ? t('wholesale.processing') : t('wholesale.submit_btn')}</span>
                         <ChevronRight className="w-4 h-4" />
                     </button>
                 </form>

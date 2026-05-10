@@ -2,14 +2,16 @@ import React, { useState } from 'react';
 // eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const ProductGallery = ({ images, isSoldOut, productName }) => {
+   const { t } = useTranslation();
    const [currentIndex, setCurrentIndex] = useState(0);
 
    if (!images || images.length === 0) {
       return (
          <div className="w-full h-full bg-zinc-900 border border-white/5 flex items-center justify-center">
-            <span className="font-mono text-xs text-zinc-600 uppercase tracking-widest">[ NO ASSET ]</span>
+            <span className="font-mono text-xs text-zinc-600 uppercase tracking-widest">{t('product_gallery.no_asset')}</span>
          </div>
       );
    }
@@ -64,7 +66,7 @@ const ProductGallery = ({ images, isSoldOut, productName }) => {
 
             {isSoldOut && (
                <div className="absolute top-6 right-6 px-4 py-2 bg-red-950/90 border border-red-500/30 text-red-500 text-[10px] font-mono uppercase tracking-widest backdrop-blur-md">
-                  Sold Out
+                  {t('shop.sold_out')}
                </div>
             )}
          </div>

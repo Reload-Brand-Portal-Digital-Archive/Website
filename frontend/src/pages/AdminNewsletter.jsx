@@ -4,8 +4,10 @@ import { Mail, Users, RefreshCw, FileDown, Trash2 } from 'lucide-react';
 import { useConfirm } from '../lib/confirm-dialog';
 import { notify } from '../lib/toast';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { useTranslation } from 'react-i18next';
 
 export default function AdminNewsletter() {
+    const { t } = useTranslation();
     const [subscribers, setSubscribers] = useState([]);
     const [stats, setStats] = useState({ total: 0, monthlyStats: [] });
     const [loading, setLoading] = useState(true);
@@ -26,7 +28,7 @@ export default function AdminNewsletter() {
             setStats(statsRes.data);
         } catch (error) {
             console.error('Error fetching newsletter data:', error);
-            notify.error('Failed to load newsletter data.');
+            notify.error(t('admin_newsletter.failed_load'));
         } finally {
             setLoading(false);
         }
@@ -38,30 +40,30 @@ export default function AdminNewsletter() {
 
     const handleDelete = async (id) => {
         const isConfirmed = await confirm({
-            title: 'Delete Subscriber',
-            message: 'Are you sure you want to delete this subscriber? This action cannot be undone.',
-            confirmText: 'Delete',
-            cancelText: 'Cancel'
+            title: t('admin_newsletter.delete_title'),
+            message: t('admin_newsletter.delete_confirm'),
+            confirmText: t('admin_newsletter.delete_btn'),
+            cancelText: t('admin_newsletter.cancel_btn')
         });
 
         if (isConfirmed) {
             try {
-                const loadingToastId = notify.loading('Deleting subscriber...');
+                const loadingToastId = notify.loading(t('admin_newsletter.deleting'));
                 const token = localStorage.getItem('token');
                 await axios.delete(`${import.meta.env.VITE_API_URL}/api/newsletter/${id}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
-                notify.update(loadingToastId, { render: 'Subscriber deleted.', type: 'success', isLoading: false, autoClose: 3000 });
+                notify.update(loadingToastId, { render: t('admin_newsletter.deleted_success'), type: 'success', isLoading: false, autoClose: 3000 });
                 fetchNewsletterData();
             } catch {
-                notify.error('Failed to delete subscriber.');
+                notify.error(t('admin_newsletter.failed_delete'));
             }
         }
     };
 
     const handleExport = async (format) => {
         try {
-            const loadingToastId = notify.loading(`Preparing ${format.toUpperCase()} export...`);
+            const loadingToastId = notify.loading(t('admin_newsletter.preparing_export', { format: format.toUpperCase() }));
             const response = await axios.get(import.meta.env.VITE_API_URL + `/api/newsletter/export/${format}`, {
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
                 responseType: 'blob'
@@ -76,9 +78,9 @@ export default function AdminNewsletter() {
             link.click();
             link.parentNode.removeChild(link);
             
-            notify.update(loadingToastId, { render: `Data exported to ${format.toUpperCase()} successfully!`, type: 'success', isLoading: false, autoClose: 3000 });
+            notify.update(loadingToastId, { render: t('admin_newsletter.export_success', { format: format.toUpperCase() }), type: 'success', isLoading: false, autoClose: 3000 });
         } catch {
-            notify.error("Failed to export data. Make sure the server is running.");
+            notify.error(t('admin_newsletter.export_failed'));
         }
     };
 
@@ -96,9 +98,9 @@ export default function AdminNewsletter() {
                 <div>
                     <h2 className="text-2xl font-bold text-zinc-50 flex items-center gap-2">
                         <Mail className="text-rose-500" />
-                        Newsletter Management
+                        {t('admin_newsletter.page_title')}
                     </h2>
-                    <p className="text-zinc-400 text-sm mt-1">Manage subscriber email list and monitor growth.</p>
+                    <p className="text-zinc-400 text-sm mt-1">{t('admin_newsletter.page_desc')}</p>
                 </div>
                 <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-2 sm:pb-0">
                     <button 
@@ -129,7 +131,7 @@ export default function AdminNewsletter() {
                 <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 flex flex-col justify-center">
                     <div className="flex items-center gap-3 text-zinc-400 mb-2">
                         <Users className="w-5 h-5 text-rose-500" />
-                        <span className="font-medium text-sm uppercase tracking-wider">Total Subscriber</span>
+                        <span className="font-medium text-sm uppercase tracking-wider">{t('admin_newsletter.total_subscribers')}</span>
                     </div>
                     <div className="text-4xl font-bold text-white">
                         {stats.total.toLocaleString('en-US')}
@@ -137,7 +139,7 @@ export default function AdminNewsletter() {
                 </div>
 
                 <div className="md:col-span-2 bg-zinc-900 border border-zinc-800 rounded-lg p-6 h-[200px] flex flex-col">
-                    <span className="text-zinc-400 font-medium text-sm uppercase tracking-wider mb-4 block">Monthly Growth</span>
+                    <span className="text-zinc-400 font-medium text-sm uppercase tracking-wider mb-4 block">{t('admin_newsletter.monthly_growth')}</span>
                     <div className="flex-1 w-full min-h-0">
                         {stats.monthlyStats && stats.monthlyStats.length > 0 ? (
                             <ResponsiveContainer width="100%" height="100%">
@@ -165,7 +167,7 @@ export default function AdminNewsletter() {
                             </ResponsiveContainer>
                         ) : (
                             <div className="flex items-center justify-center h-full text-zinc-600 text-sm">
-                                Not enough data for a chart
+                                {t('admin_newsletter.no_chart_data')}
                             </div>
                         )}
                     </div>
@@ -177,17 +179,17 @@ export default function AdminNewsletter() {
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-zinc-950 border-b border-zinc-800 text-zinc-400 text-xs uppercase tracking-wider">
-                                <th className="p-4 font-medium">Email Address</th>
-                                <th className="p-4 font-medium">User Status</th>
-                                <th className="p-4 font-medium">Subscribed On</th>
-                                <th className="p-4 font-medium text-right">Actions</th>
+                                <th className="p-4 font-medium">{t('admin_newsletter.col_email')}</th>
+                                <th className="p-4 font-medium">{t('admin_newsletter.col_status')}</th>
+                                <th className="p-4 font-medium">{t('admin_newsletter.col_date')}</th>
+                                <th className="p-4 font-medium text-right">{t('admin_newsletter.col_actions')}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-zinc-800">
                             {subscribers.length === 0 ? (
                                 <tr>
                                     <td colSpan="4" className="p-8 text-center text-zinc-500">
-                                        No subscribers found.
+                                        {t('admin_newsletter.no_subscribers')}
                                     </td>
                                 </tr>
                             ) : (
@@ -199,11 +201,11 @@ export default function AdminNewsletter() {
                                         <td className="p-4">
                                             {sub.user_name ? (
                                                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                                                    Registered
+                                                    {t('admin_newsletter.status_registered')}
                                                 </span>
                                             ) : (
                                                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-zinc-500/10 text-zinc-400 border border-zinc-500/20">
-                                                    Guest
+                                                    {t('admin_newsletter.status_guest')}
                                                 </span>
                                             )}
                                         </td>
