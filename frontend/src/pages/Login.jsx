@@ -226,7 +226,6 @@ export default function Login() {
                                 />
                             </div>
                         </div>
-
                         <motion.button
                             whileHover={{ scale: timeLeft === 0 ? 1 : 0.98 }}
                             whileTap={{ scale: timeLeft === 0 ? 1 : 0.95 }}

@@ -171,3 +171,87 @@ exports.getTrackingStats = async (req, res) => {
         res.status(500).json({ success: false, message: 'Failed to fetch tracking stats' });
     }
 };
+
+/**
+ * recordGpsLocation - Saves GPS coordinates to site_settings as JSON array
+ */
+exports.recordGpsLocation = async (req, res) => {
+    const { latitude, longitude, client_id } = req.body;
+
+    if (latitude == null || longitude == null) {
+        return res.status(400).json({ success: false, message: 'Latitude and longitude are required' });
+    }
+
+    const trackerId = client_id || ('anon-' + Date.now().toString(36));
+
+    try {
+        // Ambil data GPS yang sudah tersimpan di site_settings
+        const [rows] = await db.query(
+            "SELECT setting_value FROM site_settings WHERE setting_key = 'visitor_gps_locations' LIMIT 1"
+        );
+
+        let locations = [];
+        if (rows.length > 0 && rows[0].setting_value) {
+            try {
+                locations = JSON.parse(rows[0].setting_value);
+                if (!Array.isArray(locations)) locations = [];
+            } catch (e) { locations = []; }
+        }
+
+        const now = new Date().toISOString();
+        const existingIndex = locations.findIndex(loc => loc.client_id === trackerId);
+
+        if (existingIndex >= 0) {
+            // Update koordinat visitor yang sudah ada
+            locations[existingIndex].latitude = latitude;
+            locations[existingIndex].longitude = longitude;
+            locations[existingIndex].updated_at = now;
+        } else {
+            // Tambah visitor baru
+            locations.push({ client_id: trackerId, latitude, longitude, created_at: now, updated_at: now });
+        }
+
+        // Simpan kembali ke site_settings
+        await db.query(
+            `INSERT INTO site_settings (setting_key, setting_value)
+             VALUES ('visitor_gps_locations', ?)
+             ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)`,
+            [JSON.stringify(locations)]
+        );
+
+        res.status(200).json({ success: true, message: 'GPS location recorded' });
+    } catch (error) {
+        console.error('GPS Location Error:', error);
+        res.status(500).json({ success: false, message: 'Failed to record GPS location' });
+    }
+};
+
+/**
+ * getGpsLocations - Returns all GPS visitor coordinates from site_settings JSON
+ */
+exports.getGpsLocations = async (req, res) => {
+    try {
+        const [rows] = await db.query(
+            "SELECT setting_value FROM site_settings WHERE setting_key = 'visitor_gps_locations' LIMIT 1"
+        );
+
+        let locations = [];
+        if (rows.length > 0 && rows[0].setting_value) {
+            try {
+                locations = JSON.parse(rows[0].setting_value);
+                if (!Array.isArray(locations)) locations = [];
+            } catch (e) { locations = []; }
+        }
+
+        // Sort terbaru dulu
+        locations.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+
+        res.status(200).json({
+            success: true,
+            data: { total: locations.length, locations }
+        });
+    } catch (error) {
+        console.error('Fetch GPS Locations Error:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch GPS locations' });
+    }
+};

@@ -33,6 +33,7 @@ export default function AdminSidebar({
 }) {
     const { t } = useTranslation();
     const [unreadChatsCount, setUnreadChatsCount] = React.useState(0);
+    const [unreadWholesaleCount, setUnreadWholesaleCount] = React.useState(0);
     const token = localStorage.getItem('token');
 
     React.useEffect(() => {
@@ -48,6 +49,24 @@ export default function AdminSidebar({
         };
         fetchUnreadCount();
         const interval = setInterval(fetchUnreadCount, 10000);
+        return () => clearInterval(interval);
+    }, [token]);
+
+    React.useEffect(() => {
+        const fetchUnreadWholesale = async () => {
+            try {
+                const res = await axios.get(`${API}/api/wholesale/unread-count`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                if (res.data.success) {
+                    setUnreadWholesaleCount(res.data.count);
+                }
+            } catch (error) {
+                console.error('Error fetching unread wholesale count', error);
+            }
+        };
+        fetchUnreadWholesale();
+        const interval = setInterval(fetchUnreadWholesale, 10000);
         return () => clearInterval(interval);
     }, [token]);
 
@@ -129,6 +148,11 @@ export default function AdminSidebar({
                                 {item.id === 'chats' && unreadChatsCount > 0 && (
                                     <div className={`absolute right-3 top-1/2 -translate-y-1/2 bg-rose-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full transition-all duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0 md:opacity-100 md:right-1'}`}>
                                         {unreadChatsCount}
+                                    </div>
+                                )}
+                                {item.id === 'messages' && unreadWholesaleCount > 0 && (
+                                    <div className={`absolute right-3 top-1/2 -translate-y-1/2 bg-amber-500 text-white text-[10px] font-bold min-w-[18px] h-[18px] flex items-center justify-center rounded-full transition-all duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0 md:opacity-100 md:right-1'}`}>
+                                        {unreadWholesaleCount > 99 ? '99+' : unreadWholesaleCount}
                                     </div>
                                 )}
                             </button>

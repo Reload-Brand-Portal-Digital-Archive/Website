@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 export default function AdminGeographicMapV2({ refreshTrigger }) {
     const { t } = useTranslation();
     const [hubData, setHubData] = useState(null);
+    const [gpsData, setGpsData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const { settings } = useSettings();
@@ -22,19 +23,59 @@ export default function AdminGeographicMapV2({ refreshTrigger }) {
     const mapContainerRef = useRef(null);
     const mapInstanceRef = useRef(null);
 
-    // Leaflet fixes for default icon issues 
-    const markerIconUrl = 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png';
-    const markerIconRetinaUrl = 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png';
-    const markerShadowUrl = 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png';
+    // ── Custom SVG DivIcons ─────────────────────────────────────────────
+    const makePinIcon = (fillColor, borderColor, svgInner, size = 32) => L.divIcon({
+        className: '',
+        iconAnchor: [size / 2, size],
+        popupAnchor: [0, -size],
+        html: `
+            <div style="
+                width: ${size}px; height: ${size}px;
+                position: relative;
+                filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+            ">
+                <svg viewBox="0 0 32 40" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;">
+                    <path d="M16 0C9.37 0 4 5.37 4 12c0 9 12 28 12 28S28 21 28 12C28 5.37 22.63 0 16 0z"
+                          fill="${fillColor}" stroke="${borderColor}" stroke-width="1.5"/>
+                    <circle cx="16" cy="12" r="7" fill="white" opacity="0.25"/>
+                    <g transform="translate(9,5)">${svgInner}</g>
+                </svg>
+            </div>
+        `
+    });
 
-    const defaultIcon = L.icon({
-        iconUrl: markerIconUrl,
-        iconRetinaUrl: markerIconRetinaUrl,
-        shadowUrl: markerShadowUrl,
-        iconSize: [25, 41],
-        iconAnchor: [12, 41],
-        popupAnchor: [1, -34],
-        shadowSize: [41, 41]
+    // TikTok: hitam dengan logo TT
+    const tiktokIcon = makePinIcon('#18181b', '#52525b',
+        `<text x="7" y="11" text-anchor="middle" font-size="11" font-weight="bold"
+              font-family="sans-serif" fill="white">TT</text>`);
+
+    // Shopee: oranye dengan logo SP
+    const shopeeIcon = makePinIcon('#ea580c', '#c2410c',
+        `<text x="7" y="11" text-anchor="middle" font-size="11" font-weight="bold"
+              font-family="sans-serif" fill="white">SP</text>`);
+
+    // GPS Visitor: cyan dengan ikon sinyal
+    const gpsIcon = L.divIcon({
+        className: '',
+        iconAnchor: [12, 12],
+        popupAnchor: [0, -14],
+        html: `
+            <div style="position:relative;width:24px;height:24px;">
+                <div style="
+                    position:absolute;inset:0;
+                    background:#06b6d4;border:2px solid #0891b2;
+                    border-radius:50%;
+                    box-shadow:0 0 0 4px rgba(6,182,212,0.25);
+                    display:flex;align-items:center;justify-content:center;
+                ">
+                    <svg viewBox="0 0 16 16" width="12" height="12" fill="white" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="8" cy="8" r="2.5"/>
+                        <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 12.5A5.5 5.5 0 1 1 8 2.5a5.5 5.5 0 0 1 0 11z" opacity="0.5"/>
+                        <path d="M8 4.5A3.5 3.5 0 1 0 8 11.5 3.5 3.5 0 0 0 8 4.5zm0 5.5A2 2 0 1 1 8 6a2 2 0 0 1 0 4z" opacity="0.75"/>
+                    </svg>
+                </div>
+            </div>
+        `
     });
 
     useEffect(() => {
@@ -111,6 +152,24 @@ export default function AdminGeographicMapV2({ refreshTrigger }) {
         fetchHubData();
     }, [refreshTrigger, isSimulationMode]);
 
+    // Fetch GPS visitor locations
+    useEffect(() => {
+        const fetchGpsData = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                const res = await axios.get(import.meta.env.VITE_API_URL + '/api/track/locations', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                if (res.data.success) {
+                    setGpsData(res.data.data);
+                }
+            } catch (err) {
+                console.error('GPS Locations Fetch Error:', err);
+            }
+        };
+        fetchGpsData();
+    }, [refreshTrigger]);
+
     // Initialize Map Instance
     useEffect(() => {
         if (!mapContainerRef.current || isLoading || error) return;
@@ -156,10 +215,14 @@ export default function AdminGeographicMapV2({ refreshTrigger }) {
         hubData.orders.forEach(order => {
             if (!order.coordinates || !Array.isArray(order.coordinates)) return;
 
+            const isTikTok = order.platform === 'TikTok';
+            const icon = isTikTok ? tiktokIcon : shopeeIcon;
+
+            const platformColor = isTikTok ? '#a1a1aa' : '#f97316';
             const popupContent = `
-                <div style="font-family: sans-serif; min-width: 150px; padding: 4px; color: #333;">
-                    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding-bottom: 4px; margin-bottom: 4px;">
-                        <b style="font-size: 10px;">${order.platform}</b>
+                <div style="font-family: sans-serif; min-width: 155px; padding: 4px; color: #333;">
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding-bottom: 4px; margin-bottom: 4px; align-items:center;">
+                        <b style="font-size: 10px; color: ${platformColor}; background:#18181b; padding:2px 6px; border-radius:3px;">${order.platform}</b>
                         <span style="font-size: 10px; color: #999;">#${order.order_id}</span>
                     </div>
                     <div style="font-size: 12px;">
@@ -170,15 +233,41 @@ export default function AdminGeographicMapV2({ refreshTrigger }) {
                 </div>
             `;
 
-            L.marker(order.coordinates, { icon: defaultIcon })
-                .bindPopup(popupContent, { minWidth: 150 })
+            L.marker(order.coordinates, { icon })
+                .bindPopup(popupContent, { minWidth: 155 })
                 .addTo(markerLayer);
         });
+
+        // GPS Visitor markers
+        if (gpsData?.locations?.length > 0) {
+            gpsData.locations.forEach(loc => {
+                const lat = parseFloat(loc.latitude);
+                const lng = parseFloat(loc.longitude);
+                if (isNaN(lat) || isNaN(lng)) return;
+
+                const lastSeen = new Date(loc.updated_at || loc.created_at).toLocaleString('id-ID');
+                const popupContent = `
+                    <div style="font-family: sans-serif; min-width: 145px; padding: 4px; color: #333;">
+                        <div style="border-bottom: 1px solid #eee; padding-bottom: 4px; margin-bottom: 4px;">
+                            <b style="font-size: 10px; color: #0891b2; background:#ecfeff; padding:2px 6px; border-radius:3px;">📡 GPS Visitor</b>
+                        </div>
+                        <div style="font-size: 11px;">
+                            <p style="margin: 2px 0; color: #555;">IP: ${loc.ip_address || '-'}</p>
+                            <p style="margin: 2px 0; color: #888;">🕐 ${lastSeen}</p>
+                        </div>
+                    </div>
+                `;
+
+                L.marker([lat, lng], { icon: gpsIcon })
+                    .bindPopup(popupContent, { minWidth: 145 })
+                    .addTo(markerLayer);
+            });
+        }
 
         return () => {
             if (map) map.removeLayer(markerLayer);
         };
-    }, [hubData, isLoading]);
+    }, [hubData, gpsData, isLoading]);
 
     if (isLoading) {
         return (
@@ -215,7 +304,7 @@ export default function AdminGeographicMapV2({ refreshTrigger }) {
                 </div>
 
                 {hubData && (
-                    <div className="flex gap-4">
+                    <div className="flex gap-4 flex-wrap">
                         <div className="bg-zinc-950/50 border border-zinc-800 px-4 py-2 rounded-md">
                             <p className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold mb-1">{t('admin_map.stats_orders')}</p>
                             <span className="text-lg font-bold text-zinc-100 font-mono">{hubData.total_orders}</span>
@@ -224,6 +313,12 @@ export default function AdminGeographicMapV2({ refreshTrigger }) {
                             <p className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold mb-1">{t('admin_map.stats_revenue')}</p>
                             <span className="text-lg font-bold text-zinc-100 font-mono">Rp {hubData.total_sales.toLocaleString('en-US')}</span>
                         </div>
+                        {gpsData && (
+                            <div className="bg-zinc-950/50 border border-blue-900/40 px-4 py-2 rounded-md">
+                                <p className="text-[10px] uppercase tracking-wider text-blue-500 font-bold mb-1">📡 GPS Visitors</p>
+                                <span className="text-lg font-bold text-blue-400 font-mono">{gpsData.total}</span>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
@@ -236,22 +331,46 @@ export default function AdminGeographicMapV2({ refreshTrigger }) {
                 />
 
                 {/* Legend Overlays */}
-                <div className="absolute bottom-4 right-4 z-[1000] bg-zinc-900/90 p-4 rounded-lg border border-zinc-800 backdrop-blur shadow-2xl min-w-[150px]">
+                <div className="absolute bottom-4 right-4 z-[1000] bg-zinc-900/95 py-3 px-4 rounded-xl border border-zinc-800 backdrop-blur shadow-2xl min-w-[165px]">
+                    <p className="text-[9px] uppercase tracking-[0.15em] text-zinc-600 font-bold mb-2.5">Map Legend</p>
                     <div className="space-y-2">
+                        {/* TikTok */}
                         <div className="flex items-center justify-between text-[11px]">
-                            <span className="text-zinc-400 flex items-center gap-2">
-                                <span className="w-2 h-2 rounded-full bg-zinc-100"></span> TikTok
+                            <span className="text-zinc-300 flex items-center gap-2">
+                                <svg viewBox="0 0 32 40" width="10" height="13" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M16 0C9.37 0 4 5.37 4 12c0 9 12 28 12 28S28 21 28 12C28 5.37 22.63 0 16 0z" fill="#18181b" stroke="#52525b" strokeWidth="2"/>
+                                    <text x="16" y="16" textAnchor="middle" fontSize="10" fontWeight="bold" fill="white" fontFamily="sans-serif">TT</text>
+                                </svg>
+                                TikTok
                             </span>
-                            <span className="text-zinc-100 font-bold">{hubData?.platform_breakdown?.TikTok || 0}</span>
+                            <span className="text-zinc-100 font-bold tabular-nums">{hubData?.platform_breakdown?.TikTok || 0}</span>
                         </div>
+                        {/* Shopee */}
                         <div className="flex items-center justify-between text-[11px]">
-                            <span className="text-zinc-400 flex items-center gap-2">
-                                <span className="w-2 h-2 rounded-full bg-orange-500"></span> Shopee
+                            <span className="text-zinc-300 flex items-center gap-2">
+                                <svg viewBox="0 0 32 40" width="10" height="13" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M16 0C9.37 0 4 5.37 4 12c0 9 12 28 12 28S28 21 28 12C28 5.37 22.63 0 16 0z" fill="#ea580c" stroke="#c2410c" strokeWidth="2"/>
+                                    <text x="16" y="16" textAnchor="middle" fontSize="10" fontWeight="bold" fill="white" fontFamily="sans-serif">SP</text>
+                                </svg>
+                                Shopee
                             </span>
-                            <span className="text-zinc-100 font-bold">{hubData?.platform_breakdown?.Shopee || 0}</span>
+                            <span className="text-zinc-100 font-bold tabular-nums">{hubData?.platform_breakdown?.Shopee || 0}</span>
+                        </div>
+                        {/* GPS Visitor */}
+                        <div className="border-t border-zinc-800 pt-2 mt-1">
+                            <div className="flex items-center justify-between text-[11px]">
+                                <span className="text-cyan-400 flex items-center gap-2">
+                                    <span className="w-3 h-3 rounded-full bg-cyan-500 border-2 border-cyan-300 inline-flex items-center justify-center flex-shrink-0">
+                                        <span className="w-1 h-1 rounded-full bg-white block"></span>
+                                    </span>
+                                    GPS Visitor
+                                </span>
+                                <span className="text-cyan-400 font-bold tabular-nums">{gpsData?.total || 0}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
+
             </div>
         </div>
     );

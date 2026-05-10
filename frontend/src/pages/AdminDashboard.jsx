@@ -20,7 +20,6 @@ import AdminProfile from './AdminProfile';
 import { DashboardSummaryCards } from '../components/ui/admin-summary-cards';
 import { TrafficChart, UserGrowthChart, SubscriberChart, ExternalClicksChart } from '../components/ui/admin-charts';
 import AdminGeographicMap from '../components/ui/AdminGeographicMapV2';
-import RecentActivityLog from '../components/ui/RecentActivityLog';
 import AdminActivityLog from '../components/ui/AdminActivityLog';
 import SyncEcommerceModal from '../components/ui/SyncEcommerceModal';
 import { useTranslation } from 'react-i18next';
@@ -188,8 +187,7 @@ export default function AdminDashboard() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                <RecentActivityLog dateRange={dateRange} />
+            <div className="w-full">
                 <AdminActivityLog />
             </div>
         </div>
