@@ -212,7 +212,16 @@ exports.getOrderById = async (req, res) => {
         }
 
         const [items] = await connection.query(
-            'SELECT * FROM order_items WHERE order_id = ?',
+            `SELECT oi.*,
+                    (
+                        SELECT pi.image_path
+                        FROM product_images pi
+                        WHERE pi.product_id = oi.product_id
+                        ORDER BY pi.is_primary DESC, pi.sort_order ASC
+                        LIMIT 1
+                    ) AS product_image
+             FROM order_items oi
+             WHERE oi.order_id = ?`,
             [id]
         );
         order.items = items;
@@ -232,7 +241,7 @@ exports.getOrderById = async (req, res) => {
 
 exports.confirmOrder = async (req, res) => {
     const { id } = req.params;
-    const { decision, shipping_cost, admin_note } = req.body;
+    const { decision, shipping_cost, admin_note, invoice_items, subtotal, grand_total } = req.body;
 
     if (!decision || !['confirm', 'reject'].includes(decision)) {
         return res.status(400).json({ error: 'Decision must be "confirm" or "reject".' });
@@ -289,7 +298,11 @@ exports.confirmOrder = async (req, res) => {
                 decision,
                 status: newStatus,
                 shipping_cost: decision === 'confirm' ? Number(shipping_cost) : null,
-                admin_note: admin_note || null
+                admin_note: admin_note || null,
+                // Full invoice data (only on confirm)
+                invoice_items: decision === 'confirm' && Array.isArray(invoice_items) ? invoice_items : null,
+                subtotal: decision === 'confirm' && subtotal != null ? Number(subtotal) : null,
+                grand_total: decision === 'confirm' && grand_total != null ? Number(grand_total) : null,
             });
 
             await connection.query(

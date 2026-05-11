@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Package, ChevronDown, ArrowRight, Truck, MessageSquare, Clock, CheckCircle2, XCircle, Loader2, AlertCircle } from 'lucide-react';
+import { Package, ChevronDown, ArrowRight, Truck, MessageSquare, Clock, CheckCircle2, XCircle, Loader2, AlertCircle, ImageIcon } from 'lucide-react';
 import { notify } from '../lib/toast';
 import Navbar from '../components/ui/Navbar';
 import { useTranslation } from 'react-i18next';
@@ -346,23 +346,37 @@ export default function UserOrders() {
                                                                     <table className="w-full text-left text-sm whitespace-nowrap">
                                                                         <thead className="bg-zinc-900 border-b border-zinc-800 text-zinc-500 text-[10px] uppercase font-mono tracking-widest">
                                                                             <tr>
-                                                                                <th className="px-4 md:px-5 py-3 font-medium">{t('user_orders.th_product')}</th>
-                                                                                <th className="px-4 md:px-5 py-3 font-medium">{t('user_orders.th_size')}</th>
-                                                                                <th className="px-4 md:px-5 py-3 font-medium">{t('user_orders.th_qty')}</th>
+                                                                                <th className="px-3 md:px-4 py-3 w-10"></th>
+                                                                                <th className="px-3 md:px-5 py-3 font-medium">{t('user_orders.th_product')}</th>
+                                                                                <th className="px-3 md:px-5 py-3 font-medium">{t('user_orders.th_size')}</th>
                                                                             </tr>
                                                                         </thead>
                                                                         <tbody className="divide-y divide-zinc-800/50">
                                                                             {order.items.map((item, i) => (
                                                                                 <tr key={item.item_id || `${item.product_id}-${item.size}-${i}`} className="hover:bg-zinc-800/20 transition-colors">
-                                                                                    <td className="px-4 md:px-5 py-3 text-zinc-200">
-                                                                                        <span className="font-medium uppercase text-xs truncate inline-block max-w-[160px] md:max-w-[360px]">
+                                                                                    {/* Product image */}
+                                                                                    <td className="px-3 md:px-4 py-2.5 w-10">
+                                                                                        {item.product_image ? (
+                                                                                            <img
+                                                                                                src={`${API}${item.product_image}`}
+                                                                                                alt={item.product_name_snapshot}
+                                                                                                className="w-9 h-9 object-cover border border-zinc-800"
+                                                                                                onError={e => { e.target.style.display = 'none'; }}
+                                                                                            />
+                                                                                        ) : (
+                                                                                            <div className="w-9 h-9 bg-zinc-800 border border-zinc-700 flex items-center justify-center">
+                                                                                                <ImageIcon className="w-3.5 h-3.5 text-zinc-600" />
+                                                                                            </div>
+                                                                                        )}
+                                                                                    </td>
+                                                                                    {/* Product name */}
+                                                                                    <td className="px-3 md:px-5 py-2.5 text-zinc-200">
+                                                                                        <span className="font-medium uppercase text-xs truncate inline-block max-w-[140px] md:max-w-[320px]">
                                                                                             {item.product_name_snapshot}
                                                                                         </span>
                                                                                     </td>
-                                                                                    <td className="px-4 md:px-5 py-3 font-mono text-zinc-400 text-xs">{item.size}</td>
-                                                                                    <td className="px-4 md:px-5 py-3">
-                                                                                        <span className="inline-block px-2 py-0.5 bg-zinc-800 text-white text-xs font-mono">{item.quantity}</span>
-                                                                                    </td>
+                                                                                    {/* Size */}
+                                                                                    <td className="px-3 md:px-5 py-2.5 font-mono text-zinc-400 text-xs">{item.size}</td>
                                                                                 </tr>
                                                                             ))}
                                                                         </tbody>

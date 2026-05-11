@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Search, Trash2, CheckCircle2, ChevronRight } from 'lucide-react';
+import { Search, Trash2, CheckCircle2, ChevronRight, Layers, Maximize2 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import Navbar from '../components/ui/Navbar';
 import { useTranslation } from 'react-i18next';
@@ -56,9 +56,19 @@ export default function Wholesale() {
     return products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
   }, [products, searchQuery]);
 
+  // Group cart items by product for compact display
+  const groupedCart = useMemo(() => {
+    const map = {};
+    selectedItems.forEach(item => {
+      const pid = item.product.product_id;
+      if (!map[pid]) map[pid] = { product: item.product, sizes: [] };
+      map[pid].sizes.push(item);
+    });
+    return Object.values(map);
+  }, [selectedItems]);
+
   const handleToggleSize = (product, size) => {
     if (product.status !== 'Available') return;
-    
     const existing = selectedItems.find(item => item.product.product_id === product.product_id && item.size === size);
     if (existing) {
       setSelectedItems(prev => prev.filter(item => item.id !== existing.id));
@@ -67,12 +77,33 @@ export default function Wholesale() {
     }
   };
 
-  const handleUpdateQuantity = (id, newQuantity) => {
-    setSelectedItems(prev => prev.map(item => item.id === id ? { ...item, quantity: Math.max(1, parseInt(newQuantity) || 1) } : item));
-  };
-
   const handleRemoveItem = (id) => {
     setSelectedItems(prev => prev.filter(item => item.id !== id));
+  };
+
+  // Select ALL available products â€” one entry per product+size combo
+  const handleSelectAllProducts = () => {
+    const allItems = [];
+    products.filter(p => p.status === 'Available').forEach(product => {
+      const sizes = parseSizes(product.sizes);
+      const sizeList = sizes.length > 0 ? sizes : ['One Size'];
+      sizeList.forEach(size => {
+        const exists = selectedItems.some(i => i.product.product_id === product.product_id && i.size === size);
+        if (!exists) allItems.push({ id: `${product.product_id}-${size}-${Date.now()}-${Math.random()}`, product, size, quantity: 1 });
+      });
+    });
+    setSelectedItems(prev => [...prev, ...allItems]);
+  };
+
+  // Select ALL sizes of a product at once
+  const handleSelectAllSizes = (product) => {
+    if (product.status !== 'Available') return;
+    const sizes = parseSizes(product.sizes);
+    const sizeList = sizes.length > 0 ? sizes : ['One Size'];
+    const newItems = sizeList
+      .filter(size => !selectedItems.some(i => i.product.product_id === product.product_id && i.size === size))
+      .map(size => ({ id: `${product.product_id}-${size}-${Date.now()}-${Math.random()}`, product, size, quantity: 1 }));
+    setSelectedItems(prev => [...prev, ...newItems]);
   };
 
   const handleFormChange = (e) => {
@@ -186,15 +217,27 @@ export default function Wholesale() {
             
             {/* LEFT COLUMN: PRODUCT SELECTION */}
             <div className="lg:col-span-7 flex flex-col gap-6">
-                <div className="flex items-center gap-4 bg-zinc-900/50 border border-zinc-800 p-2 rounded-none px-4 box-border">
-                    <Search className="w-4 h-4 text-zinc-500" />
-                    <input 
-                        type="text" 
-                        placeholder={t('wholesale.search_placeholder')}
-                        className="bg-transparent border-none outline-none text-sm text-zinc-100 placeholder:text-zinc-600 w-full h-8"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                    />
+                {/* Search + Select All bar */}
+                <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="flex items-center gap-4 bg-zinc-900/50 border border-zinc-800 p-2 rounded-none px-4 flex-1">
+                        <Search className="w-4 h-4 text-zinc-500" />
+                        <input
+                            type="text"
+                            placeholder={t('wholesale.search_placeholder')}
+                            className="bg-transparent border-none outline-none text-sm text-zinc-100 placeholder:text-zinc-600 w-full h-8"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                    </div>
+                    {/* SELECT ALL PRODUCTS â€” prominent amber button */}
+                    <button
+                        type="button"
+                        onClick={handleSelectAllProducts}
+                        className="flex items-center gap-2 bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-black text-[11px] font-bold uppercase tracking-widest px-4 py-2 transition-colors whitespace-nowrap shadow-[0_0_16px_rgba(245,158,11,0.4)] border border-amber-400"
+                    >
+                        <Layers className="w-3.5 h-3.5" />
+                        Select All Products
+                    </button>
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
@@ -218,13 +261,24 @@ export default function Wholesale() {
                                         </div>
                                     )}
                                 </div>
-                                <h3 className="text-xs md:text-sm font-semibold uppercase tracking-wider mb-3 leading-tight truncate text-white" title={product.name}>{product.name}</h3>
-                                
+                                <h3 className="text-xs md:text-sm font-semibold uppercase tracking-wider mb-2 leading-tight truncate text-white" title={product.name}>{product.name}</h3>
+
+                                {/* SELECT ALL SIZES button â€” prominent orange */}
+                                {isAvailable && (
+                                    <button
+                                        type="button"
+                                        onClick={() => handleSelectAllSizes(product)}
+                                        className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest mb-2 px-2 py-1 bg-orange-500/20 hover:bg-orange-500/40 border border-orange-500/60 text-orange-400 hover:text-orange-300 transition-colors w-full justify-center"
+                                    >
+                                        <Maximize2 className="w-2.5 h-2.5" /> All Sizes
+                                    </button>
+                                )}
+
                                 <div className="flex flex-wrap gap-1 mt-auto">
                                     {sizes.length > 0 ? sizes.map(size => {
                                         const isSelected = selectedItems.some(i => i.product.product_id === product.product_id && i.size === size);
                                         return (
-                                            <button 
+                                            <button
                                                 key={size}
                                                 onClick={() => handleToggleSize(product, size)}
                                                 className={`text-[10px] sm:text-xs px-2 py-1 flex items-center gap-1 transition-colors ${isSelected ? 'bg-white text-black font-bold' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-600 hover:text-white'}`}
@@ -233,7 +287,7 @@ export default function Wholesale() {
                                             </button>
                                         );
                                     }) : (
-                                        <button 
+                                        <button
                                             onClick={() => handleToggleSize(product, 'One Size')}
                                             className={`text-[10px] sm:text-xs px-2 py-1 transition-colors ${selectedItems.some(i => i.product.product_id === product.product_id && i.size === 'One Size') ? 'bg-white text-black font-bold' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-600 hover:text-white'}`}
                                         >
@@ -262,20 +316,33 @@ export default function Wholesale() {
                             <span className="text-xs text-zinc-600 font-mono">{t('wholesale.cart_empty')}</span>
                         </div>
                     ) : (
-                        <div className="flex flex-col gap-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-                            {selectedItems.map(item => (
-                                <div key={item.id} className="flex items-center gap-3 bg-zinc-950 border border-zinc-800 p-3">
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-xs font-semibold text-white uppercase truncate">{item.product.name}</p>
-                                        <p className="text-[10px] font-mono text-zinc-500 mt-1">{t('wholesale.size_label')} {item.size === 'One Size' ? t('wholesale.one_size') : item.size}</p>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <button 
-                                            onClick={() => handleRemoveItem(item.id)}
-                                            className="text-zinc-500 hover:text-red-500 transition-colors p-1"
+                        <div className="flex flex-col gap-2 max-h-[320px] overflow-y-auto pr-1 custom-scrollbar">
+                            {groupedCart.map(({ product, sizes }) => (
+                                <div key={product.product_id} className="bg-zinc-950 border border-zinc-800 px-3 py-2.5">
+                                    <div className="flex items-start justify-between gap-2">
+                                        <p className="text-xs font-semibold text-white uppercase truncate flex-1">{product.name}</p>
+                                        <button
+                                            type="button"
+                                            onClick={() => sizes.forEach(s => handleRemoveItem(s.id))}
+                                            className="text-zinc-600 hover:text-red-500 transition-colors p-0.5 shrink-0 mt-0.5"
+                                            title="Remove all sizes"
                                         >
-                                            <Trash2 className="w-4 h-4" />
+                                            <Trash2 className="w-3.5 h-3.5" />
                                         </button>
+                                    </div>
+                                    <div className="flex flex-wrap gap-1 mt-1.5">
+                                        {sizes.map(item => (
+                                            <button
+                                                key={item.id}
+                                                type="button"
+                                                onClick={() => handleRemoveItem(item.id)}
+                                                title={`Remove size ${item.size}`}
+                                                className="flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.5 bg-white/10 border border-white/20 text-zinc-300 hover:bg-red-500/20 hover:border-red-500/40 hover:text-red-400 transition-colors"
+                                            >
+                                                {item.size === 'One Size' ? t('wholesale.one_size') : item.size}
+                                                <span className="text-zinc-500">x</span>
+                                            </button>
+                                        ))}
                                     </div>
                                 </div>
                             ))}
