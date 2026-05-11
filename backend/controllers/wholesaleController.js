@@ -486,7 +486,11 @@ exports.getUserWholesaleOrder = async (req, res) => {
         console.error('Error fetching user wholesale order:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
-  exports.getUnreadOrdersCount = async (req, res) => {
+};
+
+// ─── Get Unread Orders Count (Admin) ─────────────────────────────────────────
+
+exports.getUnreadOrdersCount = async (req, res) => {
     try {
         const [result] = await db.query(
             "SELECT COUNT(*) as count FROM wholesale_orders WHERE status = 'Belum Dibaca'"
