@@ -21,6 +21,7 @@ import { DashboardSummaryCards } from '../components/ui/admin-summary-cards';
 import { TrafficChart, UserGrowthChart, SubscriberChart, ExternalClicksChart } from '../components/ui/admin-charts';
 import AdminGeographicMap from '../components/ui/AdminGeographicMapV2';
 import AdminActivityLog from '../components/ui/AdminActivityLog';
+import TopProductsTable from '../components/ui/TopProductsTable';
 import SyncEcommerceModal from '../components/ui/SyncEcommerceModal';
 
 export default function AdminDashboard() {
@@ -185,8 +186,13 @@ export default function AdminDashboard() {
                 </div>
             </div>
 
-            <div className="w-full">
-                <AdminActivityLog />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="w-full">
+                    <AdminActivityLog />
+                </div>
+                <div className="w-full">
+                    <TopProductsTable refreshTrigger={mapRefreshTrigger} />
+                </div>
             </div>
         </div>
     );
