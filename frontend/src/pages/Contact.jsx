@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+// eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
-import { Send, User, Shield, Package, CheckCircle2, XCircle, Clock, MessageSquare, Paperclip, Download, X, Image as ImageIcon, FileText } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Send, User, Shield, Package, CheckCircle2, XCircle, Clock, MessageSquare, Paperclip, Download, X, Image as ImageIcon, FileText, ArrowRight } from 'lucide-react';
 import Navbar from '../components/ui/Navbar';
 import { notify } from '../lib/toast';
+
 import { useTranslation } from 'react-i18next';
 
 const API = import.meta.env.VITE_API_URL;
@@ -73,35 +76,104 @@ function WholesaleOrderCard({ metadata, messageType }) {
     const isRejected  = messageType === 'wholesale_rejected';
 
     if (isConfirmed || isRejected) {
+        const hasItems = Array.isArray(metadata.invoice_items) && metadata.invoice_items.length > 0;
         return (
-            <div className={`border rounded-none p-4 max-w-[85%] md:max-w-[70%] ${
-                isConfirmed
-                    ? 'bg-emerald-500/10 border-emerald-500/30'
-                    : 'bg-rose-500/10 border-rose-500/30'
+            <div className={`border w-full max-w-[85%] md:max-w-[480px] text-xs font-mono ${
+                isConfirmed ? 'bg-emerald-500/5 border-emerald-500/25' : 'bg-rose-500/5 border-rose-500/25'
             }`}>
-                <div className="flex items-center gap-2 mb-3">
+                {/* Header */}
+                <div className={`flex items-center gap-2 px-4 py-3 border-b ${isConfirmed ? 'border-emerald-500/20' : 'border-rose-500/20'}`}>
                     {isConfirmed
                         ? <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                         : <XCircle className="w-4 h-4 text-rose-400 shrink-0" />
                     }
-                    <span className={`font-mono text-[10px] uppercase tracking-widest font-bold ${isConfirmed ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    <span className={`uppercase tracking-widest font-bold text-[10px] ${isConfirmed ? 'text-emerald-400' : 'text-rose-400'}`}>
                         Order #{metadata.order_id} — {isConfirmed ? 'Confirmed' : 'Rejected'}
                     </span>
                 </div>
-                {isConfirmed && metadata.shipping_cost != null && (
-                    <div className="text-sm text-zinc-200">
-                        <span className="text-zinc-500 text-[10px] uppercase tracking-wider block">Shipping Cost</span>
-                        <span className="font-semibold text-emerald-300">
+
+                {/* Full invoice items (new format) */}
+                {isConfirmed && hasItems && (
+                    <>
+                        <div className="px-4 pt-3 pb-1">
+                            <p className="text-[9px] uppercase tracking-widest text-zinc-500 mb-2">Items</p>
+                            <div className="space-y-1.5">
+                                {metadata.invoice_items.map((item, i) => (
+                                    <div key={i} className="flex items-center gap-2 bg-zinc-800/40 border border-zinc-800 px-2 py-1.5">
+                                        {item.product_image ? (
+                                            <img
+                                                src={`${API}${item.product_image}`}
+                                                alt={item.product_name_snapshot}
+                                                className="w-8 h-8 object-cover border border-zinc-700 shrink-0"
+                                                onError={e => { e.target.style.display = 'none'; }}
+                                            />
+                                        ) : (
+                                            <div className="w-8 h-8 bg-zinc-800 border border-zinc-700 flex items-center justify-center shrink-0">
+                                                <Package className="w-3.5 h-3.5 text-zinc-600" />
+                                            </div>
+                                        )}
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-zinc-200 font-medium truncate">{item.product_name_snapshot}</p>
+                                            <p className="text-zinc-500 text-[9px]">{item.size}</p>
+                                        </div>
+                                        <div className="text-right shrink-0">
+                                            <p className="text-zinc-300">Rp {Number(item.unit_price || 0).toLocaleString('id-ID')}</p>
+                                            <p className="text-zinc-500 text-[9px]">= Rp {Number(item.line_total || 0).toLocaleString('id-ID')}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        {/* Totals */}
+                        <div className="px-4 py-3 border-t border-zinc-800 space-y-1">
+                            <div className="flex justify-between text-zinc-400">
+                                <span>Subtotal</span>
+                                <span>Rp {Number(metadata.subtotal || 0).toLocaleString('id-ID')}</span>
+                            </div>
+                            <div className="flex justify-between text-zinc-400">
+                                <span>Shipping</span>
+                                <span>Rp {Number(metadata.shipping_cost || 0).toLocaleString('id-ID')}</span>
+                            </div>
+                            <div className="flex justify-between text-emerald-300 font-bold border-t border-zinc-700 pt-1 mt-1">
+                                <span className="uppercase tracking-wider text-[10px] self-center">Grand Total</span>
+                                <span className="text-sm">Rp {Number(metadata.grand_total || 0).toLocaleString('id-ID')}</span>
+                            </div>
+                        </div>
+                    </>
+                )}
+
+                {/* Fallback for old confirmed messages (shipping_cost only) */}
+                {isConfirmed && !hasItems && metadata.shipping_cost != null && (
+                    <div className="px-4 py-3">
+                        <span className="text-zinc-500 text-[9px] uppercase tracking-wider block">Shipping Cost</span>
+                        <span className="text-emerald-300 font-semibold">
                             Rp {Number(metadata.shipping_cost).toLocaleString('id-ID')}
                         </span>
                     </div>
                 )}
+
+                {/* Admin note */}
                 {metadata.admin_note && (
-                    <div className="mt-2 text-sm text-zinc-300 leading-relaxed">
-                        <span className="text-zinc-500 text-[10px] uppercase tracking-wider block mb-1">Note</span>
-                        {metadata.admin_note}
+                    <div className={`px-4 py-2 border-t ${isConfirmed ? 'border-emerald-500/15' : 'border-rose-500/15'}`}>
+                        <span className="text-zinc-500 text-[9px] uppercase tracking-wider block mb-0.5">Note</span>
+                        <p className="text-zinc-300 leading-relaxed">{metadata.admin_note}</p>
                     </div>
                 )}
+
+                {/* CTA → redirect to orders page */}
+                <div className={`px-4 py-3 border-t ${isConfirmed ? 'border-emerald-500/15' : 'border-rose-500/15'}`}>
+                    <Link
+                        to="/orders"
+                        className={`inline-flex items-center gap-2 w-full justify-center py-2 text-[10px] font-mono uppercase tracking-widest transition-colors ${
+                            isConfirmed
+                                ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/25'
+                                : 'bg-rose-500/10 border border-rose-500/25 text-rose-400 hover:bg-rose-500/20'
+                        }`}
+                    >
+                        View My Orders
+                        <ArrowRight className="w-3 h-3" />
+                    </Link>
+                </div>
             </div>
         );
     }
@@ -144,24 +216,39 @@ function WholesaleOrderCard({ metadata, messageType }) {
                         <p className="text-zinc-300 italic">{metadata.message}</p>
                     </div>
                 )}
-                {metadata.items && metadata.items.length > 0 && (
-                    <div>
-                        <span className="text-zinc-500 uppercase tracking-widest text-[9px] block mb-1">
-                            Items ({metadata.items.length})
-                        </span>
-                        <div className="space-y-1">
-                            {metadata.items.map((item, idx) => (
-                                <div key={idx} className="flex items-center justify-between bg-zinc-800/60 px-2 py-1.5 border border-zinc-800">
-                                    <span className="text-zinc-200 font-medium truncate max-w-[160px]">{item.product_name_snapshot}</span>
-                                    <div className="flex items-center gap-2 shrink-0 ml-2">
-                                        <span className="text-zinc-500 font-mono">{item.size}</span>
-                                        <span className="bg-zinc-700 text-white text-[10px] px-1.5 py-0.5 font-mono">×{item.quantity}</span>
+                {metadata.items && metadata.items.length > 0 && (() => {
+                    // Group items by product_id so same product shows sizes inline
+                    const grouped = {};
+                    metadata.items.forEach(item => {
+                        const pid = item.product_id || item.product_name_snapshot;
+                        if (!grouped[pid]) grouped[pid] = { name: item.product_name_snapshot, sizes: [] };
+                        if (item.size && !grouped[pid].sizes.includes(item.size)) {
+                            grouped[pid].sizes.push(item.size);
+                        }
+                    });
+                    const groups = Object.values(grouped);
+                    return (
+                        <div>
+                            <span className="text-zinc-500 uppercase tracking-widest text-[9px] block mb-1">
+                                Items ({groups.length} product{groups.length !== 1 ? 's' : ''})
+                            </span>
+                            <div className="space-y-1">
+                                {groups.map((g, idx) => (
+                                    <div key={idx} className="bg-zinc-800/60 px-2 py-1.5 border border-zinc-800">
+                                        <p className="text-zinc-200 font-medium truncate text-[11px] mb-1">{g.name}</p>
+                                        <div className="flex flex-wrap gap-1">
+                                            {g.sizes.map(size => (
+                                                <span key={size} className="text-[9px] font-mono px-1.5 py-0.5 bg-zinc-700/60 border border-zinc-700 text-zinc-400">
+                                                    {size}
+                                                </span>
+                                            ))}
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
                         </div>
-                    </div>
-                )}
+                    );
+                })()}
             </div>
 
             <div className="mt-3 pt-2 border-t border-zinc-800">
@@ -172,6 +259,7 @@ function WholesaleOrderCard({ metadata, messageType }) {
         </div>
     );
 }
+
 
 export default function Contact() {
     const { t } = useTranslation();
@@ -203,7 +291,6 @@ export default function Contact() {
     const scrollToBottom = () =>
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
 
-    const smartScroll = () => {}; // no-op, kept to avoid ref errors
 
     const handleChatScroll = () => {
         const box = chatBoxRef.current;

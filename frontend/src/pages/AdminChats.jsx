@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { User, Send, Shield, Search, Package, CheckCircle2, XCircle, Clock, AlertCircle, ChevronDown, ChevronUp, Paperclip, Download, X, FileText } from 'lucide-react';
+import { User, Send, Shield, Search, Package, CheckCircle2, XCircle, Clock, AlertCircle, ChevronDown, ChevronUp, Paperclip, Download, X, FileText, Receipt, ImageIcon, Plus, Minus } from 'lucide-react';
 import { notify } from '../lib/toast';
 import { useTranslation } from 'react-i18next';
+
+const fmt = (n) => `Rp ${Number(n || 0).toLocaleString('id-ID')}`;
 
 const API = import.meta.env.VITE_API_URL;
 
@@ -38,6 +40,88 @@ function FileBubble({ metadata, isAdmin }) {
     );
 }
 
+// ── Wholesale Invoice Card (confirmed / rejected) ─────────────────────────────
+function WholesaleInvoiceCard({ metadata, isConfirmed }) {
+    const hasItems = Array.isArray(metadata.invoice_items) && metadata.invoice_items.length > 0;
+    return (
+        <div className={`border w-full max-w-lg text-xs font-mono ${
+            isConfirmed ? 'bg-emerald-500/5 border-emerald-500/25' : 'bg-rose-500/5 border-rose-500/25'
+        }`}>
+            {/* Header */}
+            <div className={`flex items-center gap-2 px-4 py-3 border-b ${isConfirmed ? 'border-emerald-500/20' : 'border-rose-500/20'}`}>
+                {isConfirmed ? <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> : <XCircle className="w-4 h-4 text-rose-400 shrink-0" />}
+                <span className={`uppercase tracking-widest font-bold text-[10px] ${isConfirmed ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    Order #{metadata.order_id} — {isConfirmed ? 'Confirmed' : 'Rejected'}
+                </span>
+                <Receipt className="w-3 h-3 ml-auto opacity-40" />
+            </div>
+
+            {isConfirmed && hasItems && (
+                <>
+                    {/* Items table */}
+                    <div className="px-4 pt-3 pb-1">
+                        <p className="text-[9px] uppercase tracking-widest text-zinc-500 mb-2">Items</p>
+                        <div className="space-y-1.5">
+                            {metadata.invoice_items.map((item, i) => (
+                                <div key={i} className="flex items-center gap-2 bg-zinc-800/40 border border-zinc-800 px-2 py-1.5">
+                                    {item.product_image ? (
+                                        <img
+                                            src={`${API}${item.product_image}`}
+                                            alt={item.product_name_snapshot}
+                                            className="w-8 h-8 object-cover border border-zinc-700 shrink-0"
+                                            onError={e => { e.target.style.display = 'none'; }}
+                                        />
+                                    ) : (
+                                        <div className="w-8 h-8 bg-zinc-800 border border-zinc-700 flex items-center justify-center shrink-0">
+                                            <ImageIcon className="w-3.5 h-3.5 text-zinc-600" />
+                                        </div>
+                                    )}
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-zinc-200 font-medium truncate">{item.product_name_snapshot}</p>
+                                        <p className="text-zinc-500 text-[9px]">{item.size} · ×{item.quantity}</p>
+                                    </div>
+                                    <div className="text-right shrink-0">
+                                        <p className="text-zinc-300">{fmt(item.unit_price)}</p>
+                                        <p className="text-zinc-500 text-[9px]">= {fmt(item.line_total)}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                    {/* Totals */}
+                    <div className="px-4 py-3 border-t border-zinc-800 space-y-1">
+                        <div className="flex justify-between text-zinc-400">
+                            <span>Subtotal</span><span>{fmt(metadata.subtotal)}</span>
+                        </div>
+                        <div className="flex justify-between text-zinc-400">
+                            <span>Shipping</span><span>{fmt(metadata.shipping_cost)}</span>
+                        </div>
+                        <div className="flex justify-between text-emerald-300 font-bold border-t border-zinc-700 pt-1 mt-1">
+                            <span className="uppercase tracking-wider text-[10px]">Grand Total</span>
+                            <span className="text-sm">{fmt(metadata.grand_total)}</span>
+                        </div>
+                    </div>
+                </>
+            )}
+
+            {/* Fallback: just shipping for old data */}
+            {isConfirmed && !hasItems && metadata.shipping_cost != null && (
+                <div className="px-4 py-3">
+                    <span className="text-zinc-500 text-[9px] uppercase tracking-wider block">Shipping Cost</span>
+                    <span className="text-emerald-300 font-semibold">{fmt(metadata.shipping_cost)}</span>
+                </div>
+            )}
+
+            {metadata.admin_note && (
+                <div className={`px-4 py-2 border-t ${isConfirmed ? 'border-emerald-500/15' : 'border-rose-500/15'}`}>
+                    <span className="text-zinc-500 text-[9px] uppercase tracking-wider block mb-0.5">Note</span>
+                    <p className="text-zinc-300 leading-relaxed">{metadata.admin_note}</p>
+                </div>
+            )}
+        </div>
+    );
+}
+
 // ── Wholesale Order Card ──────────────────────────────────────────────────────
 function WholesaleOrderCard({ metadata, messageType }) {
     if (!metadata) return null;
@@ -45,22 +129,7 @@ function WholesaleOrderCard({ metadata, messageType }) {
     const isRejected  = messageType === 'wholesale_rejected';
 
     if (isConfirmed || isRejected) {
-        return (
-            <div className={`border p-3 max-w-[85%] ${isConfirmed ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-rose-500/10 border-rose-500/30'}`}>
-                <div className="flex items-center gap-2 mb-2">
-                    {isConfirmed ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <XCircle className="w-4 h-4 text-rose-400" />}
-                    <span className={`font-mono text-[10px] uppercase tracking-widest font-bold ${isConfirmed ? 'text-emerald-400' : 'text-rose-400'}`}>
-                        Order #{metadata.order_id} — {isConfirmed ? 'Confirmed' : 'Rejected'}
-                    </span>
-                </div>
-                {isConfirmed && metadata.shipping_cost != null && (
-                    <p className="text-sm text-emerald-300 font-semibold">
-                        Shipping: Rp {Number(metadata.shipping_cost).toLocaleString('id-ID')}
-                    </p>
-                )}
-                {metadata.admin_note && <p className="text-xs text-zinc-300 mt-1">{metadata.admin_note}</p>}
-            </div>
-        );
+        return <WholesaleInvoiceCard metadata={metadata} isConfirmed={isConfirmed} />;
     }
 
     const statusConfig = {
@@ -87,47 +156,130 @@ function WholesaleOrderCard({ metadata, messageType }) {
                 {metadata.phone && <div><span className="text-zinc-500 text-[9px] uppercase tracking-wider">Phone</span><p className="text-zinc-200">{metadata.phone}</p></div>}
                 {metadata.address && <div><span className="text-zinc-500 text-[9px] uppercase tracking-wider">Address</span><p className="text-zinc-200 leading-relaxed">{metadata.address}</p></div>}
                 {metadata.message && <div><span className="text-zinc-500 text-[9px] uppercase tracking-wider">Notes</span><p className="text-zinc-400 italic">{metadata.message}</p></div>}
-                {metadata.items && metadata.items.length > 0 && (
-                    <div className="pt-1">
-                        <span className="text-zinc-500 text-[9px] uppercase tracking-wider block mb-1">Items ({metadata.items.length})</span>
-                        <div className="space-y-1">
-                            {metadata.items.map((item, i) => (
-                                <div key={i} className="flex items-center justify-between bg-zinc-800/60 px-2 py-1 border border-zinc-800">
-                                    <span className="text-zinc-200 truncate max-w-[200px]">{item.product_name_snapshot}</span>
-                                    <div className="flex items-center gap-2 ml-2">
-                                        <span className="text-zinc-500 font-mono">{item.size}</span>
-                                        <span className="bg-zinc-700 text-white text-[10px] px-1.5 py-0.5 font-mono">×{item.quantity}</span>
+                {metadata.items && metadata.items.length > 0 && (() => {
+                    const grouped = {};
+                    metadata.items.forEach(item => {
+                        const pid = item.product_id || item.product_name_snapshot;
+                        if (!grouped[pid]) grouped[pid] = { name: item.product_name_snapshot, sizes: [] };
+                        if (item.size && !grouped[pid].sizes.includes(item.size)) {
+                            grouped[pid].sizes.push(item.size);
+                        }
+                    });
+                    const groups = Object.values(grouped);
+                    return (
+                        <div className="pt-1">
+                            <span className="text-zinc-500 text-[9px] uppercase tracking-wider block mb-1">
+                                Items ({groups.length} product{groups.length !== 1 ? 's' : ''})
+                            </span>
+                            <div className="space-y-1">
+                                {groups.map((g, idx) => (
+                                    <div key={idx} className="bg-zinc-800/60 px-2 py-1.5 border border-zinc-800">
+                                        <p className="text-zinc-200 font-medium truncate text-[11px] mb-1">{g.name}</p>
+                                        <div className="flex flex-wrap gap-1">
+                                            {g.sizes.map(size => (
+                                                <span key={size} className="text-[9px] font-mono px-1.5 py-0.5 bg-zinc-700/60 border border-zinc-700 text-zinc-400">
+                                                    {size}
+                                                </span>
+                                            ))}
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
                         </div>
-                    </div>
-                )}
+                    );
+                })()}
             </div>
         </div>
     );
 }
 
+
 // ── Admin Confirmation Panel ──────────────────────────────────────────────────
 function ConfirmationPanel({ session, token, onDone, t }) {
-    const [shippingCost, setShippingCost] = useState('');
-    const [adminNote, setAdminNote] = useState('');
-    const [submitting, setSubmitting] = useState(null); // 'confirm' | 'reject' | null
-    const [expanded, setExpanded] = useState(false);
+    const [expanded, setExpanded]     = useState(false);
+    const [orderItems, setOrderItems] = useState([]);   // [{...item, unit_price:''}]
+    const [shippingCost, setShipping] = useState('');
+    const [adminNote, setAdminNote]   = useState('');
+    const [submitting, setSubmitting] = useState(null); // 'confirm'|'reject'|null
+    const [loadingItems, setLoading]  = useState(false);
 
-    if (!session?.pending_order_id) return null;
+    const orderId = session?.pending_order_id;
+
+    // Fetch order items when panel is expanded
+    useEffect(() => {
+        if (!expanded || !orderId) return;
+        setLoading(true);
+        axios.get(`${API}/api/wholesale/${orderId}`, { headers: { Authorization: `Bearer ${token}` } })
+            .then(res => {
+                const items = (res.data.items || []).map(it => ({ ...it, unit_price: '' }));
+                setOrderItems(items);
+            })
+            .catch(err => { console.error(err); notify.error('Failed to load order items.'); })
+            .finally(() => setLoading(false));
+    }, [expanded, orderId, token]);
+
+    if (!orderId) return null;
+
+    // Derived totals
+    const subtotal   = orderItems.reduce((s, it) => s + (parseFloat(it.unit_price) || 0) * (it.quantity || 1), 0);
+    const grandTotal = subtotal + (parseFloat(shippingCost) || 0);
+
+    // Sizes M/L/XL share one price per product; XXL is priced separately
+    const SIZE_GROUP_STD = ['M', 'L', 'XL'];
+
+    const setItemPrice = (idx, val) => {
+        const item = orderItems[idx];
+        const isStdSize = SIZE_GROUP_STD.includes(item.size);
+        setOrderItems(prev => prev.map((it, i) => {
+            if (i === idx) return { ...it, unit_price: val };
+            // Auto-sync M/L/XL of the same product
+            if (isStdSize && it.product_id === item.product_id && SIZE_GROUP_STD.includes(it.size)) {
+                return { ...it, unit_price: val };
+            }
+            return it;
+        }));
+    };
+
+    const setItemQty = (idx, delta) =>
+        setOrderItems(prev => prev.map((it, i) => i === idx ? { ...it, quantity: Math.max(1, (it.quantity || 1) + delta) } : it));
+
+    const setItemQtyDirect = (idx, val) => {
+        const n = parseInt(val);
+        if (!isNaN(n)) setOrderItems(prev => prev.map((it, i) => i === idx ? { ...it, quantity: Math.max(1, n) } : it));
+    };
 
     const handleDecision = async (decision) => {
-        if (decision === 'confirm' && !shippingCost) {
-            notify.warning('Please enter shipping cost before confirming.');
-            return;
+        if (decision === 'confirm') {
+            const missing = orderItems.some(it => it.unit_price === '' || parseFloat(it.unit_price) < 0);
+            if (missing) { notify.warning('Please enter a valid price for every item.'); return; }
+            if (shippingCost === '' || parseFloat(shippingCost) < 0) {
+                notify.warning('Please enter a valid shipping cost.'); return;
+            }
         }
         if (decision === 'reject' && !window.confirm(t('admin_chats.reject_confirm_msg'))) return;
 
         setSubmitting(decision);
         try {
-            await axios.put(`${API}/api/wholesale/${session.pending_order_id}/confirm`,
-                { decision, shipping_cost: shippingCost || null, admin_note: adminNote || null },
+            const invoiceItems = orderItems.map(it => ({
+                product_id:            it.product_id,
+                product_name_snapshot: it.product_name_snapshot,
+                product_image:         it.product_image || null,
+                size:                  it.size,
+                quantity:              it.quantity,
+                unit_price:            parseFloat(it.unit_price) || 0,
+                line_total:            (parseFloat(it.unit_price) || 0) * (it.quantity || 1),
+            }));
+
+            await axios.put(
+                `${API}/api/wholesale/${orderId}/confirm`,
+                {
+                    decision,
+                    shipping_cost: decision === 'confirm' ? parseFloat(shippingCost) : null,
+                    admin_note:    adminNote || null,
+                    invoice_items: decision === 'confirm' ? invoiceItems : null,
+                    subtotal:      decision === 'confirm' ? subtotal : null,
+                    grand_total:   decision === 'confirm' ? grandTotal : null,
+                },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             notify.success(decision === 'confirm' ? t('admin_chats.confirm_success') : t('admin_chats.reject_success'));
@@ -142,6 +294,7 @@ function ConfirmationPanel({ session, token, onDone, t }) {
 
     return (
         <div className="border-t-2 border-amber-500/30 bg-zinc-950 shrink-0">
+            {/* Toggle header */}
             <button
                 onClick={() => setExpanded(v => !v)}
                 className="w-full flex items-center justify-between px-4 py-3 text-amber-400 hover:bg-zinc-900/60 transition-colors"
@@ -149,7 +302,7 @@ function ConfirmationPanel({ session, token, onDone, t }) {
                 <div className="flex items-center gap-2">
                     <AlertCircle className="w-4 h-4" />
                     <span className="font-mono text-xs uppercase tracking-widest">
-                        {t('admin_chats.confirmation_panel_title')} — Order #{session.pending_order_id}
+                        {t('admin_chats.confirmation_panel_title')} — Order #{orderId}
                     </span>
                     <span className="text-[9px] font-mono px-1.5 py-0.5 border border-amber-500/40 bg-amber-500/10 text-amber-400 uppercase">
                         {session.pending_order_status === 'pending_discussion' ? t('admin_chats.status_pending') : t('admin_chats.status_in_discussion')}
@@ -159,18 +312,112 @@ function ConfirmationPanel({ session, token, onDone, t }) {
             </button>
 
             {expanded && (
-                <div className="px-4 pb-4 space-y-3 animate-in slide-in-from-bottom-2 duration-200">
+                <div className="px-4 pb-5 space-y-4 animate-in slide-in-from-bottom-2 duration-200">
                     <p className="text-xs text-zinc-500">{t('admin_chats.confirmation_panel_desc')}</p>
+
+                    {/* Items list */}
+                    {loadingItems ? (
+                        <div className="flex justify-center py-4">
+                            <div className="w-5 h-5 border-2 border-zinc-600 border-t-amber-400 rounded-full animate-spin" />
+                        </div>
+                    ) : orderItems.length > 0 && (
+                        <div>
+                            <p className="text-[9px] font-mono uppercase tracking-widest text-zinc-500 mb-2">
+                                Items — set price per unit
+                            </p>
+                            {/* Pricing rule hint */}
+                            <div className="flex flex-wrap gap-3 mb-3 text-[9px] font-mono uppercase tracking-wider">
+                                <span className="flex items-center gap-1.5 px-2 py-1 bg-sky-500/10 border border-sky-500/30 text-sky-400">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-sky-400 inline-block" />
+                                    M / L / XL — harga otomatis sama (sync)
+                                </span>
+                                <span className="flex items-center gap-1.5 px-2 py-1 bg-purple-500/10 border border-purple-500/30 text-purple-400">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-purple-400 inline-block" />
+                                    XXL — harga terpisah
+                                </span>
+                            </div>
+                            {/* Column headers */}
+                            <div className="hidden md:grid grid-cols-[2rem_1fr_4rem_8rem_7rem_6rem] gap-2 px-2 mb-1">
+                                {['', 'Product', 'Size', 'Qty', 'Price (M/L/XL synced)', 'Total'].map(h => (
+                                    <span key={h} className="text-[9px] font-mono text-zinc-600 uppercase tracking-wider text-right first:text-left">{h}</span>
+                                ))}
+                            </div>
+                            <div className="space-y-1.5">
+                                {orderItems.map((item, idx) => {
+                                    const lineTotal = (parseFloat(item.unit_price) || 0) * (item.quantity || 1);
+                                    return (
+                                        <div key={idx} className="grid grid-cols-1 md:grid-cols-[2rem_1fr_4rem_8rem_7rem_6rem] gap-2 items-center bg-zinc-900/60 border border-zinc-800 px-2 py-2">
+                                            {/* Thumbnail */}
+                                            {item.product_image ? (
+                                                <img src={`${API}${item.product_image}`} alt="" className="w-8 h-8 object-cover border border-zinc-700 shrink-0" onError={e => { e.target.style.display = 'none'; }} />
+                                            ) : (
+                                                <div className="w-8 h-8 bg-zinc-800 border border-zinc-700 flex items-center justify-center">
+                                                    <Package className="w-3.5 h-3.5 text-zinc-600" />
+                                                </div>
+                                            )}
+                                            {/* Name */}
+                                            <span className="text-zinc-200 text-xs font-medium truncate">{item.product_name_snapshot}</span>
+                                            {/* Size + badge */}
+                                            <div className="text-right">
+                                                <span className="text-zinc-500 text-xs font-mono">{item.size}</span>
+                                                {item.size === 'XXL' ? (
+                                                    <span className="ml-1 text-[8px] font-bold uppercase px-1 bg-purple-500/20 border border-purple-500/40 text-purple-400">+price</span>
+                                                ) : SIZE_GROUP_STD.includes(item.size) ? (
+                                                    <span className="ml-1 text-[8px] font-bold uppercase px-1 bg-sky-500/20 border border-sky-500/40 text-sky-400">sync</span>
+                                                ) : null}
+                                            </div>
+                                            {/* Qty stepper */}
+                                            <div className="flex items-center justify-end border border-zinc-700">
+                                                <button type="button" onClick={() => setItemQty(idx, -1)} className="w-6 h-7 flex items-center justify-center text-zinc-500 hover:text-white hover:bg-zinc-800 transition-colors">
+                                                    <Minus className="w-2.5 h-2.5" />
+                                                </button>
+                                                <input
+                                                    type="number" min="1"
+                                                    value={item.quantity}
+                                                    onChange={e => setItemQtyDirect(idx, e.target.value)}
+                                                    className="w-9 h-7 bg-zinc-900 text-center text-xs text-white font-mono border-x border-zinc-700 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                                />
+                                                <button type="button" onClick={() => setItemQty(idx, 1)} className="w-6 h-7 flex items-center justify-center text-zinc-500 hover:text-white hover:bg-zinc-800 transition-colors">
+                                                    <Plus className="w-2.5 h-2.5" />
+                                                </button>
+                                            </div>
+                                            {/* Unit price input */}
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                value={item.unit_price}
+                                                onChange={e => setItemPrice(idx, e.target.value)}
+                                                placeholder="0"
+                                                title={SIZE_GROUP_STD.includes(item.size) ? 'Price synced across M/L/XL for this product' : 'Independent price for XXL'}
+                                                className={`w-full bg-zinc-950 border text-right text-xs text-zinc-100 font-mono h-7 px-2 outline-none transition-colors ${
+                                                    item.unit_price === ''
+                                                        ? item.size === 'XXL'
+                                                            ? 'border-purple-500/50'
+                                                            : 'border-amber-500/50'
+                                                        : item.size === 'XXL'
+                                                            ? 'border-purple-600/40 focus:border-purple-500/60'
+                                                            : 'border-zinc-700 focus:border-amber-500/50'
+                                                }`}
+                                            />
+                                            {/* Line total */}
+                                            <span className="text-zinc-300 text-xs font-mono text-right">{fmt(lineTotal)}</span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Shipping + Note */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
                             <label className="text-[10px] font-mono text-zinc-500 uppercase block mb-1">
                                 {t('admin_chats.shipping_cost_label')} <span className="text-rose-400">*</span>
                             </label>
                             <input
-                                type="number"
-                                min="0"
+                                type="number" min="0"
                                 value={shippingCost}
-                                onChange={e => setShippingCost(e.target.value)}
+                                onChange={e => setShipping(e.target.value)}
                                 placeholder={t('admin_chats.shipping_cost_placeholder')}
                                 className="w-full bg-zinc-900 border border-zinc-700 focus:border-amber-500/50 outline-none h-9 px-3 text-sm text-zinc-100 transition-colors"
                             />
@@ -188,7 +435,20 @@ function ConfirmationPanel({ session, token, onDone, t }) {
                             />
                         </div>
                     </div>
-                    <div className="flex items-center gap-3">
+
+                    {/* Invoice summary preview */}
+                    <div className="border border-zinc-800 bg-zinc-900/40 px-4 py-3 space-y-1 text-xs font-mono">
+                        <p className="text-[9px] text-zinc-600 uppercase tracking-widest mb-2">Invoice Preview</p>
+                        <div className="flex justify-between text-zinc-400"><span>Subtotal</span><span>{fmt(subtotal)}</span></div>
+                        <div className="flex justify-between text-zinc-400"><span>Shipping</span><span>{fmt(shippingCost || 0)}</span></div>
+                        <div className="flex justify-between text-emerald-300 font-bold border-t border-zinc-700 pt-1 mt-1 text-sm">
+                            <span className="uppercase tracking-wider text-[10px] self-center">Grand Total</span>
+                            <span>{fmt(grandTotal)}</span>
+                        </div>
+                    </div>
+
+                    {/* Action buttons */}
+                    <div className="flex items-center gap-3 pt-1">
                         <button
                             onClick={() => handleDecision('confirm')}
                             disabled={!!submitting}
@@ -211,6 +471,7 @@ function ConfirmationPanel({ session, token, onDone, t }) {
         </div>
     );
 }
+
 
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function AdminChats() {

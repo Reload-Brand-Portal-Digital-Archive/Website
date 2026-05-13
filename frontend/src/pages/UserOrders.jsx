@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Package, ChevronDown, ArrowRight, Truck, MessageSquare, Clock, CheckCircle2, XCircle, Loader2, AlertCircle } from 'lucide-react';
+import { Package, ChevronDown, ArrowRight, Truck, MessageSquare, Clock, CheckCircle2, XCircle, Loader2, AlertCircle, ImageIcon } from 'lucide-react';
 import { notify } from '../lib/toast';
 import Navbar from '../components/ui/Navbar';
 import { useTranslation } from 'react-i18next';
@@ -341,38 +341,99 @@ export default function UserOrders() {
                                                             )}
 
                                                             {/* ── Items table ── */}
-                                                            {order.items && order.items.length > 0 ? (
-                                                                <div className="overflow-x-auto">
-                                                                    <table className="w-full text-left text-sm whitespace-nowrap">
-                                                                        <thead className="bg-zinc-900 border-b border-zinc-800 text-zinc-500 text-[10px] uppercase font-mono tracking-widest">
-                                                                            <tr>
-                                                                                <th className="px-4 md:px-5 py-3 font-medium">{t('user_orders.th_product')}</th>
-                                                                                <th className="px-4 md:px-5 py-3 font-medium">{t('user_orders.th_size')}</th>
-                                                                                <th className="px-4 md:px-5 py-3 font-medium">{t('user_orders.th_qty')}</th>
-                                                                            </tr>
-                                                                        </thead>
-                                                                        <tbody className="divide-y divide-zinc-800/50">
-                                                                            {order.items.map((item, i) => (
-                                                                                <tr key={item.item_id || `${item.product_id}-${item.size}-${i}`} className="hover:bg-zinc-800/20 transition-colors">
-                                                                                    <td className="px-4 md:px-5 py-3 text-zinc-200">
-                                                                                        <span className="font-medium uppercase text-xs truncate inline-block max-w-[160px] md:max-w-[360px]">
-                                                                                            {item.product_name_snapshot}
-                                                                                        </span>
-                                                                                    </td>
-                                                                                    <td className="px-4 md:px-5 py-3 font-mono text-zinc-400 text-xs">{item.size}</td>
-                                                                                    <td className="px-4 md:px-5 py-3">
-                                                                                        <span className="inline-block px-2 py-0.5 bg-zinc-800 text-white text-xs font-mono">{item.quantity}</span>
-                                                                                    </td>
+                                                            {(() => {
+                                                                const displayItems = order.invoice_items || order.items;
+                                                                const hasPrices = !!order.invoice_items;
+                                                                
+                                                                if (!displayItems || displayItems.length === 0) {
+                                                                    return (
+                                                                        <div className="p-6 text-center">
+                                                                            <span className="text-zinc-600 font-mono text-xs uppercase tracking-wider">{t('user_orders.no_items_recorded')}</span>
+                                                                        </div>
+                                                                    );
+                                                                }
+
+                                                                return (
+                                                                    <div className="overflow-x-auto">
+                                                                        <table className="w-full text-left text-sm whitespace-nowrap">
+                                                                            <thead className="bg-zinc-900 border-b border-zinc-800 text-zinc-500 text-[10px] uppercase font-mono tracking-widest">
+                                                                                <tr>
+                                                                                    <th className="px-3 md:px-4 py-3 w-10"></th>
+                                                                                    <th className="px-3 md:px-5 py-3 font-medium">{t('user_orders.th_product')}</th>
+                                                                                    <th className="px-3 md:px-5 py-3 font-medium">{t('user_orders.th_size')}</th>
+                                                                                    <th className="px-3 md:px-5 py-3 font-medium text-center">Qty</th>
+                                                                                    {hasPrices && (
+                                                                                        <>
+                                                                                            <th className="px-3 md:px-5 py-3 font-medium text-right">Price</th>
+                                                                                            <th className="px-3 md:px-5 py-3 font-medium text-right">Total</th>
+                                                                                        </>
+                                                                                    )}
                                                                                 </tr>
-                                                                            ))}
-                                                                        </tbody>
-                                                                    </table>
-                                                                </div>
-                                                            ) : (
-                                                                <div className="p-6 text-center">
-                                                                    <span className="text-zinc-600 font-mono text-xs uppercase tracking-wider">{t('user_orders.no_items_recorded')}</span>
-                                                                </div>
-                                                            )}
+                                                                            </thead>
+                                                                            <tbody className="divide-y divide-zinc-800/50">
+                                                                                {displayItems.map((item, i) => (
+                                                                                    <tr key={item.item_id || `${item.product_id}-${item.size}-${i}`} className="hover:bg-zinc-800/20 transition-colors">
+                                                                                        {/* Product image */}
+                                                                                        <td className="px-3 md:px-4 py-2.5 w-10">
+                                                                                            {item.product_image ? (
+                                                                                                <img
+                                                                                                    src={`${API}${item.product_image}`}
+                                                                                                    alt={item.product_name_snapshot}
+                                                                                                    className="w-9 h-9 object-cover border border-zinc-800"
+                                                                                                    onError={e => { e.target.style.display = 'none'; }}
+                                                                                                />
+                                                                                            ) : (
+                                                                                                <div className="w-9 h-9 bg-zinc-800 border border-zinc-700 flex items-center justify-center">
+                                                                                                    <ImageIcon className="w-3.5 h-3.5 text-zinc-600" />
+                                                                                                </div>
+                                                                                            )}
+                                                                                        </td>
+                                                                                        {/* Product name */}
+                                                                                        <td className="px-3 md:px-5 py-2.5 text-zinc-200">
+                                                                                            <span className="font-medium uppercase text-xs truncate inline-block max-w-[140px] md:max-w-[320px]">
+                                                                                                {item.product_name_snapshot}
+                                                                                            </span>
+                                                                                        </td>
+                                                                                        {/* Size */}
+                                                                                        <td className="px-3 md:px-5 py-2.5 font-mono text-zinc-400 text-xs">{item.size}</td>
+                                                                                        <td className="px-3 md:px-5 py-2.5 font-mono text-zinc-200 text-xs text-center">{item.quantity}</td>
+                                                                                        {hasPrices && (
+                                                                                            <>
+                                                                                                <td className="px-3 md:px-5 py-2.5 font-mono text-emerald-400/80 text-xs text-right">
+                                                                                                    {rupiah(item.price)}
+                                                                                                </td>
+                                                                                                <td className="px-3 md:px-5 py-2.5 font-mono text-emerald-400 text-xs text-right">
+                                                                                                    {rupiah(item.line_total)}
+                                                                                                </td>
+                                                                                            </>
+                                                                                        )}
+                                                                                    </tr>
+                                                                                ))}
+                                                                            </tbody>
+                                                                            {hasPrices && (
+                                                                                <tfoot className="bg-zinc-900 border-t border-zinc-800 font-mono text-xs">
+                                                                                    <tr>
+                                                                                        <td colSpan="5" className="px-3 md:px-5 py-2 text-right text-zinc-500 uppercase tracking-widest">Subtotal</td>
+                                                                                        <td className="px-3 md:px-5 py-2 text-right text-zinc-300">{rupiah(order.subtotal)}</td>
+                                                                                    </tr>
+                                                                                    {order.shipping_cost != null && order.shipping_cost > 0 && (
+                                                                                        <tr>
+                                                                                            <td colSpan="5" className="px-3 md:px-5 py-2 text-right text-zinc-500 uppercase tracking-widest border-t border-zinc-800/30">Shipping Cost</td>
+                                                                                            <td className="px-3 md:px-5 py-2 text-right text-zinc-300 border-t border-zinc-800/30">{rupiah(order.shipping_cost)}</td>
+                                                                                        </tr>
+                                                                                    )}
+                                                                                    <tr>
+                                                                                        <td colSpan="5" className="px-3 md:px-5 py-3 text-right text-emerald-500 uppercase tracking-widest font-bold border-t border-zinc-800">Grand Total</td>
+                                                                                        <td className="px-3 md:px-5 py-3 text-right text-emerald-400 font-bold border-t border-zinc-800 text-sm">
+                                                                                            {rupiah(order.grand_total || (Number(order.subtotal || 0) + Number(order.shipping_cost || 0)))}
+                                                                                        </td>
+                                                                                    </tr>
+                                                                                </tfoot>
+                                                                            )}
+                                                                        </table>
+                                                                    </div>
+                                                                );
+                                                            })()}
                                                         </div>
                                                     </motion.div>
                                                 )}
