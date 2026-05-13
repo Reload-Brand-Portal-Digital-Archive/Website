@@ -166,8 +166,14 @@ export default function SyncEcommerceModal({ isOpen, onClose, onSyncComplete }) 
                 onClose();
             }
         } catch (error) {
-            console.error("Upload Error:", error);
-            toast.error(t('admin_sync.toast_upload_error'));
+            console.error("Upload Error Detail:", error);
+            const srvData = error.response?.data || {};
+            const debugMsg = srvData.error || srvData.message || error.message || "Unknown Error";
+            const sqlCode = srvData.sql_code ? ` (SQL: ${srvData.sql_code})` : '';
+            toast.error(`Gagal: ${debugMsg}${sqlCode}`, { autoClose: 10000 });
+            
+            // Tampilkan rincian debug nyata dalam bentuk peringatan modal/alert agar pengguna dapat melihatnya secara eksplisit
+            alert(`[RINCIAN DEBUG BACKEND]\nPesan: ${srvData.message || 'Error'}\nError Aktual: ${debugMsg}\nKode SQL/Server: ${srvData.sql_code || error.code || '-'}`);
         } finally {
             setIsProcessing(false);
         }
