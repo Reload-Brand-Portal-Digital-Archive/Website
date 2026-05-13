@@ -3,8 +3,10 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const CollectionCard = ({ collection, index }) => {
+  const { t } = useTranslation();
   const getImageUrl = (filename) => {
     if (!filename) return '';
     return filename.startsWith('http') ? filename : `${import.meta.env.VITE_API_URL}/uploads/${filename}`;
@@ -33,7 +35,7 @@ const CollectionCard = ({ collection, index }) => {
       <div className="absolute inset-0 p-6 md:p-10 flex flex-col justify-between pointer-events-none">
         <div className="flex justify-between items-start">
           <div className="px-3 py-1 border border-white/20 bg-black/40 backdrop-blur-md font-mono text-xs tracking-widest text-zinc-300 uppercase">
-            ARCHIVE // {collection.year}
+            {t('collection_detail.archive')} {collection.year}
           </div>
           <div className="w-10 h-10 rounded-full border border-white/20 bg-black/40 backdrop-blur-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0">
             <ArrowUpRight className="w-5 h-5 text-white" />

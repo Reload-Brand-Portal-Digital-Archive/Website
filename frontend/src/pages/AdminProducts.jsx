@@ -5,8 +5,10 @@ import { notify } from '../lib/toast';
 import { useConfirm } from '../lib/confirm-dialog';
 import * as XLSX from 'xlsx';
 import Papa from 'papaparse';
+import { useTranslation } from 'react-i18next';
 
 export default function AdminProducts() {
+    const { t } = useTranslation();
     const [currentView, setCurrentView] = useState('list');
     const [products, setProducts] = useState([]);
     const [collections, setCollections] = useState([]);
@@ -81,7 +83,7 @@ export default function AdminProducts() {
     const handleFileSelect = (e) => {
         const files = Array.from(e.target.files);
         if (imageManager.length + files.length > 5) {
-            const errorMsg = "Maximum of 5 images allowed";
+            const errorMsg = t('admin_product.max_images');
             setErrors({ ...errors, images: errorMsg });
             notify.warning(errorMsg);
             return;
@@ -98,7 +100,7 @@ export default function AdminProducts() {
         setImageManager(prev => [...prev, ...newImages]);
         setErrors(prev => ({...prev, images: null}));
         e.target.value = '';
-        notify.success(`${files.length} image(s) added successfully`);
+        notify.success(t('admin_product.images_added', { count: files.length }));
     };
 
     const removeImage = (idToRemove) => {
@@ -170,7 +172,7 @@ export default function AdminProducts() {
             };
             reader.readAsBinaryString(file);
         } else {
-            notify.error("Unsupported file type. Please use .xlsx or .csv");
+            notify.error(t('admin_product.unsupported_file'));
         }
         e.target.value = '';
     };
@@ -199,7 +201,7 @@ export default function AdminProducts() {
             };
         }).filter(item => item.name);
     
-        if (processed.length === 0) return notify.error('No valid data found in this file.');
+        if (processed.length === 0) return notify.error(t('admin_product.no_valid_data'));
     
         setImportData(processed);
     
@@ -222,7 +224,7 @@ export default function AdminProducts() {
     const handleResolveCollection = async (e) => {
         e.preventDefault();
         if(!collectionFormData.cover_image) {
-            return notify.error("A cover image is required for new collections!");
+            return notify.error(t('admin_product.cover_required'));
         }
         
         const slug = collectionFormData.name.toLowerCase().replace(/\s+/g, '-');
@@ -234,13 +236,13 @@ export default function AdminProducts() {
         formPayload.append('cover_image', collectionFormData.cover_image);
 
         try {
-            const loadingToastId = notify.loading('Creating collection...');
+            const loadingToastId = notify.loading(t('admin_product.creating_collection') || t('admin_collection.creating'));
             const res = await axios.post(import.meta.env.VITE_API_URL + '/api/collections', formPayload, {
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
             });
             const newCol = res.data.data;
             setCollections(prev => [...prev, newCol]);
-            notify.update(loadingToastId, { render: `Collection "${newCol.name}" created!`, type: 'success', isLoading: false, autoClose: 3000 });
+            notify.update(loadingToastId, { render: t('admin_product.collection_created', { name: newCol.name }), type: 'success', isLoading: false, autoClose: 3000 });
             
             const remaining = missingCollections.filter(c => c !== resolvingCollection);
             setMissingCollections(remaining);
@@ -255,7 +257,7 @@ export default function AdminProducts() {
                 }
             }
         } catch (error) {
-            notify.error("Failed to create collection: " + (error.response?.data?.message || error.message));
+            notify.error(t('admin_product.failed_create_collection') + (error.response?.data?.message || error.message));
         }
     };
 
@@ -279,14 +281,14 @@ export default function AdminProducts() {
     const handleResolveCategory = async (confirmAdd) => {
         if (confirmAdd) {
             try {
-                const loadingToastId = notify.loading('Adding category...');
+                const loadingToastId = notify.loading(t('admin_product.adding_category'));
                 await axios.post(import.meta.env.VITE_API_URL + '/api/categories', { name: resolvingCategory }, {
                     headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
                 });
                 setCategories(prev => [...prev, resolvingCategory]);
-                notify.update(loadingToastId, { render: 'Category added successfully!', type: 'success', isLoading: false, autoClose: 3000 });
+                notify.update(loadingToastId, { render: t('admin_product.category_added'), type: 'success', isLoading: false, autoClose: 3000 });
             } catch (error) {
-                notify.error("Failed to add category: " + (error.response?.data?.message || error.message));
+                notify.error(t('admin_product.failed_add_category') + (error.response?.data?.message || error.message));
             }
         } else {
             // user selected NO
@@ -310,7 +312,7 @@ export default function AdminProducts() {
             if (item.local_id !== localId) return item;
             
             if (item.imageManager.length + files.length > 5) {
-                notify.warning("Maximum 5 images per product");
+                notify.warning(t('admin_product.max_images_per_product'));
                 return item;
             }
     
@@ -356,14 +358,14 @@ export default function AdminProducts() {
         
         for (const item of importData) {
             if (item.imageManager.length === 0) {
-                return notify.error(`Product "${item.name}" has no images`);
+                return notify.error(t('admin_product.no_images_for_product', { name: item.name }));
             }
             if (!item.category) {
-                 return notify.error(`Product "${item.name}" must have a valid category`);
+                 return notify.error(t('admin_product.no_category_for_product', { name: item.name }));
             }
         }
     
-        const loadingId = notify.loading('Saving products in bulk...');
+        const loadingId = notify.loading(t('admin_product.saving_bulk'));
         let successCount = 0;
     
         for (const item of importData) {
@@ -397,11 +399,11 @@ export default function AdminProducts() {
                 successCount++;
             } catch (err) {
                 console.error(`Gagal menyimpan ${item.name}`, err);
-                notify.error(`Failed to save ${item.name}`);
+                notify.error(t('admin_product.failed_save', { name: item.name }));
             }
         }
     
-        notify.update(loadingId, { render: `Successfully imported ${successCount} of ${importData.length} products.`, type: 'success', isLoading: false, autoClose: 3000 });
+        notify.update(loadingId, { render: t('admin_product.imported_success', { success: successCount, total: importData.length }), type: 'success', isLoading: false, autoClose: 3000 });
         
         await fetchData();
         setImportData([]);
@@ -422,7 +424,7 @@ export default function AdminProducts() {
 
     const handleExport = async (format) => {
         try {
-            const loadingToastId = notify.loading(`Preparing ${format.toUpperCase()} export...`);
+            const loadingToastId = notify.loading(t('admin_product.preparing_export', { format: format.toUpperCase() }));
             const response = await axios.get(import.meta.env.VITE_API_URL + `/api/products/export/${format}`, {
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
                 responseType: 'blob'
@@ -437,9 +439,9 @@ export default function AdminProducts() {
             link.click();
             link.parentNode.removeChild(link);
             
-            notify.update(loadingToastId, { render: `Products exported to ${format.toUpperCase()} successfully!`, type: 'success', isLoading: false, autoClose: 3000 });
+            notify.update(loadingToastId, { render: t('admin_product.exported_success', { format: format.toUpperCase() }), type: 'success', isLoading: false, autoClose: 3000 });
         } catch {
-            notify.error("Failed to export products. Make sure the server is running.");
+            notify.error(t('admin_product.failed_export'));
         }
     };
 
@@ -447,16 +449,16 @@ export default function AdminProducts() {
         e.preventDefault();
 
         if (!formData.name.trim()) {
-            notify.error("Product name is required");
-            return setErrors({ name: "Product name is required" });
+            notify.error(t('admin_product.name_required'));
+            return setErrors({ name: t('admin_product.name_required') });
         }
         if (!formData.category) {
-            notify.error("Category is required");
-            return setErrors({ category: "Category is required" });
+            notify.error(t('admin_product.category_required'));
+            return setErrors({ category: t('admin_product.category_required') });
         }
         if (imageManager.length === 0) {
-            notify.error("At least 1 image is required");
-            return setErrors({ images: "At least 1 image is required" });
+            notify.error(t('admin_product.min_image_required'));
+            return setErrors({ images: t('admin_product.min_image_required') });
         }
 
         const formPayload = new FormData();
@@ -482,19 +484,19 @@ export default function AdminProducts() {
 
         const token = localStorage.getItem('token');
         try {
-            const loadingToastId = notify.loading(currentView === 'create' ? 'Creating product...' : 'Saving changes...');
+            const loadingToastId = notify.loading(currentView === 'create' ? t('admin_product.creating') : t('admin_product.saving'));
 
             if (currentView === 'create') {
                 await axios.post(import.meta.env.VITE_API_URL + '/api/products', formPayload, { headers: { 'Authorization': `Bearer ${token}` } });
-                notify.update(loadingToastId, { render: 'Product created successfully!', type: 'success', isLoading: false, autoClose: 3000 });
+                notify.update(loadingToastId, { render: t('admin_product.created_success'), type: 'success', isLoading: false, autoClose: 3000 });
             } else {
                 await axios.put(`${import.meta.env.VITE_API_URL}/api/products/${selectedProduct.product_id}`, formPayload, { headers: { 'Authorization': `Bearer ${token}` } });
-                notify.update(loadingToastId, { render: 'Product updated successfully!', type: 'success', isLoading: false, autoClose: 3000 });
+                notify.update(loadingToastId, { render: t('admin_product.updated_success'), type: 'success', isLoading: false, autoClose: 3000 });
             }
             await fetchData();
             setCurrentView('list');
         } catch (error) {
-            const errorMessage = error.response?.data?.message || 'Failed to save product';
+            const errorMessage = error.response?.data?.message || t('admin_product.failed_save_product');
             notify.error(errorMessage);
         }
     };
@@ -530,20 +532,20 @@ export default function AdminProducts() {
     const handleDelete = async (id, e) => {
         e.stopPropagation();
         const confirmed = await confirm({
-            title: 'Delete Product',
-            description: 'Are you sure you want to delete this product? All associated image files will be permanently removed.',
-            confirmText: 'Delete',
-            cancelText: 'Cancel',
+            title: t('admin_product.delete_title'),
+            description: t('admin_product.delete_confirm'),
+            confirmText: t('admin_product.delete_btn'),
+            cancelText: t('admin_category.cancel_btn') || 'Cancel',
         });
 
         if (confirmed) {
             try {
-                const loadingToastId = notify.loading('Deleting product...');
+                const loadingToastId = notify.loading(t('admin_product.deleting'));
                 await axios.delete(`${import.meta.env.VITE_API_URL}/api/products/${id}`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
                 setProducts(products.filter(p => p.product_id !== id));
-                notify.update(loadingToastId, { render: 'Product deleted successfully!', type: 'success', isLoading: false, autoClose: 3000 });
+                notify.update(loadingToastId, { render: t('admin_product.deleted_success'), type: 'success', isLoading: false, autoClose: 3000 });
             } catch (error) {
-                const errorMessage = error.response?.data?.message || "Failed to delete product";
+                const errorMessage = error.response?.data?.message || t('admin_product.failed_delete');
                 notify.error(errorMessage);
             }
         }
@@ -560,28 +562,32 @@ export default function AdminProducts() {
                 <div className="flex items-center gap-4">
                     <button onClick={() => setCurrentView('list')} className="p-2 bg-zinc-900 border border-zinc-800 rounded-md text-zinc-400 hover:text-white transition-colors"><ArrowLeft size={18} /></button>
                     <div>
-                        <h2 className="text-2xl font-bold text-zinc-50 flex items-center gap-2"><Upload className="text-emerald-500" /> Bulk Product Import</h2>
-                        <p className="text-sm text-zinc-400 mt-1">Upload an Excel or CSV file, then add images for each product.</p>
+                        <h2 className="text-2xl font-bold text-zinc-50 flex items-center gap-2"><Upload className="text-emerald-500" /> {t('admin_product.bulk_import_title')}</h2>
+                        <p className="text-sm text-zinc-400 mt-1">{t('admin_product.bulk_import_desc')}</p>
                     </div>
                 </div>
 
                 {resolvingCollection && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
                         <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 max-w-md w-full animate-in zoom-in-95 duration-200">
-                            <h3 className="text-xl font-bold text-white mb-2">New Collection Found</h3>
-                            <p className="text-sm text-zinc-400 mb-6">Collection <strong>"{resolvingCollection}"</strong> does not exist in the database. Please fill in the details to create a new collection.</p>
+                            <h3 className="text-xl font-bold text-white mb-2">{t('admin_product.new_col_found')}</h3>
+                            <p className="text-sm text-zinc-400 mb-6">
+                                {t('admin_product.new_col_desc', { name: resolvingCollection }).split(`"${resolvingCollection}"`).map((part, i, arr) => 
+                                    <React.Fragment key={i}>{part}{i < arr.length - 1 && <strong>"{resolvingCollection}"</strong>}</React.Fragment>
+                                )}
+                            </p>
                             
                             <form onSubmit={handleResolveCollection} className="space-y-4">
                                 <div className="space-y-1">
-                                    <label className="text-sm text-zinc-300">Collection Description</label>
+                                    <label className="text-sm text-zinc-300">{t('admin_product.col_desc_label')}</label>
                                     <textarea required rows={3} value={collectionFormData.description} onChange={e => setCollectionFormData(prev => ({...prev, description: e.target.value}))} className="w-full bg-zinc-950 border border-zinc-800 rounded py-2 px-3 text-zinc-100" />
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-sm text-zinc-300">Year</label>
+                                    <label className="text-sm text-zinc-300">{t('admin_product.year_label')}</label>
                                     <input type="number" required value={collectionFormData.year} onChange={e => setCollectionFormData(prev => ({...prev, year: e.target.value}))} className="w-full bg-zinc-950 border border-zinc-800 rounded py-2 px-3 text-zinc-100" />
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-sm text-zinc-300">Cover Image</label>
+                                    <label className="text-sm text-zinc-300">{t('admin_product.cover_image_label')}</label>
                                     <label 
                                         className="flex items-center justify-center w-full min-h-[100px] border-2 border-dashed border-zinc-700 hover:border-emerald-500 rounded-md bg-zinc-950/50 cursor-pointer text-zinc-400 hover:text-zinc-300 transition-colors"
                                         onDragOver={e => e.preventDefault()}
@@ -596,15 +602,15 @@ export default function AdminProducts() {
                                             {collectionFormData.cover_image ? (
                                                 <span className="text-emerald-500 font-medium break-all">{collectionFormData.cover_image.name}</span>
                                             ) : (
-                                                <span className="text-sm">Click or Drag & Drop image here</span>
+                                                <span className="text-sm">{t('admin_product.click_drag_drop')}</span>
                                             )}
                                         </div>
                                         <input type="file" required={!collectionFormData.cover_image} accept="image/*" onChange={e => setCollectionFormData(prev => ({...prev, cover_image: e.target.files[0]}))} className="hidden" />
                                     </label>
                                 </div>
                                 <div className="flex gap-3 justify-end mt-6">
-                                    <button type="button" onClick={handleSkipCollection} className="px-4 py-2 border border-zinc-700 text-zinc-300 rounded hover:bg-zinc-800">Skip & Empty</button>
-                                    <button type="submit" className="px-4 py-2 bg-emerald-500 text-white rounded hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-zinc-900 transition-colors">Create Collection</button>
+                                    <button type="button" onClick={handleSkipCollection} className="px-4 py-2 border border-zinc-700 text-zinc-300 rounded hover:bg-zinc-800">{t('admin_product.skip_empty_btn')}</button>
+                                    <button type="submit" className="px-4 py-2 bg-emerald-500 text-white rounded hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-zinc-900 transition-colors">{t('admin_product.create_col_btn')}</button>
                                 </div>
                             </form>
                         </div>
@@ -615,12 +621,16 @@ export default function AdminProducts() {
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
                         <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 max-w-sm w-full animate-in zoom-in-95 duration-200 text-center">
                             <div className="mx-auto w-12 h-12 bg-emerald-500/20 text-emerald-500 rounded-full flex items-center justify-center mb-4"><Plus size={24} /></div>
-                            <h3 className="text-xl font-bold text-white mb-2">New Category</h3>
-                            <p className="text-sm text-zinc-400 mb-6">Category <strong>"{resolvingCategory}"</strong> does not exist in the database. Would you like to add it now?</p>
+                            <h3 className="text-xl font-bold text-white mb-2">{t('admin_product.new_cat_title')}</h3>
+                            <p className="text-sm text-zinc-400 mb-6">
+                                {t('admin_product.new_cat_desc', { name: resolvingCategory }).split(`"${resolvingCategory}"`).map((part, i, arr) => 
+                                    <React.Fragment key={i}>{part}{i < arr.length - 1 && <strong>"{resolvingCategory}"</strong>}</React.Fragment>
+                                )}
+                            </p>
                             
                             <div className="flex gap-3 justify-center">
-                                <button type="button" onClick={() => handleResolveCategory(false)} className="px-4 py-2 border border-zinc-700 text-zinc-300 rounded hover:bg-zinc-800">No</button>
-                                <button type="button" onClick={() => handleResolveCategory(true)} className="px-4 py-2 bg-emerald-500 text-white rounded hover:bg-emerald-600 transition-colors">Yes, Add It</button>
+                                <button type="button" onClick={() => handleResolveCategory(false)} className="px-4 py-2 border border-zinc-700 text-zinc-300 rounded hover:bg-zinc-800">{t('admin_product.no_btn')}</button>
+                                <button type="button" onClick={() => handleResolveCategory(true)} className="px-4 py-2 bg-emerald-500 text-white rounded hover:bg-emerald-600 transition-colors">{t('admin_product.yes_add_btn')}</button>
                             </div>
                         </div>
                     </div>
@@ -629,15 +639,15 @@ export default function AdminProducts() {
                 {importData.length === 0 ? (
                     <div className="bg-zinc-900 border border-zinc-800 border-dashed rounded-lg p-12 text-center flex flex-col items-center">
                         <Upload size={48} className="text-zinc-600 mb-4" />
-                        <h3 className="text-lg font-medium text-white mb-2">Upload Product Data</h3>
-                        <p className="text-sm text-zinc-400 mb-6 max-w-md">Recommended format: .xlsx. Required columns: Name, Category. Optional: Collection, Description, Sizes, Status, Shopee, TikTok.</p>
+                        <h3 className="text-lg font-medium text-white mb-2">{t('admin_product.upload_data_title')}</h3>
+                        <p className="text-sm text-zinc-400 mb-6 max-w-md">{t('admin_product.upload_data_desc')}</p>
                         
                         <div className="flex gap-4">
                             <button onClick={downloadImportTemplate} className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-md text-sm font-medium flex items-center gap-2 transition-colors">
-                                <FileDown size={16} /> Download Template
+                                <FileDown size={16} /> {t('admin_product.download_template_btn')}
                             </button>
                             <label className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-md text-sm font-medium flex items-center gap-2 transition-colors cursor-pointer">
-                                <Upload size={16} /> Select File
+                                <Upload size={16} /> {t('admin_product.select_file_btn')}
                                 <input type="file" accept=".xlsx, .xls, .csv" onChange={handleImportFileChange} className="hidden" />
                             </label>
                         </div>
@@ -647,8 +657,8 @@ export default function AdminProducts() {
                         <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 p-4 rounded-md flex items-start gap-3">
                             <CheckCircle size={20} className="shrink-0 mt-0.5" />
                             <div>
-                                <h4 className="font-medium">Data Loaded Successfully</h4>
-                                <p className="text-sm text-emerald-400/80 mt-1">Found {importData.length} valid product rows. Please upload images for each product before saving to the database.</p>
+                                <h4 className="font-medium">{t('admin_product.data_loaded')}</h4>
+                                <p className="text-sm text-emerald-400/80 mt-1">{t('admin_product.data_loaded_desc', { count: importData.length })}</p>
                             </div>
                         </div>
 
@@ -673,19 +683,19 @@ export default function AdminProducts() {
                                         </div>
                                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                                             <div className="bg-zinc-950 p-2.5 rounded border border-zinc-800/50">
-                                                <span className="text-xs text-zinc-500 block mb-1">Category</span>
-                                                <p className="text-sm text-zinc-200 font-medium">{item.category || <span className="text-red-500 italic">Not set</span>}</p>
+                                                <span className="text-xs text-zinc-500 block mb-1">{t('admin_product.category_label')}</span>
+                                                <p className="text-sm text-zinc-200 font-medium">{item.category || <span className="text-red-500 italic">{t('admin_product.not_set')}</span>}</p>
                                             </div>
                                             <div className="bg-zinc-950 p-2.5 rounded border border-zinc-800/50">
-                                                <span className="text-xs text-zinc-500 block mb-1">Collection</span>
+                                                <span className="text-xs text-zinc-500 block mb-1">{t('admin_product.collection_label')}</span>
                                                 <p className="text-sm text-zinc-200">{item.collection_name || '-'}</p>
                                             </div>
                                             <div className="bg-zinc-950 p-2.5 rounded border border-zinc-800/50">
-                                                <span className="text-xs text-zinc-500 block mb-1">Status & Size</span>
+                                                <span className="text-xs text-zinc-500 block mb-1">{t('admin_product.status_size_label')}</span>
                                                 <p className="text-sm text-zinc-200">{item.status} &bull; {item.sizes.length > 0 ? item.sizes.join(', ') : '-'}</p>
                                             </div>
                                             <div className="bg-zinc-950 p-2.5 rounded border border-zinc-800/50">
-                                                <span className="text-xs text-zinc-500 block mb-1">Links</span>
+                                                <span className="text-xs text-zinc-500 block mb-1">{t('admin_product.links_label')}</span>
                                                 <div className="flex gap-3 mt-1">
                                                     {item.shopee_link ? <a href={item.shopee_link} target="_blank" rel="noreferrer" className="text-orange-500 hover:underline text-xs flex items-center gap-1"><ExternalLink size={10}/> Shopee</a> : <span className="text-xs text-zinc-600">-</span>}
                                                     {item.tiktok_link ? <a href={item.tiktok_link} target="_blank" rel="noreferrer" className="text-emerald-500 hover:underline text-xs flex items-center gap-1"><ExternalLink size={10}/> TikTok</a> : <span className="text-xs text-zinc-600">-</span>}
@@ -698,7 +708,7 @@ export default function AdminProducts() {
                                     </div>
 
                                     <div className="lg:w-80 border-t lg:border-t-0 lg:border-l border-zinc-800 pt-4 lg:pt-0 lg:pl-6 shrink-0 flex flex-col justify-center">
-                                        <label className="text-xs font-medium text-zinc-400 mb-2 block">Upload Product Image ({item.imageManager.length}/5) <span className="text-rose-500">*</span></label>
+                                        <label className="text-xs font-medium text-zinc-400 mb-2 block">{t('admin_product.upload_image_label')} ({item.imageManager.length}/5) <span className="text-rose-500">*</span></label>
                                         <div className="flex flex-wrap gap-2">
                                             {item.imageManager.map((img) => (
                                                 <div key={img.id} className={`relative w-16 h-16 rounded-md overflow-hidden border-2 flex-shrink-0 ${img.isPrimary ? 'border-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]' : 'border-zinc-800'}`}>
@@ -706,7 +716,7 @@ export default function AdminProducts() {
                                                     <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity flex flex-col justify-between p-1 text-[10px]">
                                                         <button type="button" onClick={() => removeImportImage(item.local_id, img.id)} className="self-end bg-red-500 text-white rounded p-0.5"><X size={12} /></button>
                                                         {!img.isPrimary && (
-                                                            <button type="button" onClick={() => setImportImagePrimary(item.local_id, img.id)} className="bg-zinc-800 text-white rounded mt-auto flex items-center justify-center p-0.5" title="Jadikan Cover"><Star size={10} /></button>
+                                                            <button type="button" onClick={() => setImportImagePrimary(item.local_id, img.id)} className="bg-zinc-800 text-white rounded mt-auto flex items-center justify-center p-0.5" title={t('admin_product.set_cover_title')}><Star size={10} /></button>
                                                         )}
                                                     </div>
                                                 </div>
@@ -723,20 +733,20 @@ export default function AdminProducts() {
                                                 </label>
                                             )}
                                         </div>
-                                        {item.imageManager.length === 0 && <p className="text-xs text-rose-500 mt-2 font-medium">Please add at least 1 image.</p>}
+                                        {item.imageManager.length === 0 && <p className="text-xs text-rose-500 mt-2 font-medium">{t('admin_product.please_add_image')}</p>}
                                     </div>
                                 </div>
                             ))}
                         </div>
 
                         <div className="flex justify-end gap-4 p-4 bg-zinc-900 border border-zinc-800 rounded-lg sticky bottom-6 shadow-2xl z-40">
-                            <button onClick={() => setCurrentView('list')} className="px-6 py-2 border border-zinc-700 text-zinc-300 rounded hover:bg-zinc-800 font-medium">Cancel</button>
+                            <button onClick={() => setCurrentView('list')} className="px-6 py-2 border border-zinc-700 text-zinc-300 rounded hover:bg-zinc-800 font-medium">{t('admin_category.cancel_btn') || 'Cancel'}</button>
                             <button 
                                 onClick={handleImportSubmit} 
                                 className="px-8 py-2 bg-emerald-500 text-white rounded hover:bg-emerald-600 font-bold shadow-lg shadow-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
                                 disabled={resolvingCollection || resolvingCategory}
                             >
-                                Submit All Data
+                                {t('admin_product.submit_all_btn')}
                             </button>
                         </div>
                     </div>
@@ -750,13 +760,13 @@ export default function AdminProducts() {
             <div className="space-y-6 animate-in fade-in duration-500">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
-                        <h2 className="text-2xl font-bold text-zinc-50 flex items-center gap-2"><ShoppingBag className="text-rose-500" /> Product Management</h2>
-                        <p className="text-sm text-zinc-400 mt-1">Manage product catalog, categories, and stock.</p>
+                        <h2 className="text-2xl font-bold text-zinc-50 flex items-center gap-2"><ShoppingBag className="text-rose-500" /> {t('admin_product.page_title')}</h2>
+                        <p className="text-sm text-zinc-400 mt-1">{t('admin_product.page_desc')}</p>
                     </div>
                     <div className="flex items-center gap-3 w-full sm:w-auto">
                         <div className="relative flex-1 sm:w-64">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
-                            <input type="text" placeholder="Search products..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+                            <input type="text" placeholder={t('admin_product.search_placeholder')} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
                                 className="w-full bg-zinc-900 border border-zinc-800 rounded-md py-2 pl-9 pr-4 text-sm text-zinc-100 focus:border-rose-500 transition-colors" />
                         </div>
                         <div className="flex items-center gap-2">
@@ -771,10 +781,10 @@ export default function AdminProducts() {
                             </button>
                         </div>
                         <button onClick={openImportView} className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/20 px-3 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors shrink-0">
-                            <Upload size={16} /><span className="hidden sm:inline">Import</span>
+                            <Upload size={16} /><span className="hidden sm:inline">{t('admin_product.import_btn')}</span>
                         </button>
                         <button onClick={openCreateForm} className="bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors shrink-0">
-                            <Plus size={16} /><span className="hidden sm:inline">Add New</span>
+                            <Plus size={16} /><span className="hidden sm:inline">{t('admin_product.add_new_btn')}</span>
                         </button>
                     </div>
                 </div>
@@ -784,8 +794,8 @@ export default function AdminProducts() {
                 ) : filteredProducts.length === 0 ? (
                     <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-12 text-center">
                         <ShoppingBag size={48} className="text-zinc-700 mx-auto mb-4" />
-                        <h3 className="text-lg font-medium text-zinc-300">No products found</h3>
-                        <p className="text-zinc-500 mt-1">Try a different search term or add a new product.</p>
+                        <h3 className="text-lg font-medium text-zinc-300">{t('admin_product.no_products')}</h3>
+                        <p className="text-zinc-500 mt-1">{t('admin_product.no_products_desc')}</p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -821,7 +831,7 @@ export default function AdminProducts() {
                                         )}
 
                                         <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button onClick={(e) => handleDelete(product.product_id, e)} className="p-1.5 bg-red-500/90 text-white rounded hover:bg-red-600" title="Delete"><Trash2 size={14} /></button>
+                                            <button onClick={(e) => handleDelete(product.product_id, e)} className="p-1.5 bg-red-500/90 text-white rounded hover:bg-red-600" title={t('admin_product.delete_btn')}><Trash2 size={14} /></button>
                                         </div>
                                         <div className="absolute top-2 left-2">
                                             <span className={`px-2 py-1 text-[10px] font-bold uppercase tracking-wider rounded ${product.status === 'Available' ? 'bg-zinc-100 text-zinc-900' : 'bg-red-500 text-white'}`}>{product.status}</span>
@@ -845,22 +855,22 @@ export default function AdminProducts() {
             <div className="flex items-center gap-4">
                 <button onClick={() => setCurrentView('list')} className="p-2 bg-zinc-900 border border-zinc-800 rounded-md text-zinc-400 hover:text-white transition-colors"><ArrowLeft size={18} /></button>
                 <div>
-                    <h2 className="text-2xl font-bold text-zinc-50 flex items-center gap-2"><ShoppingBag className="text-rose-500" /> {currentView === 'create' ? 'Add New Product' : 'Edit Product Data'}</h2>
-                    <p className="text-sm text-zinc-400 mt-1">Set photos, make covers, and complete the details.</p>
+                    <h2 className="text-2xl font-bold text-zinc-50 flex items-center gap-2"><ShoppingBag className="text-rose-500" /> {currentView === 'create' ? t('admin_product.add_new_title') : t('admin_product.edit_title')}</h2>
+                    <p className="text-sm text-zinc-400 mt-1">{t('admin_product.form_desc')}</p>
                 </div>
             </div>
 
             <form onSubmit={handleSave} className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-zinc-300">Product Name <span className="text-rose-500">*</span></label>
+                        <label className="text-sm font-medium text-zinc-300">{t('admin_product.name_label')} <span className="text-rose-500">*</span></label>
                         <input type="text" name="name" value={formData.name} onChange={handleInputChange} className="w-full bg-zinc-950 border border-zinc-800 rounded-md py-2 px-4 text-zinc-100 focus:border-rose-500" />
                         {errors.name && <p className="text-xs text-red-500">{errors.name}</p>}
                     </div>
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-zinc-300">Collection</label>
+                        <label className="text-sm font-medium text-zinc-300">{t('admin_product.collection_label')}</label>
                         <select name="collection_id" value={formData.collection_id} onChange={handleInputChange} className="w-full bg-zinc-950 border border-zinc-800 rounded-md py-2 px-4 text-zinc-100">
-                            <option value="">-- No Collection --</option>
+                            <option value="">{t('admin_product.no_collection_option')}</option>
                             {collections.map(c => <option key={c.collection_id} value={c.collection_id}>{c.name}</option>)}
                         </select>
                     </div>
@@ -868,14 +878,14 @@ export default function AdminProducts() {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-zinc-300">Category <span className="text-rose-500">*</span></label>
+                        <label className="text-sm font-medium text-zinc-300">{t('admin_product.category_label')} <span className="text-rose-500">*</span></label>
                         <select
                             name="category"
                             value={formData.category}
                             onChange={handleInputChange}
                             className={`w-full bg-zinc-950 border rounded-md py-2 px-4 text-zinc-100 ${errors.category ? 'border-red-500' : 'border-zinc-800'}`}
                         >
-                            <option value="">-- Select Category --</option>
+                            <option value="">{t('admin_product.select_category_option')}</option>
                             {categories.length > 0 ? (
                                 categories.map((cat, index) => {
                                     const catName = cat.name || cat.nama || cat.category_name || cat.category || (typeof cat === 'string' ? cat : 'Unknown');
@@ -888,14 +898,14 @@ export default function AdminProducts() {
                                     );
                                 })
                             ) : (
-                                <option value="" disabled>No Category</option>
+                                <option value="" disabled>{t('admin_product.no_category')}</option>
                             )}
                         </select>
                         {errors.category && <p className="text-xs text-red-500">{errors.category}</p>}
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-zinc-300">Size (Can choose more than 1)</label>
+                        <label className="text-sm font-medium text-zinc-300">{t('admin_product.size_label')}</label>
                         <div className="flex flex-wrap gap-2 pt-1">
                             {['S', 'M', 'L', 'XL', 'XXL'].map(size => {
                                 const isSelected = Array.isArray(formData.sizes) && formData.sizes.includes(size);
@@ -917,7 +927,7 @@ export default function AdminProducts() {
                     </div>
 
                     <div className="space-y-3">
-                        <label className="text-sm font-medium text-zinc-300">Product Status</label>
+                        <label className="text-sm font-medium text-zinc-300">{t('admin_product.status_label')}</label>
                         <div className="flex items-center gap-3">
                             <button
                                 type="button"
@@ -934,21 +944,21 @@ export default function AdminProducts() {
                 </div>
 
                 <div className="space-y-2 pt-4">
-                    <label className="text-sm font-medium text-zinc-300">Detail Description</label>
+                    <label className="text-sm font-medium text-zinc-300">{t('admin_product.desc_label')}</label>
                     <textarea
                         name="description"
                         value={formData.description}
                         onChange={handleInputChange}
                         rows={4}
                         className="w-full bg-zinc-950 border border-zinc-800 rounded-md py-2 px-4 text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-rose-500 transition-colors resize-none"
-                        placeholder="Write detailed description of materials, cutting, size guide, etc..."
+                        placeholder={t('admin_product.desc_placeholder')}
                     />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-zinc-300 flex items-center gap-2">
-                            <ExternalLink size={14} className="text-orange-500" /> Link Shopee
+                            <ExternalLink size={14} className="text-orange-500" /> {t('admin_product.shopee_link')}
                         </label>
                         <input
                             type="text"
@@ -961,7 +971,7 @@ export default function AdminProducts() {
                     </div>
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-zinc-300 flex items-center gap-2">
-                            <ExternalLink size={14} className="text-emerald-500" /> Link Tik Tok Shop
+                            <ExternalLink size={14} className="text-emerald-500" /> {t('admin_product.tiktok_link')}
                         </label>
                         <input
                             type="text"
@@ -976,8 +986,8 @@ export default function AdminProducts() {
 
                 <div className="space-y-4 pt-4 border-t border-zinc-800">
                     <div>
-                        <label className="text-sm font-medium text-zinc-300">Gallery Photos ({imageManager.length}/5) <span className="text-rose-500">*</span></label>
-                        <p className="text-xs text-zinc-500 mb-4">Add photos, click the star button to make it the cover photo.</p>
+                        <label className="text-sm font-medium text-zinc-300">{t('admin_product.gallery_photos')} ({imageManager.length}/5) <span className="text-rose-500">*</span></label>
+                        <p className="text-xs text-zinc-500 mb-4">{t('admin_product.gallery_desc')}</p>
 
                         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
                             {imageManager.map((img) => (
@@ -990,14 +1000,14 @@ export default function AdminProducts() {
                                         </button>
                                         {!img.isPrimary && (
                                             <button type="button" onClick={() => setAsPrimary(img.id)} className="w-full bg-zinc-900/80 text-white text-[10px] py-1 rounded hover:bg-rose-500 transition-colors flex items-center justify-center gap-1">
-                                                <Star size={10} /> Set Cover
+                                                <Star size={10} /> {t('admin_product.set_cover_btn')}
                                             </button>
                                         )}
                                     </div>
 
                                     {img.isPrimary && (
                                         <div className="absolute top-1 left-1 bg-rose-500 text-white text-[9px] px-1.5 py-0.5 rounded font-bold uppercase flex items-center gap-1">
-                                            <Star size={8} fill="currentColor" /> Cover
+                                            <Star size={8} fill="currentColor" /> {t('admin_product.cover_badge')}
                                         </div>
                                     )}
                                 </div>
@@ -1010,7 +1020,7 @@ export default function AdminProducts() {
                                     onDrop={e => { e.preventDefault(); handleFileSelect({ target: { files: e.dataTransfer.files } }); }}
                                 >
                                     <Plus size={24} className="mb-2" />
-                                    <span className="text-xs font-medium text-center px-1">Drag & Drop or Click</span>
+                                    <span className="text-xs font-medium text-center px-1">{t('admin_product.drag_drop')}</span>
                                     <input type="file" multiple accept="image/*" onChange={handleFileSelect} className="hidden" />
                                 </label>
                             )}
@@ -1020,8 +1030,8 @@ export default function AdminProducts() {
                 </div>
 
                 <div className="pt-4 flex items-center justify-end gap-3 border-t border-zinc-800">
-                    <button type="button" onClick={() => setCurrentView('list')} className="px-4 py-2 bg-zinc-800 text-zinc-300 font-medium rounded-md hover:bg-zinc-700">Cancel</button>
-                    <button type="submit" className="px-4 py-2 bg-rose-500 text-white font-medium rounded-md hover:bg-rose-600">Save Product</button>
+                    <button type="button" onClick={() => setCurrentView('list')} className="px-4 py-2 bg-zinc-800 text-zinc-300 font-medium rounded-md hover:bg-zinc-700">{t('admin_category.cancel_btn')}</button>
+                    <button type="submit" className="px-4 py-2 bg-rose-500 text-white font-medium rounded-md hover:bg-rose-600">{t('admin_product.save_btn')}</button>
                 </div>
             </form>
         </div>

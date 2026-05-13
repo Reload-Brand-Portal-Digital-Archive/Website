@@ -3,12 +3,14 @@ import { Award, Plus, Trash2, Loader2, Image as ImageIcon, Edit2, X, ArrowLeft, 
 import axios from 'axios';
 import { notify } from '../lib/toast';
 import { useConfirm } from '../lib/confirm-dialog';
+import { useTranslation } from 'react-i18next';
 
 const RATIO_OPTIONS = ['4:3', '9:16'];
-const RATIO_LABELS = { '4:3': 'Landscape 4:3', '9:16': 'Portrait 9:16' };
 const DEFAULT_FORM = { name: '', image: null, is_active: true, ratio_type: '4:3', caption: '' };
 
 export default function AdminEndorsements() {
+    const { t } = useTranslation();
+    const RATIO_LABELS = { '4:3': 'Landscape 4:3', '9:16': 'Portrait 9:16' };
     const [currentView, setCurrentView] = useState('list');
     const [endorsements, setEndorsements] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -22,7 +24,7 @@ export default function AdminEndorsements() {
         try {
             const res = await axios.get(import.meta.env.VITE_API_URL + '/api/endorsements');
             setEndorsements(res.data);
-        } catch { notify.error("Failed to load endorsement data"); }
+        } catch { notify.error(t('admin_endorsement.failed_load')); }
         finally { setLoading(false); }
     };
 
@@ -58,8 +60,8 @@ export default function AdminEndorsements() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!formData.name) return notify.error("Endorser name is required!");
-        if (selectedEndorsement === null && !formData.image) return notify.error("An image is required!");
+        if (!formData.name) return notify.error(t('admin_endorsement.name_required'));
+        if (selectedEndorsement === null && !formData.image) return notify.error(t('admin_endorsement.image_required'));
 
         const payload = new FormData();
         payload.append('name', formData.name);
@@ -70,7 +72,7 @@ export default function AdminEndorsements() {
 
         try {
             const token = localStorage.getItem('token');
-            const loadingToastId = notify.loading(selectedEndorsement === null ? 'Adding endorsement...' : 'Saving changes...');
+            const loadingToastId = notify.loading(selectedEndorsement === null ? t('admin_endorsement.adding') : t('admin_endorsement.saving_changes'));
             let res;
             if (selectedEndorsement === null) {
                 res = await axios.post(import.meta.env.VITE_API_URL + '/api/endorsements', payload, {
@@ -82,36 +84,36 @@ export default function AdminEndorsements() {
                 });
             }
             notify.update(loadingToastId, {
-                render: res.data.message || (selectedEndorsement ? "Endorsement updated successfully!" : "Endorsement added successfully!"),
+                render: res.data.message || (selectedEndorsement ? t('admin_endorsement.updated_success') : t('admin_endorsement.added_success')),
                 type: 'success', isLoading: false, autoClose: 3000
             });
             setEndorsements(res.data.data);
             handleCancelEdit();
         } catch (error) {
-            notify.error(error.response?.data?.message || (selectedEndorsement ? "Failed to update endorsement" : "Failed to add endorsement"));
+            notify.error(error.response?.data?.message || (selectedEndorsement ? t('admin_endorsement.failed_update') : t('admin_endorsement.failed_add')));
         }
     };
 
     const handleDelete = async (id, name) => {
         const confirmed = await confirm({
-            title: 'Delete Endorsement',
-            description: `Are you sure you want to delete the endorsement "${name}"? This action cannot be undone!`,
-            confirmText: 'Delete',
-            cancelText: 'Cancel',
+            title: t('admin_endorsement.delete_title'),
+            description: t('admin_endorsement.delete_confirm', { name }),
+            confirmText: t('admin_endorsement.delete_btn'),
+            cancelText: t('admin_endorsement.cancel_btn'),
         });
 
         if (confirmed) {
             try {
                 const token = localStorage.getItem('token');
-                const loadingToastId = notify.loading('Deleting endorsement...');
+                const loadingToastId = notify.loading(t('admin_endorsement.deleting'));
                 const res = await axios.delete(`${import.meta.env.VITE_API_URL}/api/endorsements/${id}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setEndorsements(res.data.data);
                 if (selectedEndorsement?.id === id) handleCancelEdit();
-                notify.update(loadingToastId, { render: res.data.message || 'Endorsement deleted successfully!', type: 'success', isLoading: false, autoClose: 3000 });
+                notify.update(loadingToastId, { render: res.data.message || t('admin_endorsement.deleted_success'), type: 'success', isLoading: false, autoClose: 3000 });
             } catch (error) {
-                notify.error(error.response?.data?.message || "Failed to delete endorsement");
+                notify.error(error.response?.data?.message || t('admin_endorsement.failed_delete'));
             }
         }
     };
@@ -130,9 +132,9 @@ export default function AdminEndorsements() {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setEndorsements(res.data.data);
-            notify.success(`Endorsement ${newActiveState ? 'activated' : 'deactivated'}`);
+            notify.success(newActiveState ? t('admin_endorsement.status_activated') : t('admin_endorsement.status_deactivated'));
         } catch {
-            notify.error("Failed to update endorsement status");
+            notify.error(t('admin_endorsement.failed_update_status'));
         }
     };
 
@@ -143,15 +145,15 @@ export default function AdminEndorsements() {
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         <div>
                             <h2 className="text-2xl font-bold text-zinc-50 flex items-center gap-2">
-                                <Award className="text-rose-500" /> Endorsements
+                                <Award className="text-rose-500" /> {t('admin_endorsement.page_title')}
                             </h2>
-                            <p className="text-sm text-zinc-400 mt-1">Manage brand ambassadors & artists displayed on the landing page.</p>
+                            <p className="text-sm text-zinc-400 mt-1">{t('admin_endorsement.page_desc')}</p>
                         </div>
                         <button
                             onClick={() => { setCurrentView('form'); setSelectedEndorsement(null); setFormData(DEFAULT_FORM); setPreview(null); }}
                             className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-md font-medium flex items-center gap-2 transition-colors"
                         >
-                            <Plus size={18} /> Add Endorsement
+                            <Plus size={18} /> {t('admin_endorsement.add_endorsement')}
                         </button>
                     </div>
 
@@ -164,8 +166,8 @@ export default function AdminEndorsements() {
                             {endorsements.length === 0 ? (
                                 <div className="col-span-full bg-zinc-900 border border-zinc-800 rounded-lg p-12 text-center">
                                     <Award size={48} className="text-zinc-700 mx-auto mb-4" />
-                                    <h3 className="text-lg font-medium text-zinc-300">No endorsements yet</h3>
-                                    <p className="text-zinc-500 mt-1">Add your first endorsement to display on the Landing Page.</p>
+                                    <h3 className="text-lg font-medium text-zinc-300">{t('admin_endorsement.no_endorsements')}</h3>
+                                    <p className="text-zinc-500 mt-1">{t('admin_endorsement.no_endorsements_desc')}</p>
                                 </div>
                             ) : (
                                 endorsements.map((item) => {
@@ -188,7 +190,7 @@ export default function AdminEndorsements() {
                                                     <button onClick={() => handleDelete(item.id, item.name)} className="bg-red-500/90 text-white p-2 rounded-md hover:bg-red-600 transition-colors" title="Delete"><Trash2 size={14} /></button>
                                                 </div>
                                                 {!isActive && (
-                                                    <span className="absolute top-2 left-2 bg-zinc-800/90 text-zinc-400 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">Inactive</span>
+                                                    <span className="absolute top-2 left-2 bg-zinc-800/90 text-zinc-400 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">{t('admin_endorsement.inactive_badge')}</span>
                                                 )}
                                                 <span className="absolute bottom-2 left-2 bg-zinc-950/80 text-zinc-400 text-[10px] font-mono px-2 py-0.5 rounded uppercase tracking-widest">{ratioLabel}</span>
                                             </div>
@@ -226,9 +228,9 @@ export default function AdminEndorsements() {
                         <button onClick={handleCancelEdit} className="p-2 bg-zinc-900 border border-zinc-800 rounded-md text-zinc-400 hover:text-white transition-colors"><ArrowLeft size={18} /></button>
                         <div>
                             <h2 className="text-2xl font-bold text-zinc-50 flex items-center gap-2">
-                                <Award className="text-rose-500" /> {selectedEndorsement ? 'Edit Endorsement' : 'Add New Endorsement'}
+                                <Award className="text-rose-500" /> {selectedEndorsement ? t('admin_endorsement.edit_title') : t('admin_endorsement.add_new_title')}
                             </h2>
-                            <p className="text-sm text-zinc-400 mt-1">Brand ambassador or artist wearing Reload products.</p>
+                            <p className="text-sm text-zinc-400 mt-1">{t('admin_endorsement.form_desc')}</p>
                         </div>
                     </div>
 
@@ -237,19 +239,19 @@ export default function AdminEndorsements() {
                         <div className="col-span-2 space-y-5">
                             {/* Name */}
                             <div>
-                                <label className="text-sm text-zinc-400 mb-1 block">Endorser Name <span className="text-rose-500">*</span></label>
+                                <label className="text-sm text-zinc-400 mb-1 block">{t('admin_endorsement.endorser_name')} <span className="text-rose-500">*</span></label>
                                 <input
                                     type="text"
                                     value={formData.name}
                                     onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                                    placeholder="e.g. @artistname or Full Name"
+                                    placeholder={t('admin_endorsement.name_placeholder')}
                                     className="w-full bg-zinc-950 border border-zinc-800 rounded-md py-2 px-4 text-zinc-100 focus:outline-none focus:border-rose-500 transition-colors"
                                 />
                             </div>
 
                             {/* Ratio Type */}
                             <div>
-                                <label className="text-sm text-zinc-400 mb-2 block">Image Ratio <span className="text-rose-500">*</span></label>
+                                <label className="text-sm text-zinc-400 mb-2 block">{t('admin_endorsement.image_ratio')} <span className="text-rose-500">*</span></label>
                                 <div className="flex gap-2">
                                     {RATIO_OPTIONS.map(ratio => (
                                         <button
@@ -269,19 +271,19 @@ export default function AdminEndorsements() {
                                     ))}
                                 </div>
                                 <p className="text-[11px] text-zinc-600 mt-1.5">
-                                    Choose the ratio that matches your uploaded image to prevent distortion.
+                                    {t('admin_endorsement.ratio_desc')}
                                 </p>
                             </div>
 
                             {/* Caption */}
                             <div>
                                 <label className="text-sm text-zinc-400 mb-1 flex items-center gap-1.5">
-                                    <AlignLeft size={13} /> Caption <span className="text-zinc-600 font-normal">(optional)</span>
+                                    <AlignLeft size={13} /> {t('admin_endorsement.caption')} <span className="text-zinc-600 font-normal">{t('admin_endorsement.optional')}</span>
                                 </label>
                                 <textarea
                                     value={formData.caption}
                                     onChange={e => setFormData(prev => ({ ...prev, caption: e.target.value }))}
-                                    placeholder="Short description of the endorsement moment..."
+                                    placeholder={t('admin_endorsement.caption_placeholder')}
                                     rows={3}
                                     className="w-full bg-zinc-950 border border-zinc-800 rounded-md py-2 px-4 text-zinc-100 focus:outline-none focus:border-rose-500 transition-colors resize-none text-sm leading-relaxed"
                                 />
@@ -289,7 +291,7 @@ export default function AdminEndorsements() {
 
                             {/* Active Status */}
                             <div className="flex items-center gap-3 py-1">
-                                <label className="text-sm text-zinc-400">Active Status</label>
+                                <label className="text-sm text-zinc-400">{t('admin_endorsement.active_status')}</label>
                                 <button
                                     type="button"
                                     onClick={() => setFormData(prev => ({ ...prev, is_active: !prev.is_active }))}
@@ -298,7 +300,7 @@ export default function AdminEndorsements() {
                                     {formData.is_active ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
                                 </button>
                                 <span className={`text-xs font-mono uppercase tracking-wider ${formData.is_active ? 'text-emerald-400' : 'text-zinc-500'}`}>
-                                    {formData.is_active ? 'Active' : 'Inactive'}
+                                    {formData.is_active ? t('admin_endorsement.active') : t('admin_endorsement.inactive')}
                                 </span>
                             </div>
                         </div>
@@ -306,8 +308,8 @@ export default function AdminEndorsements() {
                         {/* Right: Image Upload + Actions */}
                         <div className="flex flex-col gap-4">
                             <label className="text-sm text-zinc-400 mb-1 block">
-                                Upload Photo <span className="text-rose-500">*</span>
-                                <span className="text-zinc-600 font-normal ml-1">JPG, PNG, WEBP · max 5MB</span>
+                                {t('admin_endorsement.upload_photo')} <span className="text-rose-500">*</span>
+                                <span className="text-zinc-600 font-normal ml-1">{t('admin_endorsement.photo_req')}</span>
                             </label>
 
                             {/* Preview box — aspect ratio mirrors the selected ratio_type */}
@@ -327,21 +329,21 @@ export default function AdminEndorsements() {
                                     : <>
                                         <ImageIcon size={32} className="text-zinc-600 mb-2" />
                                         <span className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest">
-                                            {formData.ratio_type} preview
+                                            {formData.ratio_type} {t('admin_endorsement.preview')}
                                         </span>
                                     </>
                                 }
                                 <span className="text-xs text-zinc-400 z-10 bg-zinc-900/80 px-2 py-1 rounded absolute bottom-2">
-                                    Drag &amp; Drop or Click
+                                    {t('admin_endorsement.drag_drop')}
                                 </span>
                                 <input type="file" onChange={handleFile} accept="image/jpeg,image/png,image/webp" className="hidden" />
                             </label>
                             <div className="flex gap-2">
                                 <button type="submit" className="flex-1 bg-rose-500 hover:bg-rose-600 text-white py-2 rounded-md font-medium flex items-center justify-center gap-2 transition-colors">
-                                    <Plus size={18} /> {selectedEndorsement ? 'Update' : 'Save'}
+                                    <Plus size={18} /> {selectedEndorsement ? t('admin_endorsement.update_btn') : t('admin_endorsement.save_btn')}
                                 </button>
                                 <button type="button" onClick={handleCancelEdit} className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 py-2 rounded-md font-medium flex items-center justify-center gap-2 transition-colors">
-                                    <X size={18} /> Cancel
+                                    <X size={18} /> {t('admin_endorsement.cancel_btn')}
                                 </button>
                             </div>
                         </div>

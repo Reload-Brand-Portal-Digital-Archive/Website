@@ -6,8 +6,10 @@ import Navbar from '../components/ui/Navbar';
 import ProductGallery from '../components/ui/ProductGallery';
 import { ArrowLeft, ShoppingBag, Loader2, XCircle } from 'lucide-react';
 import { Button } from "@/components/ui/button";
+import { useTranslation } from 'react-i18next';
 
 const ShopDetail = () => {
+  const { t } = useTranslation();
   const { slug } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -39,7 +41,7 @@ const ShopDetail = () => {
     return (
       <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center">
         <Loader2 className="animate-spin text-zinc-500 w-10 h-10 mb-4" />
-        <span className="font-mono text-xs uppercase tracking-widest text-zinc-500">Decrypting Data...</span>
+        <span className="font-mono text-xs uppercase tracking-widest text-zinc-500">{t('shop_detail.loading')}</span>
       </div>
     );
   }
@@ -47,10 +49,10 @@ const ShopDetail = () => {
   if (!product) {
     return (
       <div className="min-h-screen bg-zinc-950 text-white flex flex-col items-center justify-center font-mono">
-        <h1 className="text-2xl mb-4 text-red-500 uppercase tracking-widest">[ ERROR 404 ]</h1>
-        <p className="text-zinc-500 mb-8 uppercase tracking-widest">Entity not found in the archive.</p>
+        <h1 className="text-2xl mb-4 text-red-500 uppercase tracking-widest">{t('shop_detail.error_404')}</h1>
+        <p className="text-zinc-500 mb-8 uppercase tracking-widest">{t('shop_detail.not_found')}</p>
         <Link to="/shop" className="text-white border-b border-white pb-1 hover:text-zinc-400 hover:border-zinc-400 transition-all uppercase tracking-widest text-xs">
-          Return to Global Inventory
+          {t('shop_detail.return')}
         </Link>
       </div>
     );
@@ -95,7 +97,7 @@ const ShopDetail = () => {
             <div className="w-8 h-8 rounded-full border border-zinc-800 flex items-center justify-center group-hover:border-zinc-500 transition-colors">
               <ArrowLeft className="w-4 h-4" />
             </div>
-            Back to Inventory
+            {t('shop_detail.back')}
           </button>
         </div>
 
@@ -118,11 +120,11 @@ const ShopDetail = () => {
             >
               <div className="flex items-center gap-4 mb-8">
                 <span className="font-mono text-xs uppercase tracking-[0.2em] text-zinc-500">
-                  [{product.category || 'Product'}]
+                  [{product.category || t('shop_detail.default_category')}]
                 </span>
                 <div className="h-px bg-zinc-800 grow"></div>
                 <span className="font-mono text-[10px] uppercase tracking-widest text-zinc-600">
-                  ID: {String(product.product_id).padStart(4, '0')}
+                  {t('shop_detail.id')} {String(product.product_id).padStart(4, '0')}
                 </span>
               </div>
 
@@ -132,17 +134,17 @@ const ShopDetail = () => {
 
               <div className="mb-12">
                 <h3 className="font-mono text-xs uppercase tracking-widest text-zinc-500 mb-4 border-b border-white/10 pb-2">
-                  [ Operator Notes ]
+                  {t('shop_detail.notes_badge')}
                 </h3>
                 <p className="font-sans text-base lg:text-lg text-zinc-400 leading-relaxed max-w-[55ch] whitespace-pre-line">
-                  {product.description || 'Tidak ada deskripsi.'}
+                  {product.description || t('shop_detail.no_desc')}
                 </p>
               </div>
 
               {product.sizes && product.sizes.length > 0 && (
                 <div className="mb-16">
                   <h3 className="font-mono text-xs uppercase tracking-widest text-zinc-500 mb-6 border-b border-white/10 pb-2">
-                    [ Available Configurations ]
+                    {t('shop_detail.config_badge')}
                   </h3>
                   <div className="flex flex-wrap gap-3">
                     {product.sizes.map((size) => (
@@ -159,7 +161,7 @@ const ShopDetail = () => {
 
               <div>
                 <h3 className="font-mono text-[10px] uppercase tracking-widest text-zinc-600 mb-4">
-                  Transmission Protocol // Secure Checkout via:
+                  {t('shop_detail.checkout_via')}
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Button
@@ -168,7 +170,7 @@ const ShopDetail = () => {
                     className="bg-transparent border border-orange-600/50 text-orange-500 hover:bg-orange-600 hover:text-white hover:border-orange-600 rounded-none h-14 font-mono text-xs uppercase tracking-widest transition-all w-full flex items-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed"
                   >
                     {hasShopeeLink ? <ShoppingBag className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
-                    {hasShopeeLink ? 'Shopee' : 'Shopee — No Link'}
+                    {hasShopeeLink ? 'Shopee' : t('shop_detail.shopee_no_link')}
                   </Button>
                   <Button
                     disabled={isSoldOut || !hasTiktokLink}
@@ -176,16 +178,16 @@ const ShopDetail = () => {
                     className="bg-transparent border border-emerald-600/50 text-emerald-500 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 rounded-none h-14 font-mono text-xs uppercase tracking-widest transition-all w-full flex items-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed"
                   >
                     {hasTiktokLink ? <ShoppingBag className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
-                    {hasTiktokLink ? 'TikTok Shop' : 'TikTok — No Link'}
+                    {hasTiktokLink ? 'TikTok Shop' : t('shop_detail.tiktok_no_link')}
                   </Button>
                 </div>
                 {isSoldOut && (
                   <p className="mt-4 font-mono text-xs text-red-500 uppercase tracking-widest text-center">
-                    [ Out of Stock — Transmission Disabled ]
+                    {t('shop_detail.out_of_stock_msg')}
                   </p>
                 )}
                 <p className="mt-6 font-mono text-[10px] text-zinc-600 uppercase tracking-widest leading-relaxed">
-                  * Reload Distro exclusively uses external processing. No direct payments are processed on this terminal.
+                  {t('shop_detail.disclaimer')}
                 </p>
               </div>
 

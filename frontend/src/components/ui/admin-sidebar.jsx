@@ -1,24 +1,27 @@
 import React from 'react';
 import { 
-    LayoutDashboard, ShoppingBag, Layers, 
+    LayoutDashboard, ShoppingBag, ShoppingCart, Layers, 
     MessageSquare, Mail, Settings, Users, LogOut, X, Tag, Palette, Award, ExternalLink, Menu
 } from 'lucide-react';
 
+import { useTranslation } from 'react-i18next';
+
 export const navigationItems = [
-    { id: 'home', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'products', label: 'Product', icon: ShoppingBag },
-    { id: 'collections', label: 'Collection', icon: Layers },
-    { id: 'categories', label: 'Category', icon: Tag },
-    { id: 'materials', label: 'Material', icon: Palette },
-    { id: 'endorsements', label: 'Endorsement', icon: Award },
-    { id: 'chats', label: 'Chats', icon: MessageSquare },
-    { id: 'messages', label: 'Wholesale Order', icon: MessageSquare },
-    { id: 'newsletter', label: 'Newsletter', icon: Mail },
-    { id: 'settings', label: 'Setting', icon: Settings },
+    { id: 'home', labelKey: 'admin_sidebar.dashboard', icon: LayoutDashboard },
+    { id: 'products', labelKey: 'admin_sidebar.product', icon: ShoppingBag },
+    { id: 'collections', labelKey: 'admin_sidebar.collection', icon: Layers },
+    { id: 'categories', labelKey: 'admin_sidebar.category', icon: Tag },
+    { id: 'materials', labelKey: 'admin_sidebar.material', icon: Palette },
+    { id: 'endorsements', labelKey: 'admin_sidebar.endorsement', icon: Award },
+    { id: 'chats', labelKey: 'admin_sidebar.chats', icon: MessageSquare },
+    { id: 'messages', labelKey: 'admin_sidebar.wholesale_order', icon: ShoppingCart },
+    { id: 'newsletter', labelKey: 'admin_sidebar.newsletter', icon: Mail },
+    { id: 'settings', labelKey: 'admin_sidebar.setting', icon: Settings },
 ];
 
 import axios from 'axios';
 const API = import.meta.env.VITE_API_URL;
+import LanguageSwitcher from './LanguageSwitcher';
 
 export default function AdminSidebar({
     isSidebarOpen,
@@ -28,6 +31,7 @@ export default function AdminSidebar({
     user,
     handleLogout
 }) {
+    const { t } = useTranslation();
     const [unreadChatsCount, setUnreadChatsCount] = React.useState(0);
     const [unreadWholesaleCount, setUnreadWholesaleCount] = React.useState(0);
     const token = localStorage.getItem('token');
@@ -103,12 +107,12 @@ export default function AdminSidebar({
                         href="/"
                         target="_blank"
                         rel="noopener noreferrer"
-                        title="View Site"
+                        title={t('admin_sidebar.view_site')}
                         className="flex items-center gap-3 px-3 py-2.5 rounded-md text-zinc-500 hover:bg-zinc-800 hover:text-zinc-100 transition-all duration-200 group mb-1"
                     >
                         <ExternalLink size={20} className="shrink-0 group-hover:text-zinc-100 transition-colors" />
                         <span className={`font-medium whitespace-nowrap text-xs tracking-widest uppercase transition-all duration-300 ${isSidebarOpen ? "opacity-100 w-auto" : "opacity-0 w-0 md:hidden"}`}>
-                            View Site
+                            {t('admin_sidebar.view_site')}
                         </span>
                     </a>
 
@@ -129,14 +133,14 @@ export default function AdminSidebar({
                                         : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
                                     }
                                 `}
-                                title={!isSidebarOpen ? item.label : ""}
+                                title={!isSidebarOpen ? t(item.labelKey) : ""}
                             >
                                 {isActive && (
                                     <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-rose-500 rounded-r-md" />
                                 )}
                                 <Icon size={20} className={`shrink-0 ${isActive ? "text-rose-500" : "group-hover:text-zinc-100 transition-colors"}`} />
                                 <span className={`font-medium whitespace-nowrap transition-all duration-300 ${isSidebarOpen ? "opacity-100 w-auto" : "opacity-0 w-0 md:hidden"}`}>
-                                    {item.label}
+                                    {t(item.labelKey)}
                                 </span>                                
                                 {!isSidebarOpen && isActive && (
                                     <div className="absolute right-2 w-1.5 h-1.5 bg-rose-500 rounded-full shadow-[0_0_8px_rgba(244,63,94,0.6)]" />
@@ -156,19 +160,20 @@ export default function AdminSidebar({
                     })}
                 </div>
 
-                <div className="border-t border-zinc-800 p-4 shrink-0 bg-zinc-900 overflow-hidden">
+                <div className="border-t border-zinc-800 p-3 shrink-0 bg-zinc-900 overflow-hidden flex flex-col gap-3">
+                    <LanguageSwitcher className={`${isSidebarOpen ? "w-full justify-center" : "w-full justify-center px-0 [&>span]:hidden"}`} />
                     <div className={`flex items-center gap-4 transition-all duration-300 ${isSidebarOpen ? "justify-between" : "justify-center"}`}>
                         <button 
                             onClick={() => setActiveTab('profile')}
                             className={`flex items-center gap-3 overflow-hidden text-left hover:bg-zinc-800 p-1.5 -ml-1.5 rounded-lg transition-all duration-300 cursor-pointer ${isSidebarOpen ? "opacity-100 w-auto" : "opacity-0 w-0 pointer-events-none"}`}
-                            title="Profil Admin"
+                            title={t('admin_sidebar.admin_profile')}
                         >
                             <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors ${activeTab === 'profile' ? 'bg-rose-500 text-white' : 'bg-zinc-800 text-zinc-400'}`}>
                                 <Users size={16} />
                             </div>
                             <div className="overflow-hidden">
                                 <p className={`text-sm font-medium truncate transition-colors ${activeTab === 'profile' ? 'text-rose-500' : 'text-zinc-200'}`}>{user?.name || 'Admin User'}</p>
-                                <p className="text-xs text-zinc-500 truncate">Administrator</p>
+                                <p className="text-xs text-zinc-500 truncate">{t('admin_sidebar.administrator')}</p>
                             </div>
                         </button>
                         
@@ -177,7 +182,7 @@ export default function AdminSidebar({
                             className={`flex items-center justify-center p-2 rounded-md transition-all duration-300 text-zinc-500 hover:text-red-500 ${
                                 !isSidebarOpen && "w-full"
                             }`}
-                            title="Logout"
+                            title={t('admin_sidebar.logout')}
                         >
                             <LogOut size={18} />
                         </button>

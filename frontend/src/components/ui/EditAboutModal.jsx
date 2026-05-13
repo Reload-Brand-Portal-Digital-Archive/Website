@@ -1,0 +1,331 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { X, Globe, Save, Upload } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import axios from 'axios';
+import { toast } from 'react-toastify';
+
+const SECTION_FIELDS = [
+  {
+    section: 'Hero',
+    fields: [
+      { key: 'hero_badge', label: 'Hero Badge' },
+      { key: 'hero_tag', label: 'Hero Tag' },
+      { key: 'hero_title_1', label: 'Hero Title 1' },
+      { key: 'hero_title_2', label: 'Hero Title 2' },
+      { key: 'hero_desc', label: 'Hero Description', isTextArea: true },
+      { key: 'hero_est', label: 'Hero EST' }
+    ]
+  },
+  {
+    section: 'Brand Story',
+    fields: [
+      { key: 'story_badge', label: 'Story Badge' },
+      { key: 'story_title_1', label: 'Story Title 1' },
+      { key: 'story_title_2', label: 'Story Title 2' },
+      { key: 'story_title_3', label: 'Story Title 3' },
+      { key: 'story_since', label: 'Story Since' },
+      { key: 'story_p1', label: 'Paragraph 1', isTextArea: true },
+      { key: 'story_p2', label: 'Paragraph 2', isTextArea: true },
+      { key: 'story_p3', label: 'Paragraph 3', isTextArea: true }
+    ]
+  },
+  {
+    section: 'Values & Principles',
+    fields: [
+      { key: 'values_badge', label: 'Values Badge' },
+      { key: 'values_title_1', label: 'Values Title 1' },
+      { key: 'values_title_2', label: 'Values Title 2' },
+      { key: 'value_1_title', label: 'Value 1 Title' },
+      { key: 'value_1_desc', label: 'Value 1 Description', isTextArea: true },
+      { key: 'value_2_title', label: 'Value 2 Title' },
+      { key: 'value_2_desc', label: 'Value 2 Description', isTextArea: true },
+      { key: 'value_3_title', label: 'Value 3 Title' },
+      { key: 'value_3_desc', label: 'Value 3 Description', isTextArea: true }
+    ]
+  },
+  {
+    section: 'Milestones (Timeline)',
+    fields: [
+      { key: 'timeline_badge', label: 'Timeline Badge' },
+      { key: 'timeline_title_1', label: 'Timeline Title 1' },
+      { key: 'timeline_title_2', label: 'Timeline Title 2' },
+      { key: 'milestone_1_title', label: 'Milestone 1 Title' },
+      { key: 'milestone_1_desc', label: 'Milestone 1 Description', isTextArea: true },
+      { key: 'milestone_2_title', label: 'Milestone 2 Title' },
+      { key: 'milestone_2_desc', label: 'Milestone 2 Description', isTextArea: true },
+      { key: 'milestone_3_title', label: 'Milestone 3 Title' },
+      { key: 'milestone_3_desc', label: 'Milestone 3 Description', isTextArea: true },
+      { key: 'milestone_4_title', label: 'Milestone 4 Title' },
+      { key: 'milestone_4_desc', label: 'Milestone 4 Description', isTextArea: true }
+    ]
+  },
+  {
+    section: 'Team',
+    fields: [
+      { key: 'team_badge', label: 'Team Badge' },
+      { key: 'team_title_1', label: 'Team Title 1' },
+      { key: 'team_title_2', label: 'Team Title 2' },
+      { key: 'founder_title', label: 'Founder Title' }
+    ]
+  },
+  {
+    section: 'CTA',
+    fields: [
+      { key: 'cta_badge', label: 'CTA Badge' },
+      { key: 'cta_title_1', label: 'CTA Title 1' },
+      { key: 'cta_title_2', label: 'CTA Title 2' },
+      { key: 'cta_desc', label: 'CTA Description', isTextArea: true },
+      { key: 'shop_now', label: 'Shop Now Button Text' }
+    ]
+  }
+];
+
+export default function EditAboutModal({ isOpen, onClose, initialData, onSave, isSaving, founderImageUrl }) {
+  const { t, i18n } = useTranslation();
+  const [activeTab, setActiveTab] = useState('id');
+  const [formData, setFormData] = useState({ en: {}, id: {} });
+  const [founderName, setFounderName] = useState('');
+  const [founderPreview, setFounderPreview] = useState(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const founderFileRef = useRef(null);
+
+  const allFieldKeys = SECTION_FIELDS.flatMap(s => s.fields.map(f => f.key));
+
+  useEffect(() => {
+    if (isOpen) {
+      const tEn = i18n.getFixedT('en');
+      const tId = i18n.getFixedT('id');
+
+      const defaultsEn = {};
+      const defaultsId = {};
+      allFieldKeys.forEach(key => {
+        defaultsEn[key] = tEn(`about.${key}`);
+        defaultsId[key] = tId(`about.${key}`);
+      });
+
+      setFormData({
+        en: { ...defaultsEn, ...(initialData?.en || {}) },
+        id: { ...defaultsId, ...(initialData?.id || {}) }
+      });
+      setFounderName(initialData?.founder_name || 'Agus Syahrudin');
+      setFounderPreview(founderImageUrl || null);
+      setActiveTab('id');
+    }
+  }, [isOpen, initialData, founderImageUrl]);
+
+  if (!isOpen) return null;
+
+  const handleChange = (key, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [activeTab]: {
+        ...prev[activeTab],
+        [key]: value
+      }
+    }));
+  };
+
+  const handleFounderImageChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = (ev) => setFounderPreview(ev.target.result);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSave = async () => {
+    if (founderFileRef.current?.files?.[0]) {
+      setIsUploadingImage(true);
+      try {
+        const token = localStorage.getItem('token');
+        const fd = new FormData();
+        fd.append('founder_image', founderFileRef.current.files[0]);
+        await axios.post(import.meta.env.VITE_API_URL + '/api/admin/settings/founder-image', fd, {
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+        });
+      } catch (err) {
+        console.error('Founder image upload error:', err);
+        toast.error('Failed to upload founder image.');
+      } finally {
+        setIsUploadingImage(false);
+      }
+    }
+
+    onSave({ ...formData, founder_name: founderName });
+  };
+
+  const busy = isSaving || isUploadingImage;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div 
+        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      
+      <div className="relative w-full max-w-4xl bg-zinc-950 border border-zinc-800 rounded-2xl flex flex-col max-h-[90vh] overflow-hidden shadow-2xl">
+        
+        <div className="flex items-center justify-between p-6 border-b border-zinc-800 bg-zinc-900/50">
+          <div>
+            <h2 className="text-xl font-bold text-zinc-100 flex items-center gap-2">
+              <Globe className="text-rose-500" size={20} />
+              {t('system_settings.about_modal_title')}
+            </h2>
+            <p className="text-sm text-zinc-500 mt-1">
+              {t('system_settings.about_modal_desc')}
+            </p>
+          </div>
+          <button 
+            onClick={onClose}
+            className="p-2 text-zinc-500 hover:text-white bg-zinc-900 hover:bg-zinc-800 rounded-lg transition-colors"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="flex border-b border-zinc-800 bg-zinc-950 px-6 pt-4 gap-2">
+          <button
+            onClick={() => setActiveTab('id')}
+            className={`px-6 py-2.5 text-sm font-medium rounded-t-lg transition-colors border-b-2 ${
+              activeTab === 'id' 
+                ? 'text-rose-400 border-rose-500 bg-rose-500/10' 
+                : 'text-zinc-500 border-transparent hover:text-zinc-300 hover:bg-zinc-900'
+            }`}
+          >
+            {t('system_settings.tab_id')}
+          </button>
+          <button
+            onClick={() => setActiveTab('en')}
+            className={`px-6 py-2.5 text-sm font-medium rounded-t-lg transition-colors border-b-2 ${
+              activeTab === 'en' 
+                ? 'text-rose-400 border-rose-500 bg-rose-500/10' 
+                : 'text-zinc-500 border-transparent hover:text-zinc-300 hover:bg-zinc-900'
+            }`}
+          >
+            {t('system_settings.tab_en')}
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-6 space-y-10 custom-scrollbar bg-zinc-950">
+
+          <div className="space-y-4">
+            <h3 className="text-lg font-bold text-zinc-100 uppercase tracking-widest border-b border-zinc-800 pb-2">
+              {t('system_settings.founder_image_label')}
+            </h3>
+            <div className="flex flex-col sm:flex-row gap-6 items-start">
+              <div
+                className="w-40 h-40 bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-lg flex items-center justify-center overflow-hidden relative group cursor-pointer flex-shrink-0"
+                onClick={() => founderFileRef.current?.click()}
+              >
+                {founderPreview ? (
+                  <>
+                    <img src={founderPreview} alt="Founder" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                      <Upload className="text-white" size={24} />
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center text-zinc-500 group-hover:text-zinc-400 transition-colors">
+                    <Upload className="mx-auto mb-2" size={24} />
+                    <span className="text-xs">{t('system_settings.choose_image')}</span>
+                  </div>
+                )}
+              </div>
+              <div className="flex-1 space-y-4">
+                <p className="text-xs text-zinc-400">
+                  {t('system_settings.founder_image_desc')}
+                </p>
+                <input 
+                  type="file" 
+                  ref={founderFileRef}
+                  onChange={handleFounderImageChange}
+                  className="hidden" 
+                  accept="image/jpeg,image/png,image/webp"
+                />
+                <button 
+                  type="button"
+                  onClick={() => founderFileRef.current?.click()}
+                  className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-sm text-white rounded-md transition-colors"
+                >
+                  {t('system_settings.choose_image')}
+                </button>
+                <div className="space-y-2 mt-2">
+                  <label className="text-xs font-mono tracking-wider text-zinc-400">
+                    {t('system_settings.founder_name_label')}
+                  </label>
+                  <input
+                    type="text"
+                    value={founderName}
+                    onChange={(e) => setFounderName(e.target.value)}
+                    className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2.5 text-sm text-zinc-100 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition-colors"
+                    placeholder="Agus Syahrudin"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {SECTION_FIELDS.map((section, idx) => (
+            <div key={idx} className="space-y-4">
+              <h3 className="text-lg font-bold text-zinc-100 uppercase tracking-widest border-b border-zinc-800 pb-2">
+                {section.section}
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {section.fields.map((field) => (
+                  <div 
+                    key={field.key} 
+                    className={`space-y-2 ${field.isTextArea ? 'md:col-span-2' : ''}`}
+                  >
+                    <label className="text-xs font-mono tracking-wider text-zinc-400">
+                      {field.label} <span className="text-zinc-700">({field.key})</span>
+                    </label>
+                    {field.isTextArea ? (
+                      <textarea
+                        value={formData[activeTab][field.key] || ''}
+                        onChange={(e) => handleChange(field.key, e.target.value)}
+                        className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-100 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition-colors min-h-[100px] resize-y"
+                        placeholder={t('system_settings.default_value')}
+                      />
+                    ) : (
+                      <input
+                        type="text"
+                        value={formData[activeTab][field.key] || ''}
+                        onChange={(e) => handleChange(field.key, e.target.value)}
+                        className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2.5 text-sm text-zinc-100 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition-colors"
+                        placeholder={t('system_settings.default_value')}
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="p-6 border-t border-zinc-800 bg-zinc-900/50 flex justify-end gap-3">
+          <button
+            onClick={onClose}
+            disabled={busy}
+            className="px-6 py-2.5 text-sm font-medium text-zinc-400 hover:text-white transition-colors"
+          >
+            {t('system_settings.cancel_btn')}
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={busy}
+            className="flex items-center gap-2 px-6 py-2.5 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white rounded-lg font-medium transition-colors"
+          >
+            {busy ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/20 border-t-white" />
+            ) : (
+              <Save size={18} />
+            )}
+            <span>{busy ? t('system_settings.saving') : t('system_settings.save_changes')}</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  );
+}

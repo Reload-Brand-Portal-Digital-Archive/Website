@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { mockEndorsements } from "../../data/mockEndorsements";
+import { useTranslation } from 'react-i18next';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const SUPPORTED_RATIOS = ["4:3", "9:16"];
@@ -283,12 +284,13 @@ function CarouselLayout({ items }) {
 
 // ─── Card Image (pure display) ────────────────────────────────────────────────
 function CardImage({ item, isFocused = false }) {
+  const { t } = useTranslation();
   const url = resolveImageUrl(item.imagePath);
   if (!url) {
     return (
       <div className="flex h-full w-full items-center justify-center bg-zinc-900">
         <span className="font-mono text-[10px] text-zinc-600 uppercase tracking-widest">
-          {item.ratio} · No image
+          {item.ratio} · {t('endorsement_carousel.no_image')}
         </span>
       </div>
     );
@@ -308,6 +310,7 @@ function CardImage({ item, isFocused = false }) {
 
 // ─── Bento layout (≤ 3 items) ─────────────────────────────────────────────────
 function BentoLayout({ items }) {
+  const { t } = useTranslation();
   const ASPECT = { "4:3": "aspect-[4/3]", "16:9": "aspect-video" };
   const count = items.length;
 
@@ -329,7 +332,7 @@ function BentoLayout({ items }) {
         ) : (
           <div className="flex h-full items-center justify-center">
             <span className="font-mono text-[10px] text-zinc-600 uppercase tracking-widest">
-              {item.ratio} · No image
+              {item.ratio} · {t('endorsement_carousel.no_image')}
             </span>
           </div>
         )}
@@ -378,6 +381,7 @@ function LoadingSkeleton() {
 
 // ─── Main Export ──────────────────────────────────────────────────────────────
 export default function EndorsementSection() {
+  const { t } = useTranslation();
   const [apiItems, setApiItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -417,14 +421,14 @@ export default function EndorsementSection() {
         >
           <div>
             <span className="font-mono text-xs tracking-[0.3em] text-zinc-500 uppercase block mb-4">
-              [ WORN BY ]
+              {t('endorsement_carousel.badge')}
             </span>
             <h2 className="text-4xl md:text-[4.5vw] font-black leading-none tracking-tighter uppercase text-zinc-50">
-              Endorsement<span className="text-zinc-600"> Artists</span>
+              {t('endorsement_carousel.title_main')}<span className="text-zinc-600">{t('endorsement_carousel.title_sub')}</span>
             </h2>
           </div>
           <p className="max-w-sm text-sm text-zinc-500 leading-relaxed">
-            Talent &amp; brand ambassadors wearing Reload pieces — editorial moments captured in the field.
+            {t('endorsement_carousel.desc')}
           </p>
         </motion.div>
 

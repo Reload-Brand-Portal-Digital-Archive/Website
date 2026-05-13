@@ -3,8 +3,10 @@ import { Layers, Plus, Search, Edit2, Trash2, ArrowLeft, Image as ImageIcon, Loa
 import axios from 'axios';
 import { notify } from '../lib/toast';
 import { useConfirm } from '../lib/confirm-dialog';
+import { useTranslation } from 'react-i18next';
 
 export default function AdminCollections() {
+    const { t } = useTranslation();
     const [currentView, setCurrentView] = useState('list');
     const [collections, setCollections] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
@@ -56,14 +58,14 @@ export default function AdminCollections() {
                 const file = files[0];
                 const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
                 if (!allowedTypes.includes(file.type)) {
-                    const errorMsg = "Unsupported format. Please use JPG, PNG, or WEBP";
+                    const errorMsg = t('admin_collection.unsupported_format');
                     setErrors(prev => ({ ...prev, cover_image: errorMsg }));
                     notify.error(errorMsg);
                     return;
                 }
                 setFormData(prev => ({ ...prev, cover_image: file }));
                 setErrors(prev => ({ ...prev, cover_image: null }));
-                notify.success("Image uploaded successfully");
+                notify.success(t('admin_collection.image_uploaded'));
             }
             return;
         }
@@ -87,10 +89,10 @@ export default function AdminCollections() {
 
     const validateForm = () => {
         const newErrors = {};
-        if (!formData.name.trim()) newErrors.name = "Collection name is required";
-        if (!formData.year) newErrors.year = "Year is required";
-        if (!formData.cover_image) newErrors.cover_image = "Cover image is required";
-        if (formData.name && formData.name.length < 3) newErrors.name = "Name is too short";
+        if (!formData.name.trim()) newErrors.name = t('admin_collection.name_required');
+        if (!formData.year) newErrors.year = t('admin_collection.year_required');
+        if (!formData.cover_image) newErrors.cover_image = t('admin_collection.cover_required');
+        if (formData.name && formData.name.length < 3) newErrors.name = t('admin_collection.name_short');
 
         setErrors(newErrors);
 
@@ -118,7 +120,7 @@ export default function AdminCollections() {
         }
 
         try {
-            const loadingToastId = notify.loading(currentView === 'create' ? 'Creating collection...' : 'Saving changes...');
+            const loadingToastId = notify.loading(currentView === 'create' ? t('admin_collection.creating') : t('admin_collection.saving'));
 
             if (currentView === 'create') {
                 await axios.post(import.meta.env.VITE_API_URL + '/api/collections', formPayload, {
@@ -127,7 +129,7 @@ export default function AdminCollections() {
                         'Authorization': `Bearer ${localStorage.getItem('token')}`
                     }
                 });
-                notify.update(loadingToastId, { render: 'Collection created successfully!', type: 'success', isLoading: false, autoClose: 3000 });
+                notify.update(loadingToastId, { render: t('admin_collection.created_success'), type: 'success', isLoading: false, autoClose: 3000 });
             } else if (currentView === 'edit') {
                 await axios.put(`${import.meta.env.VITE_API_URL}/api/collections/${selectedCollection.collection_id}`, formPayload, {
                     headers: { 
@@ -135,14 +137,14 @@ export default function AdminCollections() {
                         'Authorization': `Bearer ${localStorage.getItem('token')}`
                     }
                 });
-                notify.update(loadingToastId, { render: 'Collection updated successfully!', type: 'success', isLoading: false, autoClose: 3000 });
+                notify.update(loadingToastId, { render: t('admin_collection.updated_success'), type: 'success', isLoading: false, autoClose: 3000 });
             }
 
             await fetchCollections();
             setCurrentView('list');
             setSelectedCollection(null);
         } catch (error) {
-            const errorMessage = error.response?.data?.message || 'An error occurred while saving';
+            const errorMessage = error.response?.data?.message || t('admin_collection.error_saving');
             notify.error(errorMessage);
         }
     };
@@ -161,22 +163,22 @@ export default function AdminCollections() {
     const handleDelete = async (id, e) => {
         e.stopPropagation();
         const confirmed = await confirm({
-            title: 'Delete Collection',
-            description: 'Are you sure you want to delete this collection? This action cannot be undone.',
-            confirmText: 'Delete',
-            cancelText: 'Cancel',
+            title: t('admin_collection.delete_title'),
+            description: t('admin_collection.delete_confirm'),
+            confirmText: t('admin_category.delete_btn') || 'Delete',
+            cancelText: t('admin_category.cancel_btn') || 'Cancel',
         });
 
         if (confirmed) {
             try {
-                const loadingToastId = notify.loading('Menghapus koleksi...');
+                const loadingToastId = notify.loading(t('admin_collection.deleting'));
                 await axios.delete(`${import.meta.env.VITE_API_URL}/api/collections/${id}`, {
                     headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
                 });
                 setCollections(collections.filter(c => c.collection_id !== id));
-                notify.update(loadingToastId, { render: 'Collection deleted successfully!', type: 'success', isLoading: false, autoClose: 3000 });
+                notify.update(loadingToastId, { render: t('admin_collection.deleted_success'), type: 'success', isLoading: false, autoClose: 3000 });
             } catch (error) {
-                const errorMessage = error.response?.data?.message || "Failed to delete collection";
+                const errorMessage = error.response?.data?.message || t('admin_collection.failed_delete');
                 notify.error(errorMessage);
             }
         }
@@ -195,9 +197,9 @@ export default function AdminCollections() {
                     <div>
                         <h2 className="text-2xl font-bold text-zinc-50 flex items-center gap-2">
                             <Layers className="text-rose-500" />
-                            Collection Management
+                            {t('admin_collection.page_title')}
                         </h2>
-                        <p className="text-sm text-zinc-400 mt-1">Manage collection data and cover images.</p>
+                        <p className="text-sm text-zinc-400 mt-1">{t('admin_collection.page_desc')}</p>
                     </div>
 
                     <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -205,7 +207,7 @@ export default function AdminCollections() {
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
                             <input
                                 type="text"
-                                placeholder="Search collections..."
+                                placeholder={t('admin_collection.search_placeholder')}
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className="w-full bg-zinc-900 border border-zinc-800 rounded-md py-2 pl-9 pr-4 text-sm text-zinc-100 focus:outline-none focus:border-rose-500 transition-colors"
@@ -216,7 +218,7 @@ export default function AdminCollections() {
                             className="bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors shrink-0"
                         >
                             <Plus size={16} />
-                            <span className="hidden sm:inline">Add New</span>
+                            <span className="hidden sm:inline">{t('admin_collection.add_new')}</span>
                         </button>
                     </div>
                 </div>
@@ -224,8 +226,8 @@ export default function AdminCollections() {
                 {filteredCollections.length === 0 ? (
                     <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-12 text-center">
                         <Layers size={48} className="text-zinc-700 mx-auto mb-4" />
-                        <h3 className="text-lg font-medium text-zinc-300">No collections found</h3>
-                        <p className="text-zinc-500 mt-1">Try a different search term or add a new collection.</p>
+                        <h3 className="text-lg font-medium text-zinc-300">{t('admin_collection.no_collections')}</h3>
+                        <p className="text-zinc-500 mt-1">{t('admin_collection.no_collections_desc')}</p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -243,7 +245,7 @@ export default function AdminCollections() {
                                             className="object-cover w-full h-full"
                                             onError={(e) => {
                                                 e.target.onerror = null;
-                                                e.target.src = 'https://placehold.co/600x400/18181b/a1a1aa?text=Image+Error';
+                                                e.target.src = `https://placehold.co/600x400/18181b/a1a1aa?text=${encodeURIComponent(t('admin_collection.image_error'))}`;
                                             }}
                                         />
                                     ) : (
@@ -265,7 +267,7 @@ export default function AdminCollections() {
                                         <h3 className="text-lg font-semibold text-zinc-100 group-hover:text-rose-400 transition-colors line-clamp-1">{collection.name}</h3>
                                         <span className="px-2 py-0.5 bg-zinc-800 text-zinc-300 text-xs rounded-full font-medium">{collection.year}</span>
                                     </div>
-                                    <p className="text-sm text-zinc-500 line-clamp-2">{collection.description || 'No description.'}</p>
+                                    <p className="text-sm text-zinc-500 line-clamp-2">{collection.description || t('admin_collection.no_desc')}</p>
                                 </div>
                             </div>
                         ))}
@@ -287,51 +289,51 @@ export default function AdminCollections() {
                 <div>
                     <h2 className="text-2xl font-bold text-zinc-50 flex items-center gap-2">
                         <Layers className="text-rose-500" />
-                        {currentView === 'create' ? 'Add New Collection' : 'Edit Collection'}
+                        {currentView === 'create' ? t('admin_collection.add_new_title') : t('admin_collection.edit_title')}
                     </h2>
-                    <p className="text-sm text-zinc-400 mt-1">Fill in the details for this collection and its cover image.</p>
+                    <p className="text-sm text-zinc-400 mt-1">{t('admin_collection.form_desc')}</p>
                 </div>
             </div>
 
             <form onSubmit={handleSave} className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 space-y-6">
 
                 <div className="space-y-2">
-                    <label className="text-sm font-medium text-zinc-300">Collection Name <span className="text-rose-500">*</span></label>
+                    <label className="text-sm font-medium text-zinc-300">{t('admin_collection.name_label')} <span className="text-rose-500">*</span></label>
                     <input
                         type="text"
                         name="name"
                         value={formData.name}
                         onChange={handleInputChange}
                         className={`w-full bg-zinc-950 border ${errors.name ? 'border-red-500' : 'border-zinc-800'} rounded-md py-2 px-4 text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-rose-500 transition-colors`}
-                        placeholder="Example: Summer Vibes"
+                        placeholder={t('admin_collection.name_placeholder')}
                     />
                     {errors.name ? (
                         <p className="text-xs text-red-500">{errors.name}</p>
                     ) : (
-                        <p className="text-xs text-zinc-500">Only alphabetic characters A-Z and a-z are allowed (no numbers or special characters).</p>
+                        <p className="text-xs text-zinc-500">{t('admin_collection.name_hint')}</p>
                     )}
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-zinc-300">Collection Year <span className="text-rose-500">*</span></label>
+                        <label className="text-sm font-medium text-zinc-300">{t('admin_collection.year_label')} <span className="text-rose-500">*</span></label>
                         <input
                             type="text"
                             name="year"
                             value={formData.year}
                             onChange={handleInputChange}
                             className={`w-full bg-zinc-950 border ${errors.year ? 'border-red-500' : 'border-zinc-800'} rounded-md py-2 px-4 text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-rose-500 transition-colors`}
-                            placeholder="Example: 2024"
+                            placeholder={t('admin_collection.year_placeholder')}
                         />
                         {errors.year ? (
                             <p className="text-xs text-red-500">{errors.year}</p>
                         ) : (
-                            <p className="text-xs text-zinc-500">Numbers only (0-9).</p>
+                            <p className="text-xs text-zinc-500">{t('admin_collection.year_hint')}</p>
                         )}
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-zinc-300">File Cover Image <span className="text-rose-500">*</span></label>
+                        <label className="text-sm font-medium text-zinc-300">{t('admin_collection.cover_label')} <span className="text-rose-500">*</span></label>
 
                         {formData.cover_image && (
                             <div className="mb-3 relative w-full aspect-video rounded-md overflow-hidden border border-zinc-800">
@@ -355,10 +357,10 @@ export default function AdminCollections() {
                             {!formData.cover_image ? (
                                 <>
                                     <ImageIcon size={32} className="text-zinc-600 mb-2" />
-                                    <span className="text-sm text-zinc-400">Drag & Drop file here, or click</span>
+                                    <span className="text-sm text-zinc-400">{t('admin_collection.drag_drop')}</span>
                                 </>
                             ) : (
-                                <span className="text-sm font-medium text-rose-500">Change Image (Drag & Drop / Click)</span>
+                                <span className="text-sm font-medium text-rose-500">{t('admin_collection.change_image')}</span>
                             )}
                             <input
                                 type="file"
@@ -373,9 +375,9 @@ export default function AdminCollections() {
                         ) : (
                             <div className="text-xs text-zinc-500">
                                 {typeof formData.cover_image === 'string' && formData.cover_image ? (
-                                    <span>Current image: {formData.cover_image}</span>
+                                    <span>{t('admin_collection.current_image')}{formData.cover_image}</span>
                                 ) : (
-                                    <span>Automatically saved</span>
+                                    <span>{t('admin_collection.auto_saved')}</span>
                                 )}
                             </div>
                         )}
@@ -383,16 +385,16 @@ export default function AdminCollections() {
                 </div>
 
                 <div className="space-y-2">
-                    <label className="text-sm font-medium text-zinc-300">Short Description</label>
+                    <label className="text-sm font-medium text-zinc-300">{t('admin_collection.short_desc')}</label>
                     <textarea
                         name="description"
                         value={formData.description}
                         onChange={handleInputChange}
                         rows={4}
                         className="w-full bg-zinc-950 border border-zinc-800 rounded-md py-2 px-4 text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-rose-500 transition-colors resize-none"
-                        placeholder="Write a short description of this collection..."
+                        placeholder={t('admin_collection.desc_placeholder')}
                     />
-                    <p className="text-xs text-zinc-500">Use Latin alphabet and numbers, without special characters other than standard punctuation.</p>
+                    <p className="text-xs text-zinc-500">{t('admin_collection.desc_hint')}</p>
                 </div>
 
                 <div className="pt-4 flex items-center justify-end gap-3 border-t border-zinc-800">
@@ -401,13 +403,13 @@ export default function AdminCollections() {
                         onClick={() => setCurrentView('list')}
                         className="px-4 py-2 bg-zinc-800 text-zinc-300 font-medium rounded-md hover:bg-zinc-700 transition-colors"
                     >
-                        Cancel
+                        {t('admin_category.cancel_btn') || 'Cancel'}
                     </button>
                     <button
                         type="submit"
                         className="px-4 py-2 bg-rose-500 text-white font-medium rounded-md hover:bg-rose-600 transition-colors shadow-lg shadow-rose-500/20"
                     >
-                        Save
+                        {t('common.save') || 'Save'}
                     </button>
                 </div>
             </form>

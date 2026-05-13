@@ -1,8 +1,10 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import reloadLogoTransparent from '../../assets/reload_logo_transparent.png';
+import { useTranslation } from 'react-i18next';
 
 export default function MaintenanceScreen() {
+    const { t } = useTranslation();
     return (
         <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center p-6 text-center font-sans">
             <motion.div
@@ -19,13 +21,13 @@ export default function MaintenanceScreen() {
                 
                 <div className="space-y-6">
                     <span className="font-mono text-xs tracking-[0.3em] text-rose-500 uppercase block">
-                        [ SYSTEM OFFLINE ]
+                        {t('maintenance.badge')}
                     </span>
                     <h1 className="text-4xl font-black text-zinc-50 uppercase tracking-tighter leading-none">
-                        Under Maintenance
+                        {t('maintenance.title')}
                     </h1>
                     <p className="text-zinc-400 text-sm leading-relaxed max-w-[32ch] mx-auto">
-                        We are currently upgrading our systems to bring you a better experience. We'll be back online shortly.
+                        {t('maintenance.desc')}
                     </p>
                 </div>
                 

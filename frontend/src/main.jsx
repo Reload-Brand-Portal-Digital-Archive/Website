@@ -3,6 +3,7 @@ import './index.css'
 import 'leaflet/dist/leaflet.css';
 import App from './App.jsx'
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import './i18n';
 
 const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 

@@ -6,8 +6,10 @@ import { GoogleLogin } from '@react-oauth/google';
 import { motion } from 'framer-motion';
 import { X, Eye, EyeOff } from 'lucide-react';
 import { notify } from '../lib/toast';
+import { useTranslation } from 'react-i18next';
 
 export default function Register() {
+    const { t } = useTranslation();
     const [formData, setFormData] = useState({ name: '', email: '', password: '' });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
@@ -36,10 +38,10 @@ export default function Register() {
             localStorage.setItem('token', loginRes.data.token);
             localStorage.setItem('user', JSON.stringify(loginRes.data.user));
 
-            notify.success('Account created! Welcome to Reload.');
+            notify.success(t('register.success_msg'));
             navigate('/');
         } catch (err) {
-            const errorMessage = err.response?.data?.message || 'Registration failed';
+            const errorMessage = err.response?.data?.message || t('register.fail_msg');
             setError(errorMessage);
             notify.error(errorMessage);
         } finally {
@@ -57,7 +59,7 @@ export default function Register() {
             localStorage.setItem('token', response.data.token);
             localStorage.setItem('user', JSON.stringify(response.data.user));
 
-            notify.success('Google registration successful! Redirecting...');
+            notify.success(t('register.google_success'));
 
             if (response.data.user.role === 'admin') {
                 navigate('/admin/dashboard');
@@ -65,7 +67,7 @@ export default function Register() {
                 navigate('/');
             }
         } catch (err) {
-            const errorMessage = err.response?.data?.message || 'Google registration failed';
+            const errorMessage = err.response?.data?.message || t('register.google_fail');
             setError(errorMessage);
             notify.error(errorMessage);
         }
@@ -118,10 +120,10 @@ export default function Register() {
                         <span className="text-zinc-50 font-sans font-bold text-xl tracking-widest leading-none">RELOAD</span>
                     </div>
                     <h2 className="text-3xl md:text-4xl font-bold text-zinc-50 tracking-tighter uppercase leading-none mt-8">
-                        Join The <br className="hidden sm:block" />Network
+                        {t('register.title_1')} <br className="hidden sm:block" />{t('register.title_2')}
                     </h2>
                     <p className="text-sm text-zinc-400 mt-4 leading-relaxed max-w-[30ch]">
-                        Create your account to access exclusive drops.
+                        {t('register.subtitle')}
                     </p>
                 </motion.div>
 
@@ -137,7 +139,7 @@ export default function Register() {
 
                 <motion.form variants={itemVariants} onSubmit={handleSubmit} className="space-y-6">
                     <div className="space-y-2">
-                        <label className="block text-zinc-400 text-xs font-mono uppercase tracking-[0.1em]">Full Name</label>
+                        <label className="block text-zinc-400 text-xs font-mono uppercase tracking-[0.1em]">{t('register.full_name')}</label>
                         <input 
                             type="text" 
                             name="name" 
@@ -146,12 +148,12 @@ export default function Register() {
                             autoCapitalize="words"
                             autoCorrect="off"
                             className="w-full bg-transparent border-0 border-b border-zinc-700 py-3 text-zinc-50 font-mono text-sm placeholder:text-zinc-600 focus:outline-none focus:border-zinc-50 focus:ring-0 px-0 rounded-none transition-colors"
-                            placeholder="Your full name" 
+                            placeholder={t('register.full_name_placeholder')}
                         />
                     </div>
                     
                     <div className="space-y-2">
-                        <label className="block text-zinc-400 text-xs font-mono uppercase tracking-[0.1em]">Email</label>
+                        <label className="block text-zinc-400 text-xs font-mono uppercase tracking-[0.1em]">{t('register.email')}</label>
                         <input 
                             type="email" 
                             name="email" 
@@ -160,12 +162,12 @@ export default function Register() {
                             autoCapitalize="none"
                             autoCorrect="off"
                             className="w-full bg-transparent border-0 border-b border-zinc-700 py-3 text-zinc-50 font-mono text-sm placeholder:text-zinc-600 focus:outline-none focus:border-zinc-50 focus:ring-0 px-0 rounded-none transition-colors"
-                            placeholder="your@email.com" 
+                            placeholder={t('register.email_placeholder')}
                         />
                     </div>
 
                     <div className="space-y-2">
-                        <label className="block text-zinc-400 text-xs font-mono uppercase tracking-[0.1em]">Password</label>
+                        <label className="block text-zinc-400 text-xs font-mono uppercase tracking-[0.1em]">{t('register.password')}</label>
                         <div className="relative">
                             <input 
                                 type={showPassword ? "text" : "password"} 
@@ -194,13 +196,13 @@ export default function Register() {
                         disabled={loading}
                         className="w-full bg-zinc-50 text-zinc-950 font-bold uppercase text-sm tracking-widest hover:bg-zinc-200 transition-colors rounded-none h-14 px-8 mt-6 flex items-center justify-center"
                     >
-                        {loading ? 'Processing...' : 'Create Account'}
+                        {loading ? t('register.processing') : t('register.submit')}
                     </motion.button>
                 </motion.form>
 
                 <motion.div variants={itemVariants} className="my-10 flex items-center justify-center gap-4">
                     <span className="flex-1 border-b border-zinc-800"></span>
-                    <span className="text-[10px] text-zinc-500 font-mono uppercase tracking-widest">Or register with</span>
+                    <span className="text-[10px] text-zinc-500 font-mono uppercase tracking-widest">{t('register.or_register')}</span>
                     <span className="flex-1 border-b border-zinc-800"></span>
                 </motion.div>
 
@@ -209,7 +211,7 @@ export default function Register() {
                         <GoogleLogin
                             onSuccess={handleGoogleSuccess}
                             onError={() => {
-                                const errorMsg = 'Google registration failed';
+                                const errorMsg = t('register.google_fail');
                                 setError(errorMsg);
                                 notify.error(errorMsg);
                             }}
@@ -222,9 +224,9 @@ export default function Register() {
                 </motion.div>
 
                 <motion.p variants={itemVariants} className="text-center text-zinc-500 mt-10 text-xs font-mono uppercase tracking-widest">
-                    Already an entity?{' '}
+                    {t('register.already_entity')}{' '}
                     <Link to="/login" className="text-zinc-300 hover:text-zinc-50 transition-colors">
-                        Sign in
+                        {t('register.sign_in')}
                     </Link>
                 </motion.p>
             </motion.div>

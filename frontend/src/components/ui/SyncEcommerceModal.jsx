@@ -4,8 +4,10 @@ import { toast } from 'react-toastify';
 import axios from 'axios';
 import * as XLSX from 'xlsx';
 import Papa from 'papaparse';
+import { useTranslation } from 'react-i18next';
 
 export default function SyncEcommerceModal({ isOpen, onClose, onSyncComplete }) {
+    const { t } = useTranslation();
     const [isProcessing, setIsProcessing] = useState(false);
 
     if (!isOpen) return null;
@@ -18,13 +20,13 @@ export default function SyncEcommerceModal({ isOpen, onClose, onSyncComplete }) 
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (response.data.success) {
-                toast.success(`Berhasil menyinkronkan ${response.data.processed_count} data dari API!`);
+                toast.success(t('admin_sync.toast_sync_api_success', { count: response.data.processed_count }));
                 onSyncComplete();
                 onClose();
             }
         } catch (error) {
             console.error("API Sync Error:", error);
-            toast.error("Gagal menyinkronkan data dari API external.");
+            toast.error(t('admin_sync.toast_sync_api_error'));
         } finally {
             setIsProcessing(false);
         }
@@ -147,7 +149,7 @@ export default function SyncEcommerceModal({ isOpen, onClose, onSyncComplete }) 
         try {
             const mapped = mapData(data);
             if (mapped.length === 0) {
-                toast.error("Format data tidak dikenali atau file kosong.");
+                toast.error(t('admin_sync.toast_upload_format_error'));
                 return;
             }
 
@@ -159,7 +161,7 @@ export default function SyncEcommerceModal({ isOpen, onClose, onSyncComplete }) 
             });
 
             if (response.data.success) {
-                toast.success(`Berhasil mengimpor ${response.data.processed_count} data pesanan!`);
+                toast.success(t('admin_sync.toast_upload_success', { count: response.data.processed_count }));
                 onSyncComplete();
                 onClose();
             }
@@ -195,7 +197,7 @@ export default function SyncEcommerceModal({ isOpen, onClose, onSyncComplete }) 
                     processFile(results.data);
                 },
                 error: (err) => {
-                    toast.error("Gagal membaca file CSV.");
+                    toast.error(t('admin_sync.toast_csv_error'));
                     setIsProcessing(false);
                 }
             });
@@ -210,18 +212,18 @@ export default function SyncEcommerceModal({ isOpen, onClose, onSyncComplete }) 
                 processFile(data);
             };
             reader.onerror = () => {
-                toast.error("Gagal membaca file Excel.");
+                toast.error(t('admin_sync.toast_excel_error'));
                 setIsProcessing(false);
             };
             reader.readAsBinaryString(file);
         } else {
-            toast.error("Format file tidak didukung. Gunakan .csv atau .xlsx");
+            toast.error(t('admin_sync.toast_file_unsupported'));
             setIsProcessing(false);
         }
     };
 
     const handleResetData = async () => {
-        if (!window.confirm("Apakah Anda yakin ingin menghapus seluruh data e-commerce yang tersimpan?")) return;
+        if (!window.confirm(t('admin_sync.confirm_reset'))) return;
         
         setIsProcessing(true);
         try {
@@ -230,12 +232,12 @@ export default function SyncEcommerceModal({ isOpen, onClose, onSyncComplete }) 
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (response.data.success) {
-                toast.success("Data berhasil direset!");
+                toast.success(t('admin_sync.toast_reset_success'));
                 onSyncComplete();
             }
         } catch (error) {
             console.error("Reset Error:", error);
-            toast.error("Gagal meriset data.");
+            toast.error(t('admin_sync.toast_reset_error'));
         } finally {
             setIsProcessing(false);
         }
@@ -247,8 +249,8 @@ export default function SyncEcommerceModal({ isOpen, onClose, onSyncComplete }) 
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-zinc-800">
                     <div>
-                        <h2 className="text-xl font-bold text-zinc-100">Sinkronisasi Data E-Commerce</h2>
-                        <p className="text-zinc-500 text-sm mt-1">Pilih metode untuk memperbarui data distribusi.</p>
+                        <h2 className="text-xl font-bold text-zinc-100">{t('admin_sync.title')}</h2>
+                        <p className="text-zinc-500 text-sm mt-1">{t('admin_sync.subtitle')}</p>
                     </div>
                     <button 
                         onClick={onClose}
@@ -266,7 +268,7 @@ export default function SyncEcommerceModal({ isOpen, onClose, onSyncComplete }) 
                         {isProcessing && (
                             <div className="absolute inset-0 bg-zinc-950/80 backdrop-blur-[1px] z-10 flex flex-col items-center justify-center gap-3">
                                 <Loader2 className="animate-spin text-rose-500" size={32} />
-                                <span className="text-sm font-medium text-zinc-300">Memproses Data...</span>
+                                <span className="text-sm font-medium text-zinc-300">{t('admin_sync.processing')}</span>
                             </div>
                         )}
                         
@@ -275,14 +277,14 @@ export default function SyncEcommerceModal({ isOpen, onClose, onSyncComplete }) 
                                 <FileText size={24} />
                             </div>
                             <div className="flex-1">
-                                <h3 className="font-bold text-zinc-100 group-hover:text-rose-400 transition-colors">Upload Dokumen Laporan</h3>
+                                <h3 className="font-bold text-zinc-100 group-hover:text-rose-400 transition-colors">{t('admin_sync.upload_title')}</h3>
                                 <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
-                                    Unggah file CSV atau Excel (.xlsx) hasil ekspor dari Shopee atau TikTok. Mapping kolom dilakukan otomatis.
+                                    {t('admin_sync.upload_desc')}
                                 </p>
                                 
                                 <label className="mt-4 inline-flex items-center gap-2 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 px-4 py-2 text-xs font-medium rounded-lg cursor-pointer transition-all active:scale-95">
                                     <Upload size={14} />
-                                    <span>Pilih File Laporan</span>
+                                    <span>{t('admin_sync.upload_btn')}</span>
                                     <input 
                                         type="file" 
                                         className="hidden" 
@@ -307,15 +309,15 @@ export default function SyncEcommerceModal({ isOpen, onClose, onSyncComplete }) 
                             </div>
                             <div className="flex-1">
                                 <div className="flex items-center gap-2">
-                                    <h3 className="font-bold text-zinc-100 group-hover:text-green-400 transition-colors">Sinkronisasi API Langsung</h3>
-                                    <span className="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full font-mono uppercase tracking-tighter border border-green-500/30">Active</span>
+                                    <h3 className="font-bold text-zinc-100 group-hover:text-green-400 transition-colors">{t('admin_sync.api_sync_title')}</h3>
+                                    <span className="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full font-mono uppercase tracking-tighter border border-green-500/30">{t('admin_sync.badge_active')}</span>
                                 </div>
                                 <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
-                                    Menghubungkan langsung ke API Dummy (Python) untuk mensimulasikan penarikan data e-commerce secara otomatis.
+                                    {t('admin_sync.api_sync_desc')}
                                 </p>
                                 <div className="mt-3 flex items-center gap-1.5 text-green-500/80 text-[10px] font-medium uppercase tracking-wider">
                                     <CheckCircle2 size={12} />
-                                    <span>Siap digunakan</span>
+                                    <span>{t('admin_sync.api_sync_ready')}</span>
                                 </div>
                             </div>
                         </div>
@@ -328,7 +330,7 @@ export default function SyncEcommerceModal({ isOpen, onClose, onSyncComplete }) 
                         className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-zinc-950/50 border border-zinc-800 hover:border-red-500/30 hover:bg-red-500/5 text-zinc-600 hover:text-red-400 rounded-xl transition-all duration-300 text-xs font-medium uppercase tracking-wider group"
                     >
                         <AlertCircle size={14} className="group-hover:animate-pulse" />
-                        <span>Hapus Seluruh Data (Debug Mode)</span>
+                        <span>{t('admin_sync.reset_btn')}</span>
                     </button>
                 </div>
 
@@ -339,7 +341,7 @@ export default function SyncEcommerceModal({ isOpen, onClose, onSyncComplete }) 
                         disabled={isProcessing}
                         className="px-4 py-2 text-sm font-medium text-zinc-400 hover:text-zinc-100 transition-colors disabled:opacity-30"
                     >
-                        Batal
+                        {t('admin_sync.cancel')}
                     </button>
                 </div>
             </div>

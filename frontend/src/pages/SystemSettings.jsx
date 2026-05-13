@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import { Save, Upload, Eye, EyeOff, Shield, Link as LinkIcon, Settings2, Smartphone, Mail, Globe, Image as ImageIcon } from 'lucide-react';
+import { Save, Upload, Eye, EyeOff, Shield, Link as LinkIcon, Settings2, Smartphone, Mail, Globe, Image as ImageIcon, FileText } from 'lucide-react';
 import { useSettings } from '../context/SettingsContext';
+import { useTranslation } from 'react-i18next';
+import EditAboutModal from '../components/ui/EditAboutModal';
 
 export default function SystemSettings() {
+    const { t } = useTranslation();
     const [settings, setSettings] = useState({
         hero_headline: '',
         hero_subheadline: '',
@@ -15,8 +18,12 @@ export default function SystemSettings() {
         admin_notification_email: '',
         simulation_mode: 'false',
         maintenance_mode: 'false',
-        hero_banner_image: ''
+        hero_banner_image: '',
+        about_page_content: ''
     });
+
+    const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
+    const [isSavingAbout, setIsSavingAbout] = useState(false);
 
 
 
@@ -46,7 +53,7 @@ export default function SystemSettings() {
             }
         } catch (error) {
             console.error('Error fetching settings:', error);
-            toast.error('Gagal mengambil pengaturan sistem');
+            toast.error(t('system_settings.failed_fetch'));
         } finally {
             setIsLoading(false);
         }
@@ -99,15 +106,39 @@ export default function SystemSettings() {
             });
 
             if (response.data.success) {
-                toast.success('Pengaturan sistem berhasil disimpan!');
+                toast.success(t('system_settings.saved_success'));
                 fetchSettings();
                 if (refreshSettings) refreshSettings();
             }
         } catch (error) {
             console.error('Error saving settings:', error);
-            toast.error('Gagal menyimpan pengaturan sistem');
+            toast.error(t('system_settings.failed_save'));
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const handleSaveAboutContent = async (formData) => {
+        setIsSavingAbout(true);
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.put(import.meta.env.VITE_API_URL + '/api/admin/settings', {
+                about_page_content: JSON.stringify(formData)
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            if (response.data.success) {
+                toast.success('About page content saved successfully!');
+                setSettings(prev => ({ ...prev, about_page_content: JSON.stringify(formData) }));
+                setIsAboutModalOpen(false);
+                if (refreshSettings) refreshSettings();
+            }
+        } catch (error) {
+            console.error('Error saving about content:', error);
+            toast.error('Failed to save about content.');
+        } finally {
+            setIsSavingAbout(false);
         }
     };
 
@@ -126,9 +157,9 @@ export default function SystemSettings() {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                     <h2 className="text-2xl font-bold text-zinc-50 flex items-center gap-2">
-                        <Settings2 className="text-rose-500" /> Pengaturan Sistem
+                        <Settings2 className="text-rose-500" /> {t('system_settings.title')}
                     </h2>
-                    <p className="text-zinc-400 text-sm mt-1">Konfigurasi global untuk website RELOAD dan platform e-commerce.</p>
+                    <p className="text-zinc-400 text-sm mt-1">{t('system_settings.desc')}</p>
                 </div>
             </div>
 
@@ -137,36 +168,36 @@ export default function SystemSettings() {
                 <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden shadow-sm">
                     <div className="bg-zinc-800/50 px-6 py-4 border-b border-zinc-800 flex items-center gap-3">
                         <ImageIcon className="text-rose-500" size={20} />
-                        <h3 className="font-semibold text-lg text-white">Hero Banner & Branding</h3>
+                        <h3 className="font-semibold text-lg text-white">{t('system_settings.hero_branding')}</h3>
                     </div>
                     <div className="p-6 space-y-5">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-zinc-300">Hero Headline</label>
+                                <label className="text-sm font-medium text-zinc-300">{t('system_settings.hero_headline')}</label>
                                 <input
                                     type="text"
                                     name="hero_headline"
                                     value={settings.hero_headline || ''}
                                     onChange={handleChange}
                                     className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-zinc-100 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition-colors"
-                                    placeholder="Welcome to RELOAD"
+                                    placeholder={t('system_settings.headline_placeholder')}
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-zinc-300">Hero Sub-headline</label>
+                                <label className="text-sm font-medium text-zinc-300">{t('system_settings.hero_subheadline')}</label>
                                 <input
                                     type="text"
                                     name="hero_subheadline"
                                     value={settings.hero_subheadline || ''}
                                     onChange={handleChange}
                                     className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-zinc-100 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition-colors"
-                                    placeholder="Streetwear made for everyone."
+                                    placeholder={t('system_settings.subheadline_placeholder')}
                                 />
                             </div>
                         </div>
 
                         <div className="space-y-3">
-                            <label className="text-sm font-medium text-zinc-300">Hero Banner Image</label>
+                            <label className="text-sm font-medium text-zinc-300">{t('system_settings.hero_banner_image')}</label>
                             <div className="flex flex-col sm:flex-row gap-6 items-start">
                                 <div 
                                     className="w-full sm:w-64 h-36 bg-zinc-950 border-2 border-dashed border-zinc-700 rounded-lg flex items-center justify-center overflow-hidden relative group cursor-pointer"
@@ -182,14 +213,13 @@ export default function SystemSettings() {
                                     ) : (
                                         <div className="text-center text-zinc-500 group-hover:text-zinc-400 transition-colors">
                                             <Upload className="mx-auto mb-2" size={24} />
-                                            <span className="text-xs">Klik untuk upload</span>
+                                            <span className="text-xs">{t('system_settings.click_upload')}</span>
                                         </div>
                                     )}
                                 </div>
                                 <div className="flex-1 space-y-2">
                                     <p className="text-xs text-zinc-400">
-                                        Upload gambar banner utama yang akan ditampilkan di halaman depan.
-                                        Format disarankan: JPG, WEBP (1920x1080). Maksimal ukuran 5MB.
+                                        {t('system_settings.upload_desc')}
                                     </p>
                                     <input 
                                         type="file" 
@@ -203,7 +233,7 @@ export default function SystemSettings() {
                                         onClick={() => fileInputRef.current?.click()}
                                         className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-sm text-white rounded-md transition-colors"
                                     >
-                                        Pilih File
+                                        {t('system_settings.choose_file')}
                                     </button>
                                 </div>
                             </div>
@@ -214,11 +244,11 @@ export default function SystemSettings() {
                 <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden shadow-sm">
                     <div className="bg-zinc-800/50 px-6 py-4 border-b border-zinc-800 flex items-center gap-3">
                         <LinkIcon className="text-rose-500" size={20} />
-                        <h3 className="font-semibold text-lg text-white">E-Commerce Integration</h3>
+                        <h3 className="font-semibold text-lg text-white">{t('system_settings.ecommerce_integration')}</h3>
                     </div>
                     <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-zinc-300">Shopee Shop URL</label>
+                            <label className="text-sm font-medium text-zinc-300">{t('system_settings.shopee_url')}</label>
                             <div className="relative">
                                 <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-zinc-500">
                                     <Globe size={16} />
@@ -234,7 +264,7 @@ export default function SystemSettings() {
                             </div>
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-zinc-300">TikTok Shop URL</label>
+                            <label className="text-sm font-medium text-zinc-300">{t('system_settings.tiktok_url')}</label>
                             <div className="relative">
                                 <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-zinc-500">
                                     <Smartphone size={16} />
@@ -253,13 +283,35 @@ export default function SystemSettings() {
                 </div>
 
                 <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden shadow-sm">
+                    <div className="bg-zinc-800/50 px-6 py-4 border-b border-zinc-800 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <FileText className="text-rose-500" size={20} />
+                            <h3 className="font-semibold text-lg text-white">{t('system_settings.about_content_title')}</h3>
+                        </div>
+                    </div>
+                    <div className="p-6">
+                        <p className="text-sm text-zinc-400 mb-6">
+                            {t('system_settings.about_content_desc')}
+                        </p>
+                        <button
+                            type="button"
+                            onClick={() => setIsAboutModalOpen(true)}
+                            className="inline-flex items-center gap-2 px-6 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg font-medium transition-colors border border-zinc-700 hover:border-zinc-500 shadow-sm"
+                        >
+                            <Globe size={18} />
+                            <span>{t('system_settings.edit_about_btn')}</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden shadow-sm">
                     <div className="bg-zinc-800/50 px-6 py-4 border-b border-zinc-800 flex items-center gap-3">
                         <Mail className="text-rose-500" size={20} />
-                        <h3 className="font-semibold text-lg text-white">Contact & Communication</h3>
+                        <h3 className="font-semibold text-lg text-white">{t('system_settings.contact_communication')}</h3>
                     </div>
                     <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-zinc-300">Public WhatsApp Number</label>
+                            <label className="text-sm font-medium text-zinc-300">{t('system_settings.whatsapp_number')}</label>
                             <input
                                 type="text"
                                 name="whatsapp_number"
@@ -270,7 +322,7 @@ export default function SystemSettings() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-zinc-300">Public Contact Email</label>
+                            <label className="text-sm font-medium text-zinc-300">{t('system_settings.contact_email')}</label>
                             <input
                                 type="email"
                                 name="contact_email"
@@ -281,7 +333,7 @@ export default function SystemSettings() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-zinc-300">Admin Notification Email</label>
+                            <label className="text-sm font-medium text-zinc-300">{t('system_settings.admin_notification_email')}</label>
                             <input
                                 type="email"
                                 name="admin_notification_email"
@@ -297,7 +349,7 @@ export default function SystemSettings() {
                 <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden shadow-sm">
                     <div className="bg-zinc-800/50 px-6 py-4 border-b border-zinc-800 flex items-center gap-3">
                         <Settings2 className="text-rose-500" size={20} />
-                        <h3 className="font-semibold text-lg text-white">System Control (Enterprise)</h3>
+                        <h3 className="font-semibold text-lg text-white">{t('system_settings.system_control')}</h3>
                     </div>
                     <div className="p-6 flex flex-col sm:flex-row gap-8">
                         <label className="flex items-center cursor-pointer group">
@@ -313,8 +365,8 @@ export default function SystemSettings() {
                                 <div className={`dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform ${settings.simulation_mode === 'true' ? 'transform translate-x-6' : ''}`}></div>
                             </div>
                             <div className="ml-4">
-                                <div className="text-sm font-medium text-zinc-200 group-hover:text-white transition-colors">Simulation Mode</div>
-                                <div className="text-xs text-zinc-500">Dashboard map akan menggunakan mock data</div>
+                                <div className="text-sm font-medium text-zinc-200 group-hover:text-white transition-colors">{t('system_settings.simulation_mode')}</div>
+                                <div className="text-xs text-zinc-500">{t('system_settings.simulation_desc')}</div>
                             </div>
                         </label>
 
@@ -331,8 +383,8 @@ export default function SystemSettings() {
                                 <div className={`dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform ${settings.maintenance_mode === 'true' ? 'transform translate-x-6' : ''}`}></div>
                             </div>
                             <div className="ml-4">
-                                <div className="text-sm font-medium text-zinc-200 group-hover:text-white transition-colors">Maintenance Mode</div>
-                                <div className="text-xs text-zinc-500">Frontend publik akan menampilkan layar maintenance</div>
+                                <div className="text-sm font-medium text-zinc-200 group-hover:text-white transition-colors">{t('system_settings.maintenance_mode')}</div>
+                                <div className="text-xs text-zinc-500">{t('system_settings.maintenance_desc')}</div>
                             </div>
                         </label>
                     </div>
@@ -349,13 +401,21 @@ export default function SystemSettings() {
                         ) : (
                             <Save size={18} />
                         )}
-                        <span>{isSaving ? 'Menyimpan...' : 'Save Configuration'}</span>
+                        <span>{isSaving ? t('system_settings.saving') : t('system_settings.save_btn')}</span>
                     </button>
                 </div>
             </form>
 
 
             
+            <EditAboutModal 
+                isOpen={isAboutModalOpen} 
+                onClose={() => setIsAboutModalOpen(false)}
+                initialData={settings.about_page_content ? JSON.parse(settings.about_page_content) : null}
+                onSave={handleSaveAboutContent}
+                isSaving={isSavingAbout}
+                founderImageUrl={settings.about_founder_image ? import.meta.env.VITE_API_URL + '/' + settings.about_founder_image : null}
+            />
         </div>
     );
 }
