@@ -75,7 +75,7 @@ function ChartWrapper({ title, subtitle, children, loading }) {
     );
 }
 
-/** Traffic Visitors — dari page_views (sesuai date range) */
+/** Traffic Visitors — dari page_views dan wholesale_orders (sesuai date range) */
 export const TrafficChart = ({ dateRange = {} }) => {
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -84,17 +84,24 @@ export const TrafficChart = ({ dateRange = {} }) => {
         setLoading(true);
         fetchStats(dateRange).then(stats => {
             const allDates = resolveDateRangeObj(dateRange);
-            const dailyMap = {};
+            const visitsMap = {};
             (stats?.daily_visits || []).forEach(row => {
                 const d = new Date(row.date);
-                dailyMap[toLocalDateStr(d)] = Number(row.count);
+                visitsMap[toLocalDateStr(d)] = Number(row.count);
+            });
+
+            const ordersMap = {};
+            (stats?.daily_orders || []).forEach(row => {
+                const d = new Date(row.date);
+                ordersMap[toLocalDateStr(d)] = Number(row.count);
             });
 
             const formatted = allDates.map(dateObj => {
                 const dateKey = toLocalDateStr(dateObj);
                 return {
                     name: dateObj.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' }),
-                    visitors: dailyMap[dateKey] || 0
+                    "Page Views": visitsMap[dateKey] || 0,
+                    "Orders": ordersMap[dateKey] || 0
                 };
             });
             setData(formatted);
@@ -102,14 +109,16 @@ export const TrafficChart = ({ dateRange = {} }) => {
     }, [dateRange.startDate, dateRange.endDate]);
 
     return (
-        <ChartWrapper title="Traffic Visitors" subtitle="Page Views" loading={loading}>
+        <ChartWrapper title="Traffic Visitors" subtitle="Page Views & Orders" loading={loading}>
             <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={data}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#3f3f46" vertical={false} />
                     <XAxis dataKey="name" stroke="#a1a1aa" fontSize={12} tickLine={false} axisLine={false} />
                     <YAxis stroke="#a1a1aa" fontSize={12} tickLine={false} axisLine={false} tickFormatter={v => v >= 1000 ? `${(v/1000).toFixed(1)}k` : v} />
                     <Tooltip contentStyle={{ backgroundColor: '#18181b', borderColor: '#3f3f46', color: '#f4f4f5' }} />
-                    <Line type="monotone" dataKey="visitors" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4, fill: '#18181b', strokeWidth: 2 }} activeDot={{ r: 6 }} />
+                    <Legend wrapperStyle={{ fontSize: '12px', color: '#a1a1aa', paddingTop: '10px' }} />
+                    <Line type="monotone" dataKey="Page Views" name="Melihat Website" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4, fill: '#18181b', strokeWidth: 2 }} activeDot={{ r: 6 }} />
+                    <Line type="monotone" dataKey="Orders" name="Order" stroke="#10b981" strokeWidth={3} dot={{ r: 4, fill: '#18181b', strokeWidth: 2 }} activeDot={{ r: 6 }} />
                 </LineChart>
             </ResponsiveContainer>
         </ChartWrapper>

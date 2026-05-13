@@ -138,6 +138,15 @@ exports.getTrackingStats = async (req, res) => {
             ORDER BY date ASC
         `, dateParams);
 
+        // Orders per day (filtered by date range)
+        const [dailyOrders] = await db.query(`
+            SELECT DATE(created_at) as date, COUNT(*) as count 
+            FROM wholesale_orders 
+            WHERE ${dateCondition}
+            GROUP BY DATE(created_at)
+            ORDER BY date ASC
+        `, dateParams);
+
         const [latestViews] = await db.query(`
             SELECT 'page_view' as type, url as identifier, client_id as ip_address, created_at 
             FROM page_views 
@@ -160,6 +169,7 @@ exports.getTrackingStats = async (req, res) => {
                 total_views: totalViews[0].count,
                 platform_clicks: platformClicks,
                 daily_visits: dailyVisits,
+                daily_orders: dailyOrders,
                 daily_clicks: dailyClicks,
                 user_growth: userGrowth,
                 subscriber_growth: subscriberGrowth,
