@@ -142,7 +142,7 @@ exports.createWholesaleOrder = async (req, res) => {
     } catch (error) {
         await connection.rollback();
         console.error('Error creating wholesale order:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        res.status(500).json({ error: 'Internal Server Error', details: error.message });
     } finally {
         connection.release();
     }
@@ -155,7 +155,14 @@ exports.getAllOrders = async (req, res) => {
         const [orders] = await db.query(
             `SELECT wo.*,
                     COALESCE(oi.total_qty, 0)    AS total_qty,
-                    COALESCE(oi.total_items, 0)  AS total_items
+                    COALESCE(oi.total_items, 0)  AS total_items,
+                    (
+                        SELECT metadata 
+                        FROM chats 
+                        WHERE message_type = 'wholesale_confirmed' 
+                        AND JSON_EXTRACT(metadata, '$.order_id') = wo.order_id 
+                        ORDER BY chat_id DESC LIMIT 1
+                    ) AS confirmation_metadata
              FROM wholesale_orders wo
              LEFT JOIN (
                  SELECT order_id,
@@ -166,7 +173,26 @@ exports.getAllOrders = async (req, res) => {
              ) oi ON oi.order_id = wo.order_id
              ORDER BY wo.created_at DESC`
         );
-        res.status(200).json(orders);
+
+        const processedOrders = orders.map(order => {
+            if (order.confirmation_metadata) {
+                let meta = order.confirmation_metadata;
+                if (typeof meta === 'string') {
+                    try { meta = JSON.parse(meta); } catch(e){}
+                }
+                if (meta) {
+                    order.grand_total = meta.grand_total != null ? meta.grand_total : null;
+                    if (meta.invoice_items && Array.isArray(meta.invoice_items)) {
+                        order.total_qty = meta.invoice_items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+                        order.total_items = meta.invoice_items.length;
+                    }
+                }
+            }
+            delete order.confirmation_metadata;
+            return order;
+        });
+
+        res.status(200).json(processedOrders);
     } catch (error) {
         console.error('Error fetching wholesale orders:', error);
         res.status(500).json({ error: 'Internal Server Error' });
@@ -225,6 +251,25 @@ exports.getOrderById = async (req, res) => {
             [id]
         );
         order.items = items;
+
+        const [chatRows] = await connection.query(
+            `SELECT metadata FROM chats 
+             WHERE message_type = 'wholesale_confirmed' 
+             AND JSON_EXTRACT(metadata, '$.order_id') = ? 
+             ORDER BY chat_id DESC LIMIT 1`,
+            [Number(id)]
+        );
+        if (chatRows.length > 0 && chatRows[0].metadata) {
+            let meta = chatRows[0].metadata;
+            if (typeof meta === 'string') {
+                try { meta = JSON.parse(meta); } catch(e){}
+            }
+            if (meta) {
+                order.invoice_items = meta.invoice_items || null;
+                order.subtotal = meta.subtotal != null ? meta.subtotal : null;
+                order.grand_total = meta.grand_total != null ? meta.grand_total : null;
+            }
+        }
 
         await connection.commit();
         res.status(200).json(order);
@@ -512,5 +557,236 @@ exports.getUnreadOrdersCount = async (req, res) => {
     } catch (error) {
         console.error('Error fetching unread orders count:', error);
         res.status(500).json({ error: 'Internal Server Error' });
+    }
+};
+
+exports.exportOrders = async (req, res) => {
+    const { format } = req.params;
+    const { dateRange, startDate, endDate, stores } = req.query;
+
+    try {
+        let whereClauses = [];
+        let params = [];
+
+        if (dateRange && dateRange !== 'all') {
+            const now = new Date();
+            let fromDate;
+            if (dateRange === 'today') {
+                fromDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            } else if (dateRange === 'last_7_days') {
+                fromDate = new Date(now); fromDate.setDate(fromDate.getDate() - 6);
+                fromDate.setHours(0, 0, 0, 0);
+            } else if (dateRange === 'last_30_days') {
+                fromDate = new Date(now); fromDate.setDate(fromDate.getDate() - 29);
+                fromDate.setHours(0, 0, 0, 0);
+            } else if (dateRange === 'last_1_year') {
+                fromDate = new Date(now); fromDate.setFullYear(fromDate.getFullYear() - 1);
+                fromDate.setHours(0, 0, 0, 0);
+            } else if (dateRange === 'custom' && startDate && endDate) {
+                whereClauses.push('wo.created_at >= ? AND wo.created_at < DATE_ADD(?, INTERVAL 1 DAY)');
+                params.push(startDate, endDate);
+            }
+            if (fromDate && dateRange !== 'custom') {
+                whereClauses.push('wo.created_at >= ?');
+                params.push(fromDate.toISOString().split('T')[0]);
+            }
+        }
+
+        if (stores && stores !== 'all') {
+            const storeList = stores.split(',').map(s => s.trim()).filter(Boolean);
+            if (storeList.length > 0) {
+                whereClauses.push(`LOWER(TRIM(wo.shop_name)) IN (${storeList.map(() => '?').join(',')})`);
+                params.push(...storeList.map(s => s.toLowerCase()));
+            }
+        }
+
+        const whereSQL = whereClauses.length > 0 ? 'WHERE ' + whereClauses.join(' AND ') : '';
+
+        const query = `
+            SELECT wo.*,
+                   COALESCE(oi.total_qty, 0)   AS total_qty,
+                   COALESCE(oi.total_items, 0) AS total_items,
+                   oi.items_detail,
+                   (
+                        SELECT metadata 
+                        FROM chats 
+                        WHERE message_type = 'wholesale_confirmed' 
+                        AND JSON_EXTRACT(metadata, '$.order_id') = wo.order_id 
+                        ORDER BY chat_id DESC LIMIT 1
+                   ) AS confirmation_metadata
+            FROM wholesale_orders wo
+            LEFT JOIN (
+                SELECT order_id,
+                       SUM(quantity)  AS total_qty,
+                       COUNT(*)       AS total_items,
+                       GROUP_CONCAT(CONCAT(product_name_snapshot, ' (', size, ') x', quantity) SEPARATOR ', ') AS items_detail
+                FROM order_items
+                GROUP BY order_id
+            ) oi ON oi.order_id = wo.order_id
+            ${whereSQL}
+            ORDER BY wo.created_at DESC
+        `;
+
+        let [orders] = await db.query(query, params);
+
+        orders = orders.map(order => {
+            if (order.confirmation_metadata) {
+                let meta = order.confirmation_metadata;
+                if (typeof meta === 'string') {
+                    try { meta = JSON.parse(meta); } catch(e){}
+                }
+                if (meta) {
+                    order.grand_total = meta.grand_total != null ? meta.grand_total : null;
+                    order.subtotal = meta.subtotal != null ? meta.subtotal : null;
+                    order.shipping_cost_confirmed = meta.shipping_cost != null ? meta.shipping_cost : null;
+
+                    if (meta.invoice_items && Array.isArray(meta.invoice_items)) {
+                        order.total_qty = meta.invoice_items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+                        order.total_items = meta.invoice_items.length;
+                        order.items_detail = meta.invoice_items.map(i => `${i.product_name_snapshot} (${i.size}) x${i.quantity}`).join(', ');
+                    }
+                }
+            }
+            delete order.confirmation_metadata;
+            return order;
+        });
+
+        if (format === 'csv') {
+            const escapeCSV = (str) => {
+                if (!str) return '';
+                const cleanStr = String(str).replace(/"/g, '""');
+                if (cleanStr.includes(',') || cleanStr.includes('\n') || cleanStr.includes('"')) {
+                    return `"${cleanStr}"`;
+                }
+                return cleanStr;
+            };
+
+            let csv = 'Order ID,Shop Name,Name,Email,Phone,Type,Message,Address,Status,Total Qty,Total Items,Items Detail,Subtotal,Shipping Cost,Grand Total,Created At\n';
+            orders.forEach(o => {
+                csv += `${o.order_id},${escapeCSV(o.shop_name)},${escapeCSV(o.name)},${escapeCSV(o.email)},${escapeCSV(o.phone)},${escapeCSV(o.inquiry_type)},${escapeCSV(o.message)},${escapeCSV(o.address)},${escapeCSV(o.status)},${o.total_qty},${o.total_items},${escapeCSV(o.items_detail)},${o.subtotal || ''},${o.shipping_cost_confirmed != null ? o.shipping_cost_confirmed : (o.shipping_cost || '')},${o.grand_total || ''},${escapeCSV(new Date(o.created_at).toISOString())}\n`;
+            });
+
+            res.setHeader('Content-Type', 'text/csv');
+            res.setHeader('Content-Disposition', `attachment; filename="wholesale_export_${new Date().toISOString().split('T')[0]}.csv"`);
+            await logAdminActivity(req, 'READ', 'Wholesale Order', null, { action: 'export_wholesale', format: 'csv' });
+            return res.status(200).send(csv);
+
+        } else if (format === 'pdf') {
+            const PDFDocument = require('pdfkit-table');
+            const path = require('path');
+            const fs = require('fs');
+            const doc = new PDFDocument({ margin: 30, size: 'A4', layout: 'landscape' });
+
+            res.setHeader('Content-Type', 'application/pdf');
+            res.setHeader('Content-Disposition', `attachment; filename="wholesale_export_${new Date().toISOString().split('T')[0]}.pdf"`);
+            doc.pipe(res);
+
+            const imagePath = path.join(__dirname, '../../frontend/src/assets/reload_transparent.png');
+            if (fs.existsSync(imagePath)) {
+                doc.save();
+                doc.opacity(0.35);
+                doc.translate(doc.page.width / 2, doc.page.height / 2);
+                doc.rotate(-45);
+                doc.image(imagePath, -250, -250, { width: 500 });
+                doc.restore();
+            }
+
+            doc.font('Helvetica-Bold').fontSize(16).text('Reload Distro - Wholesale Orders', { align: 'center' });
+            doc.moveDown(0.5);
+            doc.font('Helvetica').fontSize(9).fillColor('#888888').text(`Exported: ${new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })} — ${orders.length} order(s)`, { align: 'center' });
+            doc.fillColor('#000000');
+            doc.moveDown(1.5);
+
+            const table = {
+                title: '',
+                headers: ['#', 'Store', 'Name', 'Email', 'Status', 'Qty', 'Items', 'Total', 'Date'],
+                rows: orders.map(o => [
+                    String(o.order_id),
+                    o.shop_name || '-',
+                    o.name || '',
+                    o.email || '',
+                    o.status || '',
+                    String(o.total_qty || 0),
+                    o.items_detail || '-',
+                    o.grand_total ? `Rp ${Number(o.grand_total).toLocaleString('id-ID')}` : '-',
+                    new Date(o.created_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })
+                ])
+            };
+
+            await doc.table(table, {
+                width: 750,
+                prepareHeader: () => doc.font('Helvetica-Bold').fontSize(9),
+                prepareRow: () => doc.font('Helvetica').fontSize(8)
+            });
+
+            await logAdminActivity(req, 'READ', 'Wholesale Order', null, { action: 'export_wholesale', format: 'pdf' });
+            doc.end();
+            return;
+
+        } else if (format === 'excel') {
+            const ExcelJS = require('exceljs');
+            const workbook = new ExcelJS.Workbook();
+            const worksheet = workbook.addWorksheet('Wholesale Orders');
+
+            worksheet.columns = [
+                { header: 'Order ID',   key: 'order_id',   width: 10 },
+                { header: 'Shop Name',  key: 'shop_name',  width: 25 },
+                { header: 'Name',       key: 'name',       width: 25 },
+                { header: 'Email',      key: 'email',      width: 30 },
+                { header: 'Phone',      key: 'phone',      width: 18 },
+                { header: 'Type',       key: 'type',       width: 20 },
+                { header: 'Message',    key: 'message',    width: 35 },
+                { header: 'Address',    key: 'address',    width: 30 },
+                { header: 'Status',     key: 'status',     width: 20 },
+                { header: 'Total Qty',  key: 'total_qty',  width: 10 },
+                { header: 'Items',      key: 'items',      width: 12 },
+                { header: 'Items Detail', key: 'items_detail', width: 40 },
+                { header: 'Subtotal',   key: 'subtotal',   width: 15 },
+                { header: 'Shipping',   key: 'shipping',   width: 15 },
+                { header: 'Grand Total',key: 'grand_total',width: 15 },
+                { header: 'Created At', key: 'created_at', width: 22 },
+            ];
+
+            worksheet.getRow(1).font = { bold: true };
+            worksheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1a1a1a' } };
+            worksheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+
+            orders.forEach(o => {
+                worksheet.addRow({
+                    order_id: o.order_id,
+                    shop_name: o.shop_name || '',
+                    name: o.name || '',
+                    email: o.email || '',
+                    phone: o.phone || '',
+                    type: o.inquiry_type || '',
+                    message: o.message || '',
+                    address: o.address || '',
+                    status: o.status || '',
+                    total_qty: Number(o.total_qty) || 0,
+                    items: Number(o.total_items) || 0,
+                    items_detail: o.items_detail || '',
+                    subtotal: Number(o.subtotal) || 0,
+                    shipping: Number(o.shipping_cost_confirmed != null ? o.shipping_cost_confirmed : o.shipping_cost) || 0,
+                    grand_total: Number(o.grand_total) || 0,
+                    created_at: new Date(o.created_at).toISOString(),
+                });
+            });
+
+            res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            res.setHeader('Content-Disposition', `attachment; filename="wholesale_export_${new Date().toISOString().split('T')[0]}.xlsx"`);
+
+            const buffer = await workbook.xlsx.writeBuffer();
+            await logAdminActivity(req, 'READ', 'Wholesale Order', null, { action: 'export_wholesale', format: 'excel' });
+            return res.status(200).send(buffer);
+
+        } else {
+            return res.status(400).json({ message: 'Invalid format. Use csv, excel, or pdf.' });
+        }
+
+    } catch (error) {
+        console.error('Wholesale Export Error:', error);
+        if (!res.headersSent) {
+            res.status(500).json({ error: 'Failed to export wholesale orders' });
+        }
     }
 };

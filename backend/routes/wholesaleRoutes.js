@@ -9,6 +9,7 @@ router.post('/', wholesaleController.createWholesaleOrder);
 
 // Dashboard routes
 router.get('/unread-count', verifyToken, isAdmin, wholesaleController.getUnreadOrdersCount);
+router.get('/export/:format', verifyToken, isAdmin, wholesaleController.exportOrders);
 router.get('/', verifyToken, isAdmin, wholesaleController.getAllOrders);
 router.get('/admin/user/:userId', verifyToken, isAdmin, wholesaleController.getUserWholesaleOrder);
 router.get('/:id', verifyToken, isAdmin, wholesaleController.getOrderById);

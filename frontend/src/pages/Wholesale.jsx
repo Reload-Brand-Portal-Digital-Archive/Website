@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Search, Trash2, CheckCircle2, ChevronRight, Layers, Maximize2 } from 'lucide-react';
@@ -16,6 +16,7 @@ export default function Wholesale() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedItems, setSelectedItems] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pastStores, setPastStores] = useState([]);
   
   const [formData, setFormData] = useState({
     shop_name: '',
@@ -49,7 +50,24 @@ export default function Wholesale() {
         console.error("Failed to fetch products:", err);
       }
     };
+    
+    const fetchPastStores = async () => {
+      if (!token) return;
+      try {
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        const res = await axios.get(apiUrl + '/api/profile/wholesale', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (Array.isArray(res.data)) {
+            const stores = [...new Set(res.data.map(o => o.shop_name).filter(Boolean))];
+            setPastStores(stores);
+        }
+      } catch (err) {
+      }
+    };
+
     fetchProducts();
+    fetchPastStores();
   }, []);
 
   const filteredProducts = useMemo(() => {
@@ -355,7 +373,21 @@ export default function Wholesale() {
                     
                     <div className="flex flex-col gap-1.5">
                         <label className="text-[10px] font-mono text-zinc-500 uppercase">{t('wholesale.shop_name')}</label>
-                        <input required name="shop_name" value={formData.shop_name} onChange={handleFormChange} type="text" className="bg-zinc-950 border border-zinc-800 focus:border-zinc-600 outline-none h-10 px-3 text-xs text-zinc-200" />
+                        <input 
+                            required 
+                            name="shop_name" 
+                            list="past-stores"
+                            value={formData.shop_name} 
+                            onChange={handleFormChange} 
+                            type="text" 
+                            className="bg-zinc-950 border border-zinc-800 focus:border-zinc-600 outline-none h-10 px-3 text-xs text-zinc-200" 
+                            placeholder={t('wholesale.shop_name_placeholder') || "Enter shop name..."}
+                        />
+                        <datalist id="past-stores">
+                            {pastStores.map((store, idx) => (
+                                <option key={idx} value={store} />
+                            ))}
+                        </datalist>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
