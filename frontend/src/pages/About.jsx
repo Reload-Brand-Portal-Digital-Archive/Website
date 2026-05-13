@@ -163,24 +163,16 @@ function BrandStorySection({ t }) {
 // Section 3 — Values / Principles
 // ─────────────────────────────────────────
 
-function ValuesSection({ t }) {
-  const VALUES = [
-    {
-      index: '01',
-      title: t('about.value_1_title'),
-      description: t('about.value_1_desc'),
-    },
-    {
-      index: '02',
-      title: t('about.value_2_title'),
-      description: t('about.value_2_desc'),
-    },
-    {
-      index: '03',
-      title: t('about.value_3_title'),
-      description: t('about.value_3_desc'),
-    },
-  ];
+function ValuesSection({ t, values: valuesData }) {
+  const VALUES = valuesData && valuesData.length > 0
+    ? valuesData.map((v, i) => ({ index: String(i + 1).padStart(2, '0'), title: v.title, description: v.description }))
+    : [
+        { index: '01', title: t('about.value_1_title'), description: t('about.value_1_desc') },
+        { index: '02', title: t('about.value_2_title'), description: t('about.value_2_desc') },
+        { index: '03', title: t('about.value_3_title'), description: t('about.value_3_desc') },
+      ];
+
+  const gridCols = VALUES.length === 1 ? 'md:grid-cols-1' : VALUES.length === 2 ? 'md:grid-cols-2' : 'md:grid-cols-3';
 
   return (
     <section className="w-full bg-zinc-950 font-sans">
@@ -201,7 +193,7 @@ function ValuesSection({ t }) {
           </h2>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-0 border-t border-zinc-800">
+        <div className={`grid grid-cols-1 ${gridCols} gap-0 border-t border-zinc-800`}>
           {VALUES.map((v, i) => (
             <motion.div
               key={v.index}
@@ -235,29 +227,15 @@ function ValuesSection({ t }) {
 // Section 4 — Timeline / Milestones
 // ─────────────────────────────────────────
 
-function TimelineSection({ t }) {
-  const MILESTONES = [
-    {
-      year: '2002',
-      title: t('about.milestone_1_title'),
-      description: t('about.milestone_1_desc'),
-    },
-    {
-      year: '2010',
-      title: t('about.milestone_2_title'),
-      description: t('about.milestone_2_desc'),
-    },
-    {
-      year: '2012',
-      title: t('about.milestone_3_title'),
-      description: t('about.milestone_3_desc'),
-    },
-    {
-      year: '2025',
-      title: t('about.milestone_4_title'),
-      description: t('about.milestone_4_desc'),
-    },
-  ];
+function TimelineSection({ t, milestones: milestonesData }) {
+  const MILESTONES = milestonesData && milestonesData.length > 0 
+    ? milestonesData 
+    : [
+        { year: '2002', title: t('about.milestone_1_title'), description: t('about.milestone_1_desc') },
+        { year: '2010', title: t('about.milestone_2_title'), description: t('about.milestone_2_desc') },
+        { year: '2012', title: t('about.milestone_3_title'), description: t('about.milestone_3_desc') },
+        { year: '2025', title: t('about.milestone_4_title'), description: t('about.milestone_4_desc') },
+      ];
 
   return (
     <section className="w-full bg-zinc-900 border-y border-zinc-800 font-sans">
@@ -321,17 +299,14 @@ function TimelineSection({ t }) {
 // Section 5 — Team / Studio
 // ─────────────────────────────────────────
 
-function TeamSection({ t, founderImage, founderName }) {
-  const displayName = founderName || 'Agus Syahrudin';
-  const displayImage = founderImage || '/images/founder.jpg';
+function TeamSection({ t, founders }) {
+  const TEAM = founders && founders.length > 0 
+    ? founders 
+    : [{ name: 'Agus Syahrudin', title: t('about.founder_title'), image: '/images/founder.jpg' }];
 
-  const TEAM = [
-    { 
-      name: displayName, 
-      title: t('about.founder_title'),
-      image: displayImage
-    }
-  ];
+  const gridClass = TEAM.length === 1 
+    ? 'flex justify-center md:justify-start' 
+    : `grid grid-cols-1 ${TEAM.length === 2 ? 'md:grid-cols-2' : 'md:grid-cols-3'} gap-8`;
 
   return (
     <section className="w-full bg-zinc-950 font-sans">
@@ -352,8 +327,7 @@ function TeamSection({ t, founderImage, founderName }) {
           </h2>
         </motion.div>
 
-        {/* Changed grid to flex and centered since there's only 1 member */}
-        <div className="flex justify-center md:justify-start">
+        <div className={gridClass}>
           {TEAM.map((member, i) => (
             <motion.div
               key={i}
@@ -361,7 +335,7 @@ function TeamSection({ t, founderImage, founderName }) {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.2 }}
               transition={{ duration: 0.7, delay: i * 0.12, ease: [0.22, 1, 0.36, 1] }}
-              className="flex flex-col gap-4 group w-full max-w-sm"
+              className={`flex flex-col gap-4 group ${TEAM.length === 1 ? 'w-full max-w-sm' : 'w-full'}`}
             >
               {/* Avatar placeholder or Image */}
               <div className="aspect-square bg-zinc-900 border border-zinc-800 group-hover:border-zinc-600 transition-colors overflow-hidden relative flex items-center justify-center">
@@ -378,7 +352,7 @@ function TeamSection({ t, founderImage, founderName }) {
                 {/* Fallback box jika gambar error/tidak ditemukan */}
                 <div className="hidden flex-col items-center gap-2 absolute inset-0 justify-center bg-zinc-900">
                   <span className="font-mono text-[9px] text-zinc-700 uppercase tracking-widest text-center px-4">
-                    {t('about.photo_not_found')}<br/><br/>{t('about.save_image_at')}<br/>public/images/founder.jpg
+                    {t('about.photo_not_found')}
                   </span>
                 </div>
 
@@ -489,6 +463,51 @@ export default function About() {
     }
     return t(key);
   }, [aboutContent, i18n.language, t]);
+
+  const milestones = React.useMemo(() => {
+    const lang = i18n.language;
+    const savedMilestones = aboutContent?.milestones;
+    if (savedMilestones && Array.isArray(savedMilestones) && savedMilestones.length > 0) {
+      return savedMilestones.map(ms => ({
+        year: ms.year || '',
+        title: lang === 'id' ? (ms.title_id || ms.title_en || '') : (ms.title_en || ''),
+        description: lang === 'id' ? (ms.desc_id || ms.desc_en || '') : (ms.desc_en || ''),
+      }));
+    }
+    return null;
+  }, [aboutContent, i18n.language]);
+
+  const valuesData = React.useMemo(() => {
+    const lang = i18n.language;
+    const savedValues = aboutContent?.values;
+    if (savedValues && Array.isArray(savedValues) && savedValues.length > 0) {
+      return savedValues.map(v => ({
+        title: lang === 'id' ? (v.title_id || v.title_en || '') : (v.title_en || ''),
+        description: lang === 'id' ? (v.desc_id || v.desc_en || '') : (v.desc_en || ''),
+      }));
+    }
+    return null;
+  }, [aboutContent, i18n.language]);
+
+  const founders = React.useMemo(() => {
+    const apiUrl = import.meta.env.VITE_API_URL;
+    const savedFounders = aboutContent?.founders;
+    const founderCount = aboutContent?.founder_count || (savedFounders?.length) || 1;
+    
+    const result = [];
+    for (let i = 0; i < founderCount; i++) {
+      const imageKey = `about_founder_image_${i}`;
+      const imagePath = settings?.[imageKey] 
+        || (i === 0 ? settings?.about_founder_image : null);
+      
+      result.push({
+        name: savedFounders?.[i]?.name || (i === 0 ? 'Agus Syahrudin' : `Founder ${i + 1}`),
+        title: tAbout('about.founder_title'),
+        image: imagePath ? apiUrl + '/' + imagePath : '/images/founder.jpg'
+      });
+    }
+    return result;
+  }, [aboutContent, settings, tAbout]);
   
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-50 font-sans cursor-default selection:bg-white selection:text-black">
@@ -506,12 +525,11 @@ export default function About() {
       <main className="relative z-10">
         <HeroSection t={tAbout} />
         <BrandStorySection t={tAbout} />
-        <ValuesSection t={tAbout} />
-        <TimelineSection t={tAbout} />
+        <ValuesSection t={tAbout} values={valuesData} />
+        <TimelineSection t={tAbout} milestones={milestones} />
         <TeamSection 
           t={tAbout} 
-          founderImage={settings?.about_founder_image ? import.meta.env.VITE_API_URL + '/' + settings.about_founder_image : null}
-          founderName={aboutContent?.founder_name}
+          founders={founders}
         />
         <CTASection t={tAbout} />
       </main>

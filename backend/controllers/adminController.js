@@ -86,16 +86,33 @@ exports.uploadFounderImage = async (req, res) => {
             return res.status(400).json({ success: false, message: 'No file uploaded' });
         }
 
+        const founderIndex = parseInt(req.body.founder_index) || 0;
+        if (founderIndex < 0 || founderIndex > 2) {
+            return res.status(400).json({ success: false, message: 'Invalid founder index (0-2)' });
+        }
+
         const filePath = req.file.path.replace(/\\/g, '/');
+        const settingKey = `about_founder_image_${founderIndex}`;
         
-        await db.query(
-            'INSERT INTO site_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)',
-            ['about_founder_image', filePath]
-        );
+        const queries = [
+            db.query(
+                'INSERT INTO site_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)',
+                [settingKey, filePath]
+            )
+        ];
+        if (founderIndex === 0) {
+            queries.push(
+                db.query(
+                    'INSERT INTO site_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)',
+                    ['about_founder_image', filePath]
+                )
+            );
+        }
+        await Promise.all(queries);
 
-        await logAdminActivity(req, 'UPDATE', 'Settings', null, { about_founder_image: filePath });
+        await logAdminActivity(req, 'UPDATE', 'Settings', null, { [settingKey]: filePath });
 
-        res.status(200).json({ success: true, message: 'Founder image updated successfully', data: { about_founder_image: filePath } });
+        res.status(200).json({ success: true, message: 'Founder image updated successfully', data: { [settingKey]: filePath } });
     } catch (error) {
         console.error('Upload Founder Image Error:', error);
         res.status(500).json({ success: false, message: 'Failed to upload founder image' });
