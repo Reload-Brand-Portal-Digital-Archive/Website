@@ -312,7 +312,7 @@ function ConfirmationPanel({ session, token, onDone, t }) {
             </button>
 
             {expanded && (
-                <div className="px-4 pb-5 space-y-4 animate-in slide-in-from-bottom-2 duration-200">
+                <div className="px-4 pb-5 space-y-4 animate-in slide-in-from-bottom-2 duration-200 max-h-[50vh] overflow-y-auto custom-scrollbar">
                     <p className="text-xs text-zinc-500">{t('admin_chats.confirmation_panel_desc')}</p>
 
                     {/* Items list */}
