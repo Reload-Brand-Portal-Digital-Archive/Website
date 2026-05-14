@@ -265,3 +265,131 @@ exports.getGpsLocations = async (req, res) => {
         res.status(500).json({ success: false, message: 'Failed to fetch GPS locations' });
     }
 };
+
+/**
+ * getCompletedWholesaleLocations - Returns wholesale orders with status 'Pesanan selesai'
+ * with geocoded coordinates based on city name extracted from the address field
+ */
+exports.getCompletedWholesaleLocations = async (req, res) => {
+    // Kamus kota Indonesia → koordinat [lat, lng]
+    const CITY_COORDS = {
+        'jakarta': [-6.2088, 106.8456],
+        'jakarta pusat': [-6.1865, 106.8354],
+        'jakarta barat': [-6.1683, 106.7635],
+        'jakarta timur': [-6.2250, 106.9004],
+        'jakarta selatan': [-6.2668, 106.8139],
+        'jakarta utara': [-6.1219, 106.8972],
+        'bandung': [-6.9147, 107.6098],
+        'surabaya': [-7.2504, 112.7688],
+        'medan': [3.5952, 98.6722],
+        'makassar': [-5.1477, 119.4327],
+        'yogyakarta': [-7.7956, 110.3695],
+        'jogja': [-7.7956, 110.3695],
+        'semarang': [-6.9667, 110.4167],
+        'denpasar': [-8.6500, 115.2167],
+        'bali': [-8.3405, 115.0920],
+        'palembang': [-2.9761, 104.7754],
+        'tangerang': [-6.1783, 106.6319],
+        'depok': [-6.4025, 106.7942],
+        'bekasi': [-6.2383, 106.9756],
+        'bogor': [-6.5971, 106.8060],
+        'batam': [1.1301, 104.0529],
+        'pekanbaru': [0.5071, 101.4478],
+        'balikpapan': [-1.2675, 116.8289],
+        'banjarmasin': [-3.3186, 114.5944],
+        'padang': [-0.9471, 100.4172],
+        'manado': [1.4748, 124.8421],
+        'pontianak': [-0.0263, 109.3425],
+        'samarinda': [-0.5016, 117.1537],
+        'malang': [-7.9666, 112.6326],
+        'solo': [-7.5755, 110.8243],
+        'surakarta': [-7.5755, 110.8243],
+        'cirebon': [-6.7063, 108.5570],
+        'tasikmalaya': [-7.3270, 108.2132],
+        'serang': [-6.1201, 106.1503],
+        'cilegon': [-6.0023, 106.0141],
+        'sukabumi': [-6.9275, 106.9300],
+        'garut': [-7.2167, 107.9000],
+        'purwokerto': [-7.4286, 109.2330],
+        'tegal': [-6.8694, 109.1402],
+        'palu': [-0.8917, 119.8707],
+        'ambon': [-3.6554, 128.1900],
+        'sorong': [-0.8761, 131.2501],
+        'jayapura': [-2.5337, 140.7181],
+        'kupang': [-10.1772, 123.6070],
+        'mataram': [-8.5833, 116.1167],
+        'kendari': [-3.9985, 122.5127],
+        'gorontalo': [0.5435, 123.0596],
+        'ternate': [0.7833, 127.3667],
+        'bengkulu': [-3.7928, 102.2608],
+        'jambi': [-1.6101, 103.6131],
+        'lampung': [-5.4500, 105.2667],
+        'bandar lampung': [-5.4500, 105.2667],
+        'pangkal pinang': [-2.1333, 106.1167],
+        'pangkalpinang': [-2.1333, 106.1167],
+        'tanjung pinang': [0.9167, 104.4500],
+        'cimahi': [-6.8714, 107.5431],
+        'tangerang selatan': [-6.3000, 106.7167],
+        'south tangerang': [-6.3000, 106.7167],
+    };
+
+    /**
+     * Ekstrak nama kota dari string alamat:
+     * Coba cocokkan kata-kata dalam alamat dengan kamus kota
+     */
+    const geocodeAddress = (address) => {
+        if (!address) return null;
+        const lower = address.toLowerCase();
+
+        // Coba exact match panjang dulu (misal 'jakarta selatan')
+        const sortedCities = Object.keys(CITY_COORDS).sort((a, b) => b.length - a.length);
+        for (const city of sortedCities) {
+            if (lower.includes(city)) {
+                const [lat, lng] = CITY_COORDS[city];
+                // Tambahkan sedikit jitter agar marker tidak tumpang tindih persis
+                const jitterLat = (Math.random() - 0.5) * 0.02;
+                const jitterLng = (Math.random() - 0.5) * 0.02;
+                return { lat: lat + jitterLat, lng: lng + jitterLng, city };
+            }
+        }
+        return null;
+    };
+
+    try {
+        const [orders] = await db.query(
+            `SELECT order_id, name, email, phone, address, inquiry_type, created_at, status
+             FROM wholesale_orders
+             WHERE status = 'Pesanan selesai'
+             ORDER BY created_at DESC`
+        );
+
+        const locations = [];
+        for (const order of orders) {
+            const geo = geocodeAddress(order.address);
+            if (!geo) continue; // Lewati jika tidak bisa di-geocode
+
+            locations.push({
+                order_id: order.order_id,
+                name: order.name,
+                address: order.address,
+                city: geo.city,
+                inquiry_type: order.inquiry_type || 'Wholesale',
+                created_at: order.created_at,
+                status: order.status,
+                lat: geo.lat,
+                lng: geo.lng,
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            data: {
+                total: locations.length,
+                locations,
+            }
+        });
+    } catch (error) {
+        console.error('Fetch Completed Wholesale Locations Error:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch wholesale locations' });
+    }
+};

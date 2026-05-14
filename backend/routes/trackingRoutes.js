@@ -18,4 +18,7 @@ router.post('/location', optionalVerifyToken, trackingController.recordGpsLocati
 // Admin: get all GPS visitor locations
 router.get('/locations', verifyToken, isAdmin, trackingController.getGpsLocations);
 
+// Admin: get completed wholesale order locations (status = 'Pesanan selesai')
+router.get('/wholesale-locations', verifyToken, isAdmin, trackingController.getCompletedWholesaleLocations);
+
 module.exports = router;
