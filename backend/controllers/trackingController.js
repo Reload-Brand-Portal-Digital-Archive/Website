@@ -1,4 +1,5 @@
 const db = require('../config/database');
+const { geocodeLocation } = require('../utils/geocoder');
 
 /**
  * recordPageView - Records a user visit to a specific page
@@ -272,7 +273,7 @@ exports.getGpsLocations = async (req, res) => {
  */
 exports.getCompletedWholesaleLocations = async (req, res) => {
     // Kamus kota Indonesia → koordinat [lat, lng]
-    const CITY_COORDS = {
+    const FALLBACK_CITY_COORDS = {
         'jakarta': [-6.2088, 106.8456],
         'jakarta pusat': [-6.1865, 106.8354],
         'jakarta barat': [-6.1683, 106.7635],
@@ -299,6 +300,11 @@ exports.getCompletedWholesaleLocations = async (req, res) => {
         'banjarmasin': [-3.3186, 114.5944],
         'padang': [-0.9471, 100.4172],
         'manado': [1.4748, 124.8421],
+        'sumedang': [-6.8402, 107.9275],
+        'sbg': [-6.8402, 107.9275], // Alias untuk alamat tes user
+        'purwakarta': [-6.5567, 107.4431],
+        'karawang': [-6.3073, 107.2882],
+        'subang': [-6.5715, 107.7587],
         'pontianak': [-0.0263, 109.3425],
         'samarinda': [-0.5016, 117.1537],
         'malang': [-7.9666, 112.6326],
@@ -334,30 +340,51 @@ exports.getCompletedWholesaleLocations = async (req, res) => {
     };
 
     /**
-     * Ekstrak nama kota dari string alamat:
-     * Coba cocokkan kata-kata dalam alamat dengan kamus kota
+     * geocodeAddress - Mendapatkan koordinat dari alamat.
+     * Strategi:
+     * 1. Cek fallback dictionary (untuk kata kunci spesial seperti 'SBG')
+     * 2. Jika tidak ada, gunakan node-geocoder (Nominatim/OSM)
      */
-    const geocodeAddress = (address) => {
+    const getCoordinates = async (orderId, address) => {
         if (!address) return null;
         const lower = address.toLowerCase();
 
-        // Coba exact match panjang dulu (misal 'jakarta selatan')
-        const sortedCities = Object.keys(CITY_COORDS).sort((a, b) => b.length - a.length);
+        // 1. Cek Fallback Dictionary (Paling cepat)
+        const sortedCities = Object.keys(FALLBACK_CITY_COORDS).sort((a, b) => b.length - a.length);
         for (const city of sortedCities) {
             if (lower.includes(city)) {
-                const [lat, lng] = CITY_COORDS[city];
-                // Tambahkan sedikit jitter agar marker tidak tumpang tindih persis
-                const jitterLat = (Math.random() - 0.5) * 0.02;
-                const jitterLng = (Math.random() - 0.5) * 0.02;
-                return { lat: lat + jitterLat, lng: lng + jitterLng, city };
+                const [lat, lng] = FALLBACK_CITY_COORDS[city];
+                return { lat, lng, city, method: 'dictionary' };
             }
         }
+
+        // 2. Gunakan Real Geocoder (Nominatim)
+        // Kita hanya mengambil bagian alamat yang kemungkinan besar mengandung kota
+        // (Biasanya bagian setelah koma terakhir atau beberapa kata terakhir)
+        const parts = address.split(',');
+        const cityQuery = parts.length > 1 ? parts[parts.length - 1].trim() : address;
+        
+        const coords = await geocodeLocation(cityQuery);
+        if (coords) {
+            const [lat, lng] = coords;
+            // Simpan ke DB agar selanjutnya tidak perlu request API lagi (Caching)
+            try {
+                await db.query(
+                    'UPDATE wholesale_orders SET latitude = ?, longitude = ? WHERE order_id = ?',
+                    [lat, lng, orderId]
+                );
+            } catch (err) {
+                console.error('Failed to cache coordinates:', err);
+            }
+            return { lat, lng, city: cityQuery, method: 'nominatim' };
+        }
+
         return null;
     };
 
     try {
         const [orders] = await db.query(
-            `SELECT order_id, name, email, phone, address, inquiry_type, created_at, status
+            `SELECT order_id, name, email, phone, address, inquiry_type, created_at, status, latitude, longitude
              FROM wholesale_orders
              WHERE status = 'Pesanan selesai'
              ORDER BY created_at DESC`
@@ -365,19 +392,39 @@ exports.getCompletedWholesaleLocations = async (req, res) => {
 
         const locations = [];
         for (const order of orders) {
-            const geo = geocodeAddress(order.address);
-            if (!geo) continue; // Lewati jika tidak bisa di-geocode
+            let lat = order.latitude;
+            let lng = order.longitude;
+            let city = 'Unknown';
+
+            // Jika belum ada koordinat di DB, lakukan geocoding
+            if (!lat || !lng) {
+                const geo = await getCoordinates(order.order_id, order.address);
+                if (geo) {
+                    lat = geo.lat;
+                    lng = geo.lng;
+                    city = geo.city;
+                } else {
+                    continue; // Skip jika tetap tidak ditemukan
+                }
+            } else {
+                // Ekstrak kota kasar dari alamat jika koordinat sudah ada
+                city = order.address.split(',').pop().trim();
+            }
+
+            // Tambahkan sedikit jitter agar marker tidak menumpuk di titik yang sama persis
+            const jitterLat = (Math.random() - 0.5) * 0.015;
+            const jitterLng = (Math.random() - 0.5) * 0.015;
 
             locations.push({
                 order_id: order.order_id,
                 name: order.name,
                 address: order.address,
-                city: geo.city,
+                city: city,
                 inquiry_type: order.inquiry_type || 'Wholesale',
                 created_at: order.created_at,
                 status: order.status,
-                lat: geo.lat,
-                lng: geo.lng,
+                lat: parseFloat(lat) + jitterLat,
+                lng: parseFloat(lng) + jitterLng,
             });
         }
 

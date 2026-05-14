@@ -60,7 +60,7 @@ export default function AdminGeographicMapV2({ refreshTrigger }) {
         `<text x="7" y="11" text-anchor="middle" font-size="10" font-weight="bold"
               font-family="sans-serif" fill="white">WS</text>`);
 
-    // GPS Visitor: cyan dengan ikon sinyal
+    // GPS Visitor: cyan dot
     const gpsIcon = L.divIcon({
         className: '',
         iconAnchor: [12, 12],
@@ -175,6 +175,8 @@ export default function AdminGeographicMapV2({ refreshTrigger }) {
         };
         fetchGpsData();
     }, [refreshTrigger]);
+
+
 
     // Fetch completed wholesale order locations
     useEffect(() => {
@@ -392,18 +394,8 @@ export default function AdminGeographicMapV2({ refreshTrigger }) {
                             <p className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold mb-1">{t('admin_map.stats_revenue')}</p>
                             <span className="text-lg font-bold text-zinc-100 font-mono">Rp {hubData.total_sales.toLocaleString('en-US')}</span>
                         </div>
-                        {wholesaleData && wholesaleData.total > 0 && (
-                            <div className="bg-zinc-950/50 border border-green-900/40 px-4 py-2 rounded-md">
-                                <p className="text-[10px] uppercase tracking-wider text-green-500 font-bold mb-1">✅ Wholesale Selesai</p>
-                                <span className="text-lg font-bold text-green-400 font-mono">{wholesaleData.total}</span>
-                            </div>
-                        )}
-                        {gpsData && (
-                            <div className="bg-zinc-950/50 border border-blue-900/40 px-4 py-2 rounded-md">
-                                <p className="text-[10px] uppercase tracking-wider text-blue-500 font-bold mb-1">📡 GPS Visitors</p>
-                                <span className="text-lg font-bold text-blue-400 font-mono">{gpsData.total}</span>
-                            </div>
-                        )}
+
+
                     </div>
                 )}
             </div>
@@ -466,6 +458,7 @@ export default function AdminGeographicMapV2({ refreshTrigger }) {
                                 <span className="text-cyan-400 font-bold tabular-nums">{gpsData?.total || 0}</span>
                             </div>
                         </div>
+
                     </div>
                 </div>
 

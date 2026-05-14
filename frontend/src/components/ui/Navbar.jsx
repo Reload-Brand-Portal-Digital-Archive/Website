@@ -121,30 +121,46 @@ const Navbar = () => {
                   <span className="absolute -top-1 -right-2 w-2 h-2 rounded-full bg-red-500"></span>
                 )}
               </Link>
-              <div className="absolute right-0 top-full pt-2 w-48 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform origin-top-right z-50">
-                <div className="bg-zinc-950 border border-zinc-800 shadow-xl py-2 flex flex-col">
-                  <Link
-                    to="/profile"
-                    className="px-4 py-2 text-xs font-mono tracking-widest uppercase text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors"
-                  >
-                    {t('nav.profile')}
-                  </Link>
-                  <Link
-                    to="/orders"
-                    className="px-4 py-2 text-xs font-mono tracking-widest uppercase text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors flex items-center justify-between"
-                  >
-                    {t('nav.orders')}
-                    {notifications.unreadOrders && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-                    )}
-                  </Link>
-                  <Separator className="my-1 bg-zinc-800" />
-                  <button
-                    onClick={handleLogout}
-                    className="px-4 py-2 text-xs font-mono tracking-widest uppercase text-red-500 hover:text-red-400 hover:bg-zinc-900 transition-colors text-left w-full"
-                  >
-                    {t('nav.logout')}
-                  </button>
+              <div className="absolute right-0 top-full pt-4 w-56 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform origin-top-right z-50 translate-y-1 group-hover:translate-y-0">
+                <div 
+                  className="bg-zinc-950/95 backdrop-blur-xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden"
+                  style={{ mixBlendMode: 'normal' }}
+                >
+                  <div className="px-5 py-4 border-b border-white/5 bg-white/5">
+                    <p className="text-[10px] font-mono tracking-[0.2em] text-zinc-500 uppercase mb-1">{t('nav.profile')}</p>
+                    <p className="text-[11px] font-medium text-zinc-200 truncate">{user.name}</p>
+                  </div>
+                  <div className="flex flex-col py-1">
+                    <Link
+                      to="/profile"
+                      className="px-5 py-3 text-[11px] font-mono tracking-widest uppercase text-zinc-400 hover:text-white hover:bg-white/5 transition-all flex items-center gap-3"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-zinc-700 group-hover:bg-white transition-colors"></span>
+                      {t('nav.profile')}
+                    </Link>
+                    <Link
+                      to="/orders"
+                      className="px-5 py-3 text-[11px] font-mono tracking-widest uppercase text-zinc-400 hover:text-white hover:bg-white/5 transition-all flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="w-1.5 h-1.5 rounded-full bg-zinc-700 group-hover:bg-white transition-colors"></span>
+                        {t('nav.orders')}
+                      </div>
+                      {notifications.unreadOrders && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)] animate-pulse"></span>
+                      )}
+                    </Link>
+                    
+                    <div className="h-px bg-white/5 my-1" />
+                    
+                    <button
+                      onClick={handleLogout}
+                      className="px-5 py-3 text-[11px] font-mono tracking-widest uppercase text-red-500 hover:text-red-400 hover:bg-red-500/5 transition-all text-left w-full flex items-center gap-3"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-900 group-hover:bg-red-500 transition-colors"></span>
+                      {t('nav.logout')}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
