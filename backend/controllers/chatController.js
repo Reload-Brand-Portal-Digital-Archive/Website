@@ -9,8 +9,8 @@ if (!fs.existsSync(chatUploadDir)) fs.mkdirSync(chatUploadDir, { recursive: true
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, chatUploadDir),
-    filename:    (req, file, cb) => {
-        const ext  = path.extname(file.originalname);
+    filename: (req, file, cb) => {
+        const ext = path.extname(file.originalname);
         const name = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
         cb(null, name);
     }
@@ -42,14 +42,14 @@ exports.uploadFile = (req, res) => {
         if (!req.file) {
             return res.status(400).json({ success: false, message: 'No file uploaded' });
         }
-        const fileUrl  = `/uploads/chat/${req.file.filename}`;
-        const isImage  = req.file.mimetype.startsWith('image/');
+        const fileUrl = `/uploads/chat/${req.file.filename}`;
+        const isImage = req.file.mimetype.startsWith('image/');
         res.json({
-            success:      true,
-            url:          fileUrl,
+            success: true,
+            url: fileUrl,
             originalName: req.file.originalname,
-            mimeType:     req.file.mimetype,
-            size:         req.file.size,
+            mimeType: req.file.mimetype,
+            size: req.file.size,
             isImage
         });
     });
@@ -67,9 +67,9 @@ exports.sendMessage = async (req, res) => {
     }
 
     // file messages may have empty message text
-    const isFile   = !!file_url;
-    const msgText  = message || (isFile ? (file_name || 'File') : null);
-    const msgType  = message_type || (isFile ? (file_mime?.startsWith('image/') ? 'image' : 'file') : 'text');
+    const isFile = !!file_url;
+    const msgText = message || (isFile ? (file_name || 'File') : null);
+    const msgType = message_type || (isFile ? (file_mime?.startsWith('image/') ? 'image' : 'file') : 'text');
 
     if (!userId || !msgText || !sender) {
         return res.status(400).json({ success: false, message: 'Missing required fields' });

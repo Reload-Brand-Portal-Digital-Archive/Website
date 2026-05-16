@@ -761,7 +761,7 @@ export default function AdminChats() {
                                     const isSystem = msg.sender === 'system';
                                     const isWholesale = isWholesaleMsg(msg);
 
-                                    if (isSystem && isWholesale) {
+                                    if ((isSystem || !isAdmin) && msg.message_type === 'wholesale_order') {
                                         return (
                                             <div key={msg.chat_id} className="flex flex-col items-start">
                                                 <WholesaleOrderCard metadata={msg.metadata} messageType={msg.message_type} />

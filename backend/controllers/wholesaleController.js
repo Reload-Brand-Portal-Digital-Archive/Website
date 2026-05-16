@@ -95,7 +95,7 @@ exports.createWholesaleOrder = async (req, res) => {
 
             await connection.query(
                 `INSERT INTO chats (user_id, message, sender, message_type, metadata)
-                 VALUES (?, ?, 'system', 'wholesale_order', ?)`,
+                 VALUES (?, ?, 'user', 'wholesale_order', ?)`,
                 [
                     userId,
                     `Wholesale Order #${order_id} — ${name} submitted ${items.length} item(s): ${itemsSummary}`,

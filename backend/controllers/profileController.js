@@ -49,10 +49,10 @@ exports.getWholesaleOrders = async (req, res) => {
             let parsedMeta = null;
             if (order.confirmation_metadata) {
                 try {
-                    parsedMeta = typeof order.confirmation_metadata === 'string' 
-                        ? JSON.parse(order.confirmation_metadata) 
+                    parsedMeta = typeof order.confirmation_metadata === 'string'
+                        ? JSON.parse(order.confirmation_metadata)
                         : order.confirmation_metadata;
-                } catch(e) {}
+                } catch (e) { }
             }
             delete order.confirmation_metadata;
 

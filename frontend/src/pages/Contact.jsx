@@ -457,8 +457,8 @@ export default function Contact() {
                                 const isWholesale = isWholesaleMsg(msg);
                                 const isFileMsg = msg.message_type === 'image' || msg.message_type === 'file';
 
-                                // Wholesale system card → RIGHT (user submitted)
-                                if (isSystem && isWholesale) {
+                                // Wholesale order card → RIGHT (user submitted)
+                                if ((isSystem || isUser) && msg.message_type === 'wholesale_order') {
                                     return (
                                         <div key={msg.chat_id} className="flex flex-col items-end">
                                             <div className="flex items-center gap-2 mb-1.5 flex-row-reverse">
