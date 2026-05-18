@@ -170,16 +170,19 @@ const Navbar = () => {
         </Link>
 
         <Sheet>
-          <SheetTrigger className="md:hidden p-2 text-zinc-50 hover:text-zinc-300 transition-colors pointer-events-auto cursor-pointer flex items-center justify-center bg-transparent border-none">
+          <SheetTrigger className="relative md:hidden p-2 text-zinc-50 hover:text-zinc-300 transition-colors pointer-events-auto cursor-pointer flex items-center justify-center bg-transparent border-none">
             <Menu className="w-6 h-6" strokeWidth={1.5} />
+            {(notifications.unreadChats || notifications.unreadOrders) && (
+              <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-red-500 border border-zinc-950"></span>
+            )}
           </SheetTrigger>
-          <SheetContent side="right" className="bg-zinc-950 border-zinc-800 text-zinc-50 p-6 z-[100]">
+          <SheetContent side="right" className="bg-zinc-950 border-zinc-800 text-zinc-50 p-6 z-[100] flex flex-col overflow-y-auto">
             <SheetTitle className="sr-only">{t('nav.mobile_menu')}</SheetTitle>
-            <div className="mt-4 mb-12">
+            <div className="mt-4 mb-8">
               <img src={reloadLogoTransparent} alt="RELOAD" className="h-6 w-auto object-contain" />
             </div>
 
-            <div className="flex flex-col gap-8 mt-12 text-sm uppercase tracking-widest font-sans">
+            <div className="flex flex-col gap-6 mt-4 text-sm uppercase tracking-widest font-sans flex-1">
               <Link to="/collections" className={`text-left hover:text-zinc-300 transition-colors ${location.pathname.startsWith('/collections') ? 'text-white' : 'text-zinc-400'}`}>
                 {t('nav.collections')}
               </Link>
@@ -192,19 +195,35 @@ const Navbar = () => {
               <Link to="/about" className={`text-left hover:text-zinc-300 transition-colors ${location.pathname.startsWith('/about') ? 'text-white' : 'text-zinc-400'}`}>
                 {t('nav.about')}
               </Link>
-              <Separator className="bg-zinc-800 my-4" />
-              <LanguageSwitcher className="w-fit mb-4" />
+              <Separator className="bg-zinc-800 my-2" />
+              <LanguageSwitcher className="w-fit mb-2" />
               {user ? (
                 <>
                   {user.role === 'admin' && (
                     <Link to="/admin/dashboard" className="block w-full text-left py-2 text-zinc-400 hover:text-white transition-colors">{t('nav.admin_panel')}</Link>
                   )}
                   <Link to="/profile" className={`block w-full text-left py-2 transition-colors ${location.pathname === '/profile' ? 'text-white' : 'text-zinc-400 hover:text-white'}`}>{t('nav.profile')}</Link>
-                  <Link to="/orders" className={`block w-full text-left py-2 transition-colors ${location.pathname === '/orders' ? 'text-white' : 'text-zinc-400 hover:text-white'}`}>{t('nav.orders')}</Link>
+                  <Link to="/orders" className={`flex items-center w-full text-left py-2 transition-colors ${location.pathname === '/orders' ? 'text-white' : 'text-zinc-400 hover:text-white'}`}>
+                    {t('nav.orders')}
+                    {notifications.unreadOrders && (
+                      <span className="ml-2 w-2 h-2 rounded-full bg-red-500"></span>
+                    )}
+                  </Link>
+                  <Link to="/contact" className={`flex items-center w-full text-left py-2 transition-colors ${location.pathname === '/contact' ? 'text-white' : 'text-zinc-400 hover:text-white'}`}>
+                    {t('nav.chat')}
+                    {notifications.unreadChats && (
+                      <span className="ml-2 w-2 h-2 rounded-full bg-red-500"></span>
+                    )}
+                  </Link>
                   <button onClick={handleLogout} className="block w-full text-left py-2 text-red-500 hover:text-red-400 transition-colors">{t('nav.logout')}</button>
                 </>
               ) : (
-                <Link to="/login" state={{ from: location.pathname }} className="block w-full text-left py-2 text-zinc-400 hover:text-white transition-colors">{t('nav.login_register')}</Link>
+                <>
+                  <Link to="/contact" className={`flex items-center w-full text-left py-2 transition-colors ${location.pathname === '/contact' ? 'text-white' : 'text-zinc-400 hover:text-white'}`}>
+                    {t('nav.chat')}
+                  </Link>
+                  <Link to="/login" state={{ from: location.pathname }} className="block w-full text-left py-2 text-zinc-400 hover:text-white transition-colors">{t('nav.login_register')}</Link>
+                </>
               )}
             </div>
           </SheetContent>
