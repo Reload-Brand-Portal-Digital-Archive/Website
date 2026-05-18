@@ -132,7 +132,6 @@ exports.getEcommerceHubData = async (req, res) => {
                             oi.product_name_snapshot, 
                             oi.quantity, 
                             oi.size,
-                            p.price AS db_price,
                             p.category AS db_category,
                             (
                                 SELECT image_path 
@@ -140,7 +139,14 @@ exports.getEcommerceHubData = async (req, res) => {
                                 WHERE product_id = oi.product_id 
                                 ORDER BY is_primary DESC, sort_order ASC 
                                 LIMIT 1
-                            ) AS primary_image
+                            ) AS primary_image,
+                            (
+                                SELECT metadata 
+                                FROM chats 
+                                WHERE message_type = 'wholesale_confirmed' 
+                                AND JSON_EXTRACT(metadata, '$.order_id') = wo.order_id 
+                                ORDER BY chat_id DESC LIMIT 1
+                            ) AS confirmation_metadata
                         FROM wholesale_orders wo
                         JOIN order_items oi ON wo.order_id = oi.order_id
                         LEFT JOIN products p ON oi.product_id = p.product_id
@@ -149,7 +155,25 @@ exports.getEcommerceHubData = async (req, res) => {
                     const [wsRows] = await db.query(queryWholesale);
                     wsEnriched = wsRows.map(ws => {
                         const qty = parseInt(ws.quantity || 1);
-                        const price = parseFloat(ws.db_price || 0);
+                        let itemPrice = 0;
+                        if (ws.confirmation_metadata) {
+                            try {
+                                const meta = typeof ws.confirmation_metadata === 'string' 
+                                    ? JSON.parse(ws.confirmation_metadata) 
+                                    : ws.confirmation_metadata;
+                                if (meta && meta.invoice_items && Array.isArray(meta.invoice_items)) {
+                                    const matchItem = meta.invoice_items.find(i => 
+                                        parseInt(i.product_id) === parseInt(ws.product_id) && i.size === ws.size
+                                    );
+                                    if (matchItem) {
+                                        itemPrice = parseFloat(matchItem.unit_price || matchItem.price || 0);
+                                    }
+                                }
+                            } catch (e) {
+                                console.error("Error parsing wholesale metadata:", e);
+                            }
+                        }
+
                         return {
                             order_id: `WS-${ws.order_id}`,
                             platform: 'Wholesale',
@@ -157,7 +181,7 @@ exports.getEcommerceHubData = async (req, res) => {
                             product_name: ws.product_name_snapshot,
                             variant: ws.size || 'All Size',
                             quantity: qty,
-                            total_amount: qty * price,
+                            total_amount: qty * itemPrice,
                             customer_name: ws.name,
                             city: ws.address ? (ws.address.split(',').pop() || 'Indonesia').trim() : 'Indonesia',
                             created_at: ws.created_at,
