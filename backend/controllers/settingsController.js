@@ -102,18 +102,9 @@ exports.getEcommerceHubData = async (req, res) => {
                     return null;
                 };
 
-                let totalSales = 0;
-                const platformBreakdown = { TikTok: 0, Shopee: 0 };
-                
                 // Terapkan pencocokan ke setiap order
                 const enrichedOrders = rawOrders.map(order => {
                     const matched = matchProduct(order.product_name);
-                    const finalAmount = parseFloat(order.total_amount || 0);
-                    const plat = order.platform || 'General';
-                    
-                    totalSales += finalAmount;
-                    platformBreakdown[plat] = (platformBreakdown[plat] || 0) + 1;
-
                     return {
                         ...order,
                         db_matched: !!matched,
@@ -126,11 +117,77 @@ exports.getEcommerceHubData = async (req, res) => {
                     };
                 });
 
+                // Ambil data wholesale_orders dari DB
+                let wsEnriched = [];
+                try {
+                    const queryWholesale = `
+                        SELECT 
+                            wo.order_id, 
+                            wo.shop_name, 
+                            wo.name, 
+                            wo.address, 
+                            wo.created_at, 
+                            wo.status, 
+                            oi.product_id, 
+                            oi.product_name_snapshot, 
+                            oi.quantity, 
+                            oi.size,
+                            p.price AS db_price,
+                            p.category AS db_category,
+                            (
+                                SELECT image_path 
+                                FROM product_images 
+                                WHERE product_id = oi.product_id 
+                                ORDER BY is_primary DESC, sort_order ASC 
+                                LIMIT 1
+                            ) AS primary_image
+                        FROM wholesale_orders wo
+                        JOIN order_items oi ON wo.order_id = oi.order_id
+                        LEFT JOIN products p ON oi.product_id = p.product_id
+                        WHERE wo.status IN ('confirmed', 'Dalam proses penyiapan barang', 'Barang siap untuk diambil di gudang', 'Pesanan selesai')
+                    `;
+                    const [wsRows] = await db.query(queryWholesale);
+                    wsEnriched = wsRows.map(ws => {
+                        const qty = parseInt(ws.quantity || 1);
+                        const price = parseFloat(ws.db_price || 0);
+                        return {
+                            order_id: `WS-${ws.order_id}`,
+                            platform: 'Wholesale',
+                            status: ws.status,
+                            product_name: ws.product_name_snapshot,
+                            variant: ws.size || 'All Size',
+                            quantity: qty,
+                            total_amount: qty * price,
+                            customer_name: ws.name,
+                            city: ws.address ? (ws.address.split(',').pop() || 'Indonesia').trim() : 'Indonesia',
+                            created_at: ws.created_at,
+                            db_matched: true,
+                            product_id: ws.product_id,
+                            original_report_name: ws.product_name_snapshot,
+                            category: ws.db_category || 'Uncategorized',
+                            primary_image: ws.primary_image || null
+                        };
+                    });
+                } catch (e) {
+                    console.error("Gagal mengambil data wholesale_orders untuk ecommerce hub:", e.message);
+                }
+
+                const allOrders = [...enrichedOrders, ...wsEnriched];
+
+                let totalSales = 0;
+                const platformBreakdown = {};
+
+                allOrders.forEach(order => {
+                    totalSales += parseFloat(order.total_amount || 0);
+                    const plat = order.platform || 'General';
+                    platformBreakdown[plat] = (platformBreakdown[plat] || 0) + 1;
+                });
+
                 hubData = {
-                    total_orders: enrichedOrders.length,
+                    total_orders: allOrders.length,
                     total_sales: totalSales,
                     platform_breakdown: platformBreakdown,
-                    orders: enrichedOrders
+                    orders: allOrders
                 };
             } catch (parseError) {
                 console.error("Gagal parse JSON hub_data:", parseError);
