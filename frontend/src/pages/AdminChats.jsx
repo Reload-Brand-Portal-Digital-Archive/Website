@@ -61,7 +61,7 @@ function WholesaleInvoiceCard({ metadata, isConfirmed }) {
                     {/* Items table */}
                     <div className="px-4 pt-3 pb-1">
                         <p className="text-[9px] uppercase tracking-widest text-zinc-500 mb-2">Items</p>
-                        <div className="space-y-1.5">
+                        <div className="space-y-1.5 max-h-[300px] overflow-y-auto custom-scrollbar pr-1">
                             {metadata.invoice_items.map((item, i) => (
                                 <div key={i} className="flex items-center gap-2 bg-zinc-800/40 border border-zinc-800 px-2 py-1.5">
                                     {item.product_image ? (
@@ -202,26 +202,42 @@ function ConfirmationPanel({ session, token, onDone, t }) {
     const [adminNote, setAdminNote]   = useState('');
     const [submitting, setSubmitting] = useState(null); // 'confirm'|'reject'|null
     const [loadingItems, setLoading]  = useState(false);
+    const [fetchedOrderId, setFetchedOrderId] = useState(null);
 
     const orderId = session?.pending_order_id;
 
     // Fetch order items when panel is expanded
     useEffect(() => {
         if (!expanded || !orderId) return;
+        if (fetchedOrderId === orderId) return; // Don't refetch if already loaded for this order
+
         setLoading(true);
         axios.get(`${API}/api/wholesale/${orderId}`, { headers: { Authorization: `Bearer ${token}` } })
             .then(res => {
                 const items = (res.data.items || []).map(it => ({ ...it, unit_price: '' }));
                 setOrderItems(items);
+                setFetchedOrderId(orderId);
             })
             .catch(err => { console.error(err); notify.error('Failed to load order items.'); })
             .finally(() => setLoading(false));
-    }, [expanded, orderId, token]);
+    }, [expanded, orderId, token, fetchedOrderId]);
+
+    // Reset state when switching to a different user's order
+    useEffect(() => {
+        if (orderId && orderId !== fetchedOrderId) {
+            setOrderItems([]);
+            setShipping('');
+            setAdminNote('');
+            setExpanded(false);
+            setFetchedOrderId(null);
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [orderId]);
 
     if (!orderId) return null;
 
     // Derived totals
-    const subtotal   = orderItems.reduce((s, it) => s + (parseFloat(it.unit_price) || 0) * (it.quantity || 1), 0);
+    const subtotal   = orderItems.reduce((s, it) => s + (parseFloat(it.unit_price) || 0) * (it.quantity !== undefined && it.quantity !== null && it.quantity !== '' ? Number(it.quantity) : 1), 0);
     const grandTotal = subtotal + (parseFloat(shippingCost) || 0);
 
     // Sizes M/L/XL share one price per product; XXL is priced separately
@@ -241,11 +257,11 @@ function ConfirmationPanel({ session, token, onDone, t }) {
     };
 
     const setItemQty = (idx, delta) =>
-        setOrderItems(prev => prev.map((it, i) => i === idx ? { ...it, quantity: Math.max(1, (it.quantity || 1) + delta) } : it));
+        setOrderItems(prev => prev.map((it, i) => i === idx ? { ...it, quantity: Math.max(0, (it.quantity || 0) + delta) } : it));
 
     const setItemQtyDirect = (idx, val) => {
         const n = parseInt(val);
-        if (!isNaN(n)) setOrderItems(prev => prev.map((it, i) => i === idx ? { ...it, quantity: Math.max(1, n) } : it));
+        if (!isNaN(n)) setOrderItems(prev => prev.map((it, i) => i === idx ? { ...it, quantity: Math.max(0, n) } : it));
     };
 
     const handleDecision = async (decision) => {
@@ -260,15 +276,18 @@ function ConfirmationPanel({ session, token, onDone, t }) {
 
         setSubmitting(decision);
         try {
-            const invoiceItems = orderItems.map(it => ({
-                product_id:            it.product_id,
-                product_name_snapshot: it.product_name_snapshot,
-                product_image:         it.product_image || null,
-                size:                  it.size,
-                quantity:              it.quantity,
-                unit_price:            parseFloat(it.unit_price) || 0,
-                line_total:            (parseFloat(it.unit_price) || 0) * (it.quantity || 1),
-            }));
+            const invoiceItems = orderItems.map(it => {
+                const qty = it.quantity !== undefined && it.quantity !== null && it.quantity !== '' ? Number(it.quantity) : 1;
+                return {
+                    product_id:            it.product_id,
+                    product_name_snapshot: it.product_name_snapshot,
+                    product_image:         it.product_image || null,
+                    size:                  it.size,
+                    quantity:              qty,
+                    unit_price:            parseFloat(it.unit_price) || 0,
+                    line_total:            (parseFloat(it.unit_price) || 0) * qty,
+                };
+            });
 
             await axios.put(
                 `${API}/api/wholesale/${orderId}/confirm`,
@@ -344,7 +363,8 @@ function ConfirmationPanel({ session, token, onDone, t }) {
                             </div>
                             <div className="space-y-1.5">
                                 {orderItems.map((item, idx) => {
-                                    const lineTotal = (parseFloat(item.unit_price) || 0) * (item.quantity || 1);
+                                    const qty = item.quantity !== undefined && item.quantity !== null && item.quantity !== '' ? Number(item.quantity) : 1;
+                                    const lineTotal = (parseFloat(item.unit_price) || 0) * qty;
                                     return (
                                         <div key={idx} className="grid grid-cols-1 md:grid-cols-[2rem_1fr_4rem_8rem_7rem_6rem] gap-2 items-center bg-zinc-900/60 border border-zinc-800 px-2 py-2">
                                             {/* Thumbnail */}
@@ -372,7 +392,7 @@ function ConfirmationPanel({ session, token, onDone, t }) {
                                                     <Minus className="w-2.5 h-2.5" />
                                                 </button>
                                                 <input
-                                                    type="number" min="1"
+                                                    type="number" min="0"
                                                     value={item.quantity}
                                                     onChange={e => setItemQtyDirect(idx, e.target.value)}
                                                     className="w-9 h-7 bg-zinc-900 text-center text-xs text-white font-mono border-x border-zinc-700 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"

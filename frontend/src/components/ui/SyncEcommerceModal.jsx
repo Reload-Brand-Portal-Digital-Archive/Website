@@ -278,7 +278,7 @@ export default function SyncEcommerceModal({ isOpen, onClose, onSyncComplete }) 
                             </div>
                             <div className="flex-1">
                                 <h3 className="font-bold text-zinc-100 group-hover:text-rose-400 transition-colors">{t('admin_sync.upload_title')}</h3>
-                                <p className="text-xs text-zinc-500 mt-1 leading-relaxed" dangerouslySetInnerHTML={{ __html: t('admin_sync.upload_desc') }}>
+                                <p className="text-xs text-zinc-500 mt-1 leading-relaxed [&_strong]:text-zinc-200 [&_strong]:font-semibold" dangerouslySetInnerHTML={{ __html: t('admin_sync.upload_desc') }}>
                                 </p>
                                 
                                 <label className="mt-4 inline-flex items-center gap-2 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 px-4 py-2 text-xs font-medium rounded-lg cursor-pointer transition-all active:scale-95">
