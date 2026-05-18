@@ -155,6 +155,7 @@ exports.getAllChats = async (req, res) => {
             ORDER BY last_activity DESC
         `;
         const [rows] = await pool.query(query);
+        console.log('Admin getAllChats count:', rows.length);
         res.json({ success: true, chats: rows });
     } catch (error) {
         console.error('Error getting all chats:', error);

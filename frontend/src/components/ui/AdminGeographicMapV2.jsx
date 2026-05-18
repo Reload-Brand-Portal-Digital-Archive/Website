@@ -15,6 +15,7 @@ export default function AdminGeographicMapV2({ refreshTrigger }) {
     const { t } = useTranslation();
     const [hubData, setHubData] = useState(null);
     const [gpsData, setGpsData] = useState(null);
+    const [wholesaleData, setWholesaleData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const { settings } = useSettings();
@@ -54,7 +55,12 @@ export default function AdminGeographicMapV2({ refreshTrigger }) {
         `<text x="7" y="11" text-anchor="middle" font-size="11" font-weight="bold"
               font-family="sans-serif" fill="white">SP</text>`);
 
-    // GPS Visitor: cyan dengan ikon sinyal
+    // Wholesale Selesai: hijau dengan label WS
+    const wholesaleIcon = makePinIcon('#16a34a', '#15803d',
+        `<text x="7" y="11" text-anchor="middle" font-size="10" font-weight="bold"
+              font-family="sans-serif" fill="white">WS</text>`);
+
+    // GPS Visitor: cyan dot
     const gpsIcon = L.divIcon({
         className: '',
         iconAnchor: [12, 12],
@@ -170,6 +176,49 @@ export default function AdminGeographicMapV2({ refreshTrigger }) {
         fetchGpsData();
     }, [refreshTrigger]);
 
+
+
+    // Fetch completed wholesale order locations
+    useEffect(() => {
+        const fetchWholesaleLocations = async () => {
+            if (isSimulationMode) {
+                // Mock wholesale data untuk simulation mode
+                const cities = [
+                    { name: 'bandung', lat: -6.9147, lng: 107.6098 },
+                    { name: 'jakarta', lat: -6.2088, lng: 106.8456 },
+                    { name: 'surabaya', lat: -7.2504, lng: 112.7688 },
+                    { name: 'yogyakarta', lat: -7.7956, lng: 110.3695 },
+                    { name: 'semarang', lat: -6.9667, lng: 110.4167 },
+                ];
+                const mockWholesale = cities.slice(0, 3).map((c, i) => ({
+                    order_id: `SIM-WS-${i + 1}`,
+                    name: `Toko ${c.name.charAt(0).toUpperCase() + c.name.slice(1)}`,
+                    address: `Jl. Merdeka No.${i + 1}, ${c.name}`,
+                    city: c.name,
+                    inquiry_type: 'Wholesale Request',
+                    status: 'Pesanan selesai',
+                    lat: c.lat + (Math.random() - 0.5) * 0.02,
+                    lng: c.lng + (Math.random() - 0.5) * 0.02,
+                    created_at: new Date().toISOString(),
+                }));
+                setWholesaleData({ total: mockWholesale.length, locations: mockWholesale });
+                return;
+            }
+            try {
+                const token = localStorage.getItem('token');
+                const res = await axios.get(import.meta.env.VITE_API_URL + '/api/track/wholesale-locations', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                if (res.data.success) {
+                    setWholesaleData(res.data.data);
+                }
+            } catch (err) {
+                console.error('Wholesale Locations Fetch Error:', err);
+            }
+        };
+        fetchWholesaleLocations();
+    }, [refreshTrigger, isSimulationMode]);
+
     // Initialize Map Instance
     useEffect(() => {
         if (!mapContainerRef.current || isLoading || error) return;
@@ -212,6 +261,7 @@ export default function AdminGeographicMapV2({ refreshTrigger }) {
 
         const markerLayer = L.layerGroup().addTo(map);
 
+        // ── E-commerce (TikTok / Shopee) markers ──────────────────────
         hubData.orders.forEach(order => {
             if (!order.coordinates || !Array.isArray(order.coordinates)) return;
 
@@ -238,7 +288,38 @@ export default function AdminGeographicMapV2({ refreshTrigger }) {
                 .addTo(markerLayer);
         });
 
-        // GPS Visitor markers
+        // ── Wholesale Selesai markers ──────────────────────────────────
+        if (wholesaleData?.locations?.length > 0) {
+            wholesaleData.locations.forEach(order => {
+                const lat = parseFloat(order.lat);
+                const lng = parseFloat(order.lng);
+                if (isNaN(lat) || isNaN(lng)) return;
+
+                const orderDate = new Date(order.created_at).toLocaleDateString('id-ID', {
+                    day: '2-digit', month: 'short', year: 'numeric'
+                });
+                const popupContent = `
+                    <div style="font-family: sans-serif; min-width: 170px; padding: 4px; color: #333;">
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding-bottom: 4px; margin-bottom: 6px; align-items:center;">
+                            <b style="font-size: 10px; color: #16a34a; background:#f0fdf4; padding:2px 6px; border-radius:3px;">✅ Wholesale Selesai</b>
+                            <span style="font-size: 10px; color: #999;">#${order.order_id}</span>
+                        </div>
+                        <div style="font-size: 11px;">
+                            <p style="margin: 2px 0; font-weight: bold; color: #111;">${order.name}</p>
+                            <p style="margin: 3px 0; color: #555;">📍 ${order.city ? order.city.charAt(0).toUpperCase() + order.city.slice(1) : 'Unknown'}</p>
+                            <p style="margin: 2px 0; color: #777; font-size: 10px;">${order.inquiry_type}</p>
+                            <p style="margin: 4px 0 0; color: #999; font-size: 10px;">🗓 ${orderDate}</p>
+                        </div>
+                    </div>
+                `;
+
+                L.marker([lat, lng], { icon: wholesaleIcon })
+                    .bindPopup(popupContent, { minWidth: 170 })
+                    .addTo(markerLayer);
+            });
+        }
+
+        // ── GPS Visitor markers ────────────────────────────────────────
         if (gpsData?.locations?.length > 0) {
             gpsData.locations.forEach(loc => {
                 const lat = parseFloat(loc.latitude);
@@ -267,7 +348,7 @@ export default function AdminGeographicMapV2({ refreshTrigger }) {
         return () => {
             if (map) map.removeLayer(markerLayer);
         };
-    }, [hubData, gpsData, isLoading]);
+    }, [hubData, wholesaleData, gpsData, isLoading]);
 
     if (isLoading) {
         return (
@@ -313,12 +394,8 @@ export default function AdminGeographicMapV2({ refreshTrigger }) {
                             <p className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold mb-1">{t('admin_map.stats_revenue')}</p>
                             <span className="text-lg font-bold text-zinc-100 font-mono">Rp {hubData.total_sales.toLocaleString('en-US')}</span>
                         </div>
-                        {gpsData && (
-                            <div className="bg-zinc-950/50 border border-blue-900/40 px-4 py-2 rounded-md">
-                                <p className="text-[10px] uppercase tracking-wider text-blue-500 font-bold mb-1">📡 GPS Visitors</p>
-                                <span className="text-lg font-bold text-blue-400 font-mono">{gpsData.total}</span>
-                            </div>
-                        )}
+
+
                     </div>
                 )}
             </div>
@@ -356,6 +433,19 @@ export default function AdminGeographicMapV2({ refreshTrigger }) {
                             </span>
                             <span className="text-zinc-100 font-bold tabular-nums">{hubData?.platform_breakdown?.Shopee || 0}</span>
                         </div>
+                        {/* Wholesale Selesai */}
+                        <div className="border-t border-zinc-800 pt-2 mt-1">
+                            <div className="flex items-center justify-between text-[11px]">
+                                <span className="text-green-400 flex items-center gap-2">
+                                    <svg viewBox="0 0 32 40" width="10" height="13" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M16 0C9.37 0 4 5.37 4 12c0 9 12 28 12 28S28 21 28 12C28 5.37 22.63 0 16 0z" fill="#16a34a" stroke="#15803d" strokeWidth="2"/>
+                                        <text x="16" y="16" textAnchor="middle" fontSize="9" fontWeight="bold" fill="white" fontFamily="sans-serif">WS</text>
+                                    </svg>
+                                    Wholesale Selesai
+                                </span>
+                                <span className="text-green-400 font-bold tabular-nums">{wholesaleData?.total || 0}</span>
+                            </div>
+                        </div>
                         {/* GPS Visitor */}
                         <div className="border-t border-zinc-800 pt-2 mt-1">
                             <div className="flex items-center justify-between text-[11px]">
@@ -368,6 +458,7 @@ export default function AdminGeographicMapV2({ refreshTrigger }) {
                                 <span className="text-cyan-400 font-bold tabular-nums">{gpsData?.total || 0}</span>
                             </div>
                         </div>
+
                     </div>
                 </div>
 
