@@ -144,7 +144,7 @@ exports.getEcommerceHubData = async (req, res) => {
                         FROM wholesale_orders wo
                         JOIN order_items oi ON wo.order_id = oi.order_id
                         LEFT JOIN products p ON oi.product_id = p.product_id
-                        WHERE wo.status IN ('confirmed', 'Dalam proses penyiapan barang', 'Barang siap untuk diambil di gudang', 'Pesanan selesai')
+                        WHERE wo.status = 'Pesanan selesai'
                     `;
                     const [wsRows] = await db.query(queryWholesale);
                     wsEnriched = wsRows.map(ws => {
