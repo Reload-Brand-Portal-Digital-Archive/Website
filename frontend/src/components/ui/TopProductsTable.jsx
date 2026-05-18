@@ -3,16 +3,56 @@ import { RefreshCw, ChevronRight, ShoppingBag, Layers, Package, TrendingUp, Chec
 import axios from 'axios';
 import TopProductsModal from './TopProductsModal';
 
+const parseVariant = (variantStr) => {
+    let jenis = '-';
+    let warna = '-';
+    let ukuran = '-';
+
+    if (!variantStr) return { jenis, warna, ukuran };
+    const str = variantStr.trim();
+
+    if (str.includes('-') && str.includes(',')) {
+        const parts = str.split('-');
+        jenis = parts[0].trim();
+        const subParts = parts[1].split(',');
+        warna = subParts[0].trim();
+        ukuran = subParts[1].trim();
+    } else if (str.split('-').length >= 3) {
+        const parts = str.split('-');
+        jenis = parts.slice(0, 2).join('-');
+        warna = parts[2].trim();
+        ukuran = 'All Size';
+    } else if (str.includes('-')) {
+        const parts = str.split('-');
+        jenis = parts[0].trim();
+        warna = parts[1].trim();
+        ukuran = 'All Size';
+    } else if (str.includes(',')) {
+        const parts = str.split(',');
+        warna = parts[0].trim();
+        ukuran = parts[1].trim();
+    } else {
+        ukuran = str;
+    }
+
+    return { jenis, warna, ukuran };
+};
+
 export default function TopProductsTable({ refreshTrigger }) {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
+    const [selectedTab, setSelectedTab] = useState('all'); // 'all', 'tiktok', 'shopee', 'wholesale'
+    const [filterJenis, setFilterJenis] = useState('all');
+    const [filterWarna, setFilterWarna] = useState('all');
+    const [filterUkuran, setFilterUkuran] = useState('all');
+    const [sortBy, setSortBy] = useState('quantity'); // 'quantity', 'transactions', 'total_amount'
+
     const fetchTopProducts = async () => {
         setLoading(true);
         try {
             const token = localStorage.getItem('token');
-            // Kita ambil dari data ecommerce hub yang menyimpan seluruh akumulasi order
             const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/settings/ecommerce-hub`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -21,7 +61,6 @@ export default function TopProductsTable({ refreshTrigger }) {
                 const orders = response.data.data.orders;
                 const productMap = {};
 
-                // Kelompokkan berdasarkan Nama Produk Resmi + Varian (Ukuran Model)
                 orders.forEach(order => {
                     const name = order.product_name || 'Produk Tanpa Nama';
                     const variant = order.variant || 'All Size';
@@ -50,13 +89,23 @@ export default function TopProductsTable({ refreshTrigger }) {
                     productMap[key].platforms[plat] = (productMap[key].platforms[plat] || 0) + 1;
                 });
 
-                // Urutkan dari kuantitas/transaksi terbanyak dengan tie-breaker total_amount (pendapatan)
                 const sorted = Object.values(productMap).sort((a, b) => {
                     if (b.quantity !== a.quantity) return b.quantity - a.quantity;
                     if (b.transactions !== a.transactions) return b.transactions - a.transactions;
-                    return b.total_amount - a.total_amount; // tie-breaker: higher sales/amount first
+                    return b.total_amount - a.total_amount;
                 });
-                setProducts(sorted);
+
+                const enrichedSorted = sorted.map(item => {
+                    const parsed = parseVariant(item.variant);
+                    return {
+                        ...item,
+                        jenis: parsed.jenis,
+                        warna: parsed.warna,
+                        ukuran: parsed.ukuran
+                    };
+                });
+
+                setProducts(enrichedSorted);
             }
         } catch (error) {
             console.error('Failed to fetch top products:', error);
@@ -69,24 +118,47 @@ export default function TopProductsTable({ refreshTrigger }) {
         fetchTopProducts();
     }, [refreshTrigger]);
 
-    const [selectedTab, setSelectedTab] = useState('all'); // 'all', 'tiktok', 'shopee', 'wholesale'
+    const hasActiveFilters = filterJenis !== 'all' || filterWarna !== 'all' || filterUkuran !== 'all' || sortBy !== 'quantity';
+    const resetFilters = () => {
+        setFilterJenis('all');
+        setFilterWarna('all');
+        setFilterUkuran('all');
+        setSortBy('quantity');
+    };
 
-    // Filter & Sorting Dinamis berdasarkan tab aktif
-    const filteredProducts = products.filter(item => {
-        if (selectedTab === 'all') return true;
-        
-        const plats = Object.keys(item.platforms).map(p => p.toLowerCase());
-        if (selectedTab === 'tiktok') return plats.some(p => p.includes('tiktok'));
-        if (selectedTab === 'shopee') return plats.some(p => p.includes('shopee'));
-        if (selectedTab === 'wholesale') return plats.some(p => p.includes('wholesale') || p.includes('laporan') || p.includes('manual') || p.includes('general'));
-        
-        return false;
-    }).sort((a, b) => {
-        if (selectedTab === 'all') return b.quantity - a.quantity;
-        return b.quantity - a.quantity; // tetap urutkan dari kuantitas item terbanyak
-    });
+    const uniqueJenis = Array.from(new Set(products.map(p => p.jenis).filter(x => x && x !== '-'))).sort();
+    const uniqueWarna = Array.from(new Set(products.map(p => p.warna).filter(x => x && x !== '-'))).sort();
+    const uniqueUkuran = Array.from(new Set(products.map(p => p.ukuran).filter(x => x && x !== '-'))).sort();
 
-    // Ambil Top 5 untuk ditampilkan di tabel ringkas
+    const filteredProducts = products
+        .filter(item => {
+            if (selectedTab !== 'all') {
+                const plats = Object.keys(item.platforms).map(p => p.toLowerCase());
+                if (selectedTab === 'tiktok' && !plats.some(p => p.includes('tiktok'))) return false;
+                if (selectedTab === 'shopee' && !plats.some(p => p.includes('shopee'))) return false;
+                if (selectedTab === 'wholesale' && !plats.some(p => p.includes('wholesale') || p.includes('laporan') || p.includes('manual') || p.includes('general'))) return false;
+            }
+            
+            if (filterJenis !== 'all' && item.jenis !== filterJenis) return false;
+            if (filterWarna !== 'all' && item.warna !== filterWarna) return false;
+            if (filterUkuran !== 'all' && item.ukuran !== filterUkuran) return false;
+            
+            return true;
+        })
+        .sort((a, b) => {
+            if (sortBy === 'transactions') {
+                if (b.transactions !== a.transactions) return b.transactions - a.transactions;
+                return b.quantity - a.quantity;
+            }
+            if (sortBy === 'total_amount') {
+                if (b.total_amount !== a.total_amount) return b.total_amount - a.total_amount;
+                return b.quantity - a.quantity;
+            }
+            if (b.quantity !== a.quantity) return b.quantity - a.quantity;
+            if (b.transactions !== a.transactions) return b.transactions - a.transactions;
+            return b.total_amount - a.total_amount;
+        });
+
     const topDisplayProducts = filteredProducts.slice(0, 5);
 
     return (
@@ -102,13 +174,23 @@ export default function TopProductsTable({ refreshTrigger }) {
                         <p className="text-[10px] text-zinc-500">Peringkat akumulasi pesanan</p>
                     </div>
                 </div>
-                <button 
-                    onClick={fetchTopProducts}
-                    className="text-zinc-500 hover:text-zinc-300 transition-colors p-1"
-                    title="Refresh Data"
-                >
-                    <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-                </button>
+                <div className="flex items-center">
+                    {hasActiveFilters && (
+                        <button 
+                            onClick={resetFilters}
+                            className="text-[10px] text-rose-400 hover:text-rose-300 transition-colors font-bold border border-rose-500/20 bg-rose-500/5 px-2 py-0.5 rounded mr-3 uppercase tracking-wider"
+                        >
+                            Reset Filter
+                        </button>
+                    )}
+                    <button 
+                        onClick={fetchTopProducts}
+                        className="text-zinc-500 hover:text-zinc-300 transition-colors p-1"
+                        title="Refresh Data"
+                    >
+                        <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+                    </button>
+                </div>
             </div>
 
             {/* Platform Filter Tabs */}
@@ -140,6 +222,68 @@ export default function TopProductsTable({ refreshTrigger }) {
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                     Wholesale Top
                 </button>
+            </div>
+
+            {/* Sleek Custom Filters */}
+            <div className="bg-zinc-900/60 p-3 border-b border-zinc-800 text-[11px] grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-2 shrink-0">
+                {/* Filter Jenis/Design */}
+                <div className="flex flex-col gap-1">
+                    <label className="text-zinc-500 font-semibold tracking-wide uppercase text-[9px]">Model/Design</label>
+                    <select 
+                        value={filterJenis}
+                        onChange={(e) => setFilterJenis(e.target.value)}
+                        className="bg-zinc-950 border border-zinc-800 text-zinc-300 rounded px-1.5 py-1 focus:outline-none focus:border-rose-500 transition-colors w-full cursor-pointer"
+                    >
+                        <option value="all">Semua Model</option>
+                        {uniqueJenis.map(j => (
+                            <option key={j} value={j}>{j}</option>
+                        ))}
+                    </select>
+                </div>
+
+                {/* Filter Warna */}
+                <div className="flex flex-col gap-1">
+                    <label className="text-zinc-500 font-semibold tracking-wide uppercase text-[9px]">Warna</label>
+                    <select 
+                        value={filterWarna}
+                        onChange={(e) => setFilterWarna(e.target.value)}
+                        className="bg-zinc-950 border border-zinc-800 text-zinc-300 rounded px-1.5 py-1 focus:outline-none focus:border-rose-500 transition-colors w-full cursor-pointer"
+                    >
+                        <option value="all">Semua Warna</option>
+                        {uniqueWarna.map(w => (
+                            <option key={w} value={w}>{w}</option>
+                        ))}
+                    </select>
+                </div>
+
+                {/* Filter Ukuran */}
+                <div className="flex flex-col gap-1">
+                    <label className="text-zinc-500 font-semibold tracking-wide uppercase text-[9px]">Ukuran</label>
+                    <select 
+                        value={filterUkuran}
+                        onChange={(e) => setFilterUkuran(e.target.value)}
+                        className="bg-zinc-950 border border-zinc-800 text-zinc-300 rounded px-1.5 py-1 focus:outline-none focus:border-rose-500 transition-colors w-full cursor-pointer"
+                    >
+                        <option value="all">Semua Ukuran</option>
+                        {uniqueUkuran.map(u => (
+                            <option key={u} value={u}>{u}</option>
+                        ))}
+                    </select>
+                </div>
+
+                {/* Urutkan Berdasarkan */}
+                <div className="flex flex-col gap-1 col-span-2 sm:col-span-1 md:col-span-2">
+                    <label className="text-zinc-500 font-semibold tracking-wide uppercase text-[9px]">Urutkan Berdasarkan</label>
+                    <select 
+                        value={sortBy}
+                        onChange={(e) => setSortBy(e.target.value)}
+                        className="bg-zinc-950 border border-zinc-800 text-zinc-300 rounded px-1.5 py-1 focus:outline-none focus:border-rose-500 transition-colors w-full cursor-pointer font-medium"
+                    >
+                        <option value="quantity">Kuantitas Terbanyak</option>
+                        <option value="transactions">Transaksi Terbanyak</option>
+                        <option value="total_amount">Nilai Penjualan (Rupiah)</option>
+                    </select>
+                </div>
             </div>
 
             {/* Content List */}
