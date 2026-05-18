@@ -284,6 +284,85 @@ exports.getOrderById = async (req, res) => {
 
 // ─── Confirm or Reject Order (Admin) ─────────────────────────────────────────
 
+const generateInvoicePDFBuffer = async (order, invoice_items, shipping_cost, subtotal, grand_total, admin_note) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const PDFDocument = require('pdfkit-table');
+            const path = require('path');
+            const fs = require('fs');
+
+            const doc = new PDFDocument({ margin: 40, size: 'A4' });
+            let buffers = [];
+            doc.on('data', buffers.push.bind(buffers));
+            doc.on('end', () => {
+                let pdfData = Buffer.concat(buffers);
+                resolve(pdfData);
+            });
+
+            const imagePath = path.join(__dirname, '../../frontend/src/assets/reload_transparent.png');
+            if (fs.existsSync(imagePath)) {
+                doc.save();
+                doc.opacity(0.15);
+                doc.translate(doc.page.width / 2, doc.page.height / 2);
+                doc.rotate(-45);
+                doc.image(imagePath, -150, -150, { width: 300 });
+                doc.restore();
+            }
+
+            doc.font('Helvetica-Bold').fontSize(20).text('RELOAD DISTRO', { align: 'center' });
+            doc.font('Helvetica').fontSize(12).text('WHOLESALE INVOICE', { align: 'center' });
+            doc.moveDown(1.5);
+            
+            doc.font('Helvetica-Bold').fontSize(10).text(`Order ID: #${order.order_id}`);
+            doc.font('Helvetica').text(`Customer: ${order.name} ${order.shop_name ? `(${order.shop_name})` : ''}`);
+            doc.text(`Email: ${order.email}`);
+            doc.text(`Phone: ${order.phone}`);
+            doc.text(`Address: ${order.address}`);
+            doc.text(`Date: ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`);
+            doc.moveDown(1.5);
+
+            const table = {
+                title: '',
+                headers: ['Item Name', 'Size', 'Qty', 'Unit Price', 'Line Total'],
+                rows: (invoice_items || []).map(item => [
+                    item.product_name_snapshot,
+                    item.size,
+                    String(item.quantity),
+                    `Rp ${Number(item.unit_price).toLocaleString('id-ID')}`,
+                    `Rp ${Number(item.line_total).toLocaleString('id-ID')}`
+                ])
+            };
+            
+            await doc.table(table, {
+                width: 515,
+                prepareHeader: () => doc.font('Helvetica-Bold').fontSize(9),
+                prepareRow: () => doc.font('Helvetica').fontSize(9)
+            });
+
+            doc.moveDown(1);
+            
+            const totalX = 350;
+            const textOptions = { width: 165, align: 'right' };
+            
+            doc.font('Helvetica').fontSize(10).text(`Subtotal: Rp ${Number(subtotal).toLocaleString('id-ID')}`, totalX, doc.y, textOptions);
+            doc.moveDown(0.3);
+            doc.text(`Shipping Cost: Rp ${Number(shipping_cost).toLocaleString('id-ID')}`, totalX, doc.y, textOptions);
+            doc.moveDown(0.3);
+            doc.font('Helvetica-Bold').fontSize(12).text(`Grand Total: Rp ${Number(grand_total).toLocaleString('id-ID')}`, totalX, doc.y, textOptions);
+
+            if (admin_note) {
+                 doc.moveDown(2);
+                 doc.font('Helvetica-Bold').fontSize(10).text('Admin Note:', 40, doc.y);
+                 doc.font('Helvetica').fontSize(10).text(admin_note);
+            }
+
+            doc.end();
+        } catch (err) {
+            reject(err);
+        }
+    });
+};
+
 exports.confirmOrder = async (req, res) => {
     const { id } = req.params;
     const { decision, shipping_cost, admin_note, invoice_items, subtotal, grand_total } = req.body;
@@ -365,10 +444,22 @@ exports.confirmOrder = async (req, res) => {
                 const transporter = getMailTransporter();
                 const statusColor = decision === 'confirm' ? '#22c55e' : '#ef4444';
                 const statusLabel = decision === 'confirm' ? 'CONFIRMED' : 'REJECTED';
+                
+                let attachments = [];
+                if (decision === 'confirm' && Array.isArray(invoice_items)) {
+                     const pdfBuffer = await generateInvoicePDFBuffer(order, invoice_items, shipping_cost, subtotal, grand_total, admin_note);
+                     attachments.push({
+                          filename: `Invoice_Reload_Distro_Order_${id}.pdf`,
+                          content: pdfBuffer,
+                          contentType: 'application/pdf'
+                     });
+                }
+
                 await transporter.sendMail({
                     from: process.env.EMAIL_USER,
                     to: order.email,
                     subject: `[RELOAD DISTRO] Wholesale Order #${id} — ${statusLabel}`,
+                    attachments: attachments,
                     html: `
                         <div style="background:#000;padding:40px 20px;font-family:'Courier New',monospace;color:white;">
                           <div style="max-width:520px;margin:0 auto;border:1px solid #1a1a1a;">
@@ -383,8 +474,8 @@ exports.confirmOrder = async (req, res) => {
                               </p>
                               ${decision === 'confirm' ? `
                               <div style="background:#0a0a0a;border:1px solid #27272a;padding:16px;margin-bottom:16px;">
-                                <span style="color:#52525b;font-size:10px;letter-spacing:.2em;text-transform:uppercase;display:block;margin-bottom:8px;">BIAYA ONGKIR:</span>
-                                <span style="color:#22c55e;font-size:16px;font-weight:bold;">Rp ${Number(shipping_cost).toLocaleString('id-ID')}</span>
+                                <span style="color:#52525b;font-size:10px;letter-spacing:.2em;text-transform:uppercase;display:block;margin-bottom:8px;">INVOICE TERLAMPIR:</span>
+                                <p style="color:#d4d4d8;font-size:12px;margin:0;font-weight:bold;">Silakan periksa lampiran PDF pada email ini untuk rincian tagihan lengkap dan total pembayaran.</p>
                               </div>` : ''}
                               ${admin_note ? `
                               <div style="background:#0a0a0a;border:1px solid #27272a;padding:16px;margin-bottom:16px;">
@@ -629,7 +720,24 @@ exports.exportOrders = async (req, res) => {
 
         let [orders] = await db.query(query, params);
 
+        const orderIds = orders.map(o => o.order_id);
+        let orderItemsMap = {};
+        if (orderIds.length > 0) {
+            const [itemsRows] = await db.query(`SELECT order_id, product_name_snapshot, size, quantity FROM order_items WHERE order_id IN (?)`, [orderIds]);
+            itemsRows.forEach(row => {
+                if (!orderItemsMap[row.order_id]) orderItemsMap[row.order_id] = [];
+                orderItemsMap[row.order_id].push({
+                    product_name_snapshot: row.product_name_snapshot,
+                    size: row.size,
+                    quantity: row.quantity,
+                    unit_price: 0,
+                    line_total: 0
+                });
+            });
+        }
+
         orders = orders.map(order => {
+            order.items_list = orderItemsMap[order.order_id] || [];
             if (order.confirmation_metadata) {
                 let meta = order.confirmation_metadata;
                 if (typeof meta === 'string') {
@@ -644,6 +752,7 @@ exports.exportOrders = async (req, res) => {
                         order.total_qty = meta.invoice_items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
                         order.total_items = meta.invoice_items.length;
                         order.items_detail = meta.invoice_items.map(i => `${i.product_name_snapshot} (${i.size}) x${i.quantity}`).join(', ');
+                        order.items_list = meta.invoice_items;
                     }
                 }
             }
@@ -661,10 +770,33 @@ exports.exportOrders = async (req, res) => {
                 return cleanStr;
             };
 
-            let csv = 'Order ID,Shop Name,Name,Email,Phone,Type,Message,Address,Status,Total Qty,Total Items,Items Detail,Subtotal,Shipping Cost,Grand Total,Created At\n';
+            let csv = 'Order ID,Shop Name,Name,Email,Phone,Type,Message,Address,Status,Created At,Item Name,Size,Qty,Unit Price,Line Total,Subtotal,Shipping Cost,Grand Total\n';
+            let overallGrandTotal = 0;
+
             orders.forEach(o => {
-                csv += `${o.order_id},${escapeCSV(o.shop_name)},${escapeCSV(o.name)},${escapeCSV(o.email)},${escapeCSV(o.phone)},${escapeCSV(o.inquiry_type)},${escapeCSV(o.message)},${escapeCSV(o.address)},${escapeCSV(o.status)},${o.total_qty},${o.total_items},${escapeCSV(o.items_detail)},${o.subtotal || ''},${o.shipping_cost_confirmed != null ? o.shipping_cost_confirmed : (o.shipping_cost || '')},${o.grand_total || ''},${escapeCSV(new Date(o.created_at).toISOString())}\n`;
+                const gt = o.grand_total ? Number(o.grand_total) : 0;
+                overallGrandTotal += gt;
+                
+                const baseInfo = `${o.order_id},${escapeCSV(o.shop_name)},${escapeCSV(o.name)},${escapeCSV(o.email)},${escapeCSV(o.phone)},${escapeCSV(o.inquiry_type)},${escapeCSV(o.message)},${escapeCSV(o.address)},${escapeCSV(o.status)},${escapeCSV(new Date(o.created_at).toISOString().split('T')[0])}`;
+                
+                if (!o.items_list || o.items_list.length === 0) {
+                     csv += `${baseInfo},,,,,${o.subtotal || 0},${o.shipping_cost_confirmed != null ? o.shipping_cost_confirmed : (o.shipping_cost || 0)},${o.grand_total || 0}\n`;
+                } else {
+                     o.items_list.forEach((item, idx) => {
+                         const itemName = escapeCSV(item.product_name_snapshot);
+                         const size = escapeCSV(item.size);
+                         const qty = item.quantity || 0;
+                         const price = item.unit_price || 0;
+                         const lineTotal = item.line_total || 0;
+                         if (idx === 0) {
+                             csv += `${baseInfo},${itemName},${size},${qty},${price},${lineTotal},${o.subtotal || 0},${o.shipping_cost_confirmed != null ? o.shipping_cost_confirmed : (o.shipping_cost || 0)},${o.grand_total || 0}\n`;
+                         } else {
+                             csv += `${baseInfo},${itemName},${size},${qty},${price},${lineTotal},,,\n`;
+                         }
+                     });
+                }
             });
+            csv += `,,,,,,,,,,,,,,,,,OVERALL TOTAL,${overallGrandTotal}\n`;
 
             res.setHeader('Content-Type', 'text/csv');
             res.setHeader('Content-Disposition', `attachment; filename="wholesale_export_${new Date().toISOString().split('T')[0]}.csv"`);
@@ -699,23 +831,43 @@ exports.exportOrders = async (req, res) => {
 
             const table = {
                 title: '',
-                headers: ['#', 'Store', 'Name', 'Email', 'Status', 'Qty', 'Items', 'Total', 'Date'],
-                rows: orders.map(o => [
-                    String(o.order_id),
-                    o.shop_name || '-',
-                    o.name || '',
-                    o.email || '',
-                    o.status || '',
-                    String(o.total_qty || 0),
-                    o.items_detail || '-',
-                    o.grand_total ? `Rp ${Number(o.grand_total).toLocaleString('id-ID')}` : '-',
-                    new Date(o.created_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })
-                ])
+                headers: ['#', 'Order Info', 'Items (Name | Size | Qty | Price | Total)', 'Subtotal', 'Shipping', 'Grand Total'],
+                rows: []
             };
+            let overallGrandTotal = 0;
+            
+            orders.forEach(o => {
+                const gt = o.grand_total ? Number(o.grand_total) : 0;
+                overallGrandTotal += gt;
+                
+                const orderInfo = `${o.shop_name || o.name}\n${o.email}\nStatus: ${o.status}\nDate: ${new Date(o.created_at).toISOString().split('T')[0]}`;
+                
+                let itemsText = '';
+                if (o.items_list && o.items_list.length > 0) {
+                    itemsText = o.items_list.map(i => {
+                        return `${i.product_name_snapshot} (${i.size}) x${i.quantity} @Rp${Number(i.unit_price||0).toLocaleString('id-ID')} = Rp${Number(i.line_total||0).toLocaleString('id-ID')}`;
+                    }).join('\n');
+                } else {
+                    itemsText = '-';
+                }
+
+                table.rows.push([
+                    String(o.order_id),
+                    orderInfo,
+                    itemsText,
+                    o.subtotal ? `Rp ${Number(o.subtotal).toLocaleString('id-ID')}` : '-',
+                    o.shipping_cost_confirmed != null ? `Rp ${Number(o.shipping_cost_confirmed).toLocaleString('id-ID')}` : (o.shipping_cost ? `Rp ${Number(o.shipping_cost).toLocaleString('id-ID')}` : '-'),
+                    o.grand_total ? `Rp ${Number(o.grand_total).toLocaleString('id-ID')}` : '-'
+                ]);
+            });
+            
+            table.rows.push([
+                '', '', '', '', 'OVERALL TOTAL:', `Rp ${overallGrandTotal.toLocaleString('id-ID')}`
+            ]);
 
             await doc.table(table, {
-                width: 750,
-                prepareHeader: () => doc.font('Helvetica-Bold').fontSize(9),
+                width: 780,
+                prepareHeader: () => doc.font('Helvetica-Bold').fontSize(8),
                 prepareRow: () => doc.font('Helvetica').fontSize(8)
             });
 
@@ -738,21 +890,28 @@ exports.exportOrders = async (req, res) => {
                 { header: 'Message',    key: 'message',    width: 35 },
                 { header: 'Address',    key: 'address',    width: 30 },
                 { header: 'Status',     key: 'status',     width: 20 },
-                { header: 'Total Qty',  key: 'total_qty',  width: 10 },
-                { header: 'Items',      key: 'items',      width: 12 },
-                { header: 'Items Detail', key: 'items_detail', width: 40 },
+                { header: 'Created At', key: 'created_at', width: 15 },
+                { header: 'Item Name',  key: 'item_name',  width: 35 },
+                { header: 'Size',       key: 'size',       width: 10 },
+                { header: 'Qty',        key: 'qty',        width: 10 },
+                { header: 'Unit Price', key: 'unit_price', width: 15 },
+                { header: 'Line Total', key: 'line_total', width: 15 },
                 { header: 'Subtotal',   key: 'subtotal',   width: 15 },
                 { header: 'Shipping',   key: 'shipping',   width: 15 },
                 { header: 'Grand Total',key: 'grand_total',width: 15 },
-                { header: 'Created At', key: 'created_at', width: 22 },
             ];
 
             worksheet.getRow(1).font = { bold: true };
             worksheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1a1a1a' } };
             worksheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
 
+            let overallGrandTotal = 0;
+
             orders.forEach(o => {
-                worksheet.addRow({
+                const gt = o.grand_total ? Number(o.grand_total) : 0;
+                overallGrandTotal += gt;
+                
+                const baseInfo = {
                     order_id: o.order_id,
                     shop_name: o.shop_name || '',
                     name: o.name || '',
@@ -762,15 +921,40 @@ exports.exportOrders = async (req, res) => {
                     message: o.message || '',
                     address: o.address || '',
                     status: o.status || '',
-                    total_qty: Number(o.total_qty) || 0,
-                    items: Number(o.total_items) || 0,
-                    items_detail: o.items_detail || '',
-                    subtotal: Number(o.subtotal) || 0,
-                    shipping: Number(o.shipping_cost_confirmed != null ? o.shipping_cost_confirmed : o.shipping_cost) || 0,
-                    grand_total: Number(o.grand_total) || 0,
-                    created_at: new Date(o.created_at).toISOString(),
-                });
+                    created_at: new Date(o.created_at).toISOString().split('T')[0]
+                };
+
+                if (!o.items_list || o.items_list.length === 0) {
+                    worksheet.addRow({
+                        ...baseInfo,
+                        item_name: '', size: '', qty: '', unit_price: '', line_total: '',
+                        subtotal: Number(o.subtotal) || 0,
+                        shipping: Number(o.shipping_cost_confirmed != null ? o.shipping_cost_confirmed : o.shipping_cost) || 0,
+                        grand_total: gt
+                    });
+                } else {
+                    o.items_list.forEach((item, idx) => {
+                        const isFirst = idx === 0;
+                        worksheet.addRow({
+                            ...baseInfo,
+                            item_name: item.product_name_snapshot,
+                            size: item.size,
+                            qty: Number(item.quantity) || 0,
+                            unit_price: Number(item.unit_price) || 0,
+                            line_total: Number(item.line_total) || 0,
+                            subtotal: isFirst ? (Number(o.subtotal) || 0) : '',
+                            shipping: isFirst ? (Number(o.shipping_cost_confirmed != null ? o.shipping_cost_confirmed : o.shipping_cost) || 0) : '',
+                            grand_total: isFirst ? gt : ''
+                        });
+                    });
+                }
             });
+
+            const totalRow = worksheet.addRow({
+                shipping: 'OVERALL TOTAL',
+                grand_total: overallGrandTotal
+            });
+            totalRow.font = { bold: true };
 
             res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
             res.setHeader('Content-Disposition', `attachment; filename="wholesale_export_${new Date().toISOString().split('T')[0]}.xlsx"`);
