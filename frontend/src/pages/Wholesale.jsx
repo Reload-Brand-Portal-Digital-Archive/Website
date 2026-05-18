@@ -24,8 +24,21 @@ export default function Wholesale() {
     email: '',
     phone: '',
     inquiry_type: 'Bulk Purchase',
-    address: '',
+    address: '', // Will be overridden on submit if using dropdowns
     message: ''
+  });
+
+  const [provinces, setProvinces] = useState([]);
+  const [regencies, setRegencies] = useState([]);
+  const [districts, setDistricts] = useState([]);
+  const [villages, setVillages] = useState([]);
+
+  const [selectedRegion, setSelectedRegion] = useState({
+      province: { id: '', name: '' },
+      regency: { id: '', name: '' },
+      district: { id: '', name: '' },
+      village: { id: '', name: '' },
+      detail: ''
   });
 
   useEffect(() => {
@@ -68,7 +81,42 @@ export default function Wholesale() {
 
     fetchProducts();
     fetchPastStores();
+
+    // Fetch initial provinces
+    axios.get('https://www.emsifa.com/api-wilayah-indonesia/api/provinces.json')
+      .then(res => setProvinces(res.data))
+      .catch(err => console.error(err));
   }, []);
+
+  useEffect(() => {
+      if (!selectedRegion.province.id) {
+          setRegencies([]); setDistricts([]); setVillages([]);
+          return;
+      }
+      axios.get(`https://www.emsifa.com/api-wilayah-indonesia/api/regencies/${selectedRegion.province.id}.json`)
+          .then(res => setRegencies(res.data))
+          .catch(err => console.error(err));
+  }, [selectedRegion.province.id]);
+
+  useEffect(() => {
+      if (!selectedRegion.regency.id) {
+          setDistricts([]); setVillages([]);
+          return;
+      }
+      axios.get(`https://www.emsifa.com/api-wilayah-indonesia/api/districts/${selectedRegion.regency.id}.json`)
+          .then(res => setDistricts(res.data))
+          .catch(err => console.error(err));
+  }, [selectedRegion.regency.id]);
+
+  useEffect(() => {
+      if (!selectedRegion.district.id) {
+          setVillages([]);
+          return;
+      }
+      axios.get(`https://www.emsifa.com/api-wilayah-indonesia/api/villages/${selectedRegion.district.id}.json`)
+          .then(res => setVillages(res.data))
+          .catch(err => console.error(err));
+  }, [selectedRegion.district.id]);
 
   const filteredProducts = useMemo(() => {
     return products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -128,6 +176,23 @@ export default function Wholesale() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const handleRegionChange = (level, id, name) => {
+      setSelectedRegion(prev => {
+          const newState = { ...prev, [level]: { id, name } };
+          if (level === 'province') {
+              newState.regency = { id: '', name: '' };
+              newState.district = { id: '', name: '' };
+              newState.village = { id: '', name: '' };
+          } else if (level === 'regency') {
+              newState.district = { id: '', name: '' };
+              newState.village = { id: '', name: '' };
+          } else if (level === 'district') {
+              newState.village = { id: '', name: '' };
+          }
+          return newState;
+      });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (selectedItems.length === 0) {
@@ -135,11 +200,19 @@ export default function Wholesale() {
       return;
     }
     
+    if (!selectedRegion.province.id || !selectedRegion.regency.id || !selectedRegion.district.id || !selectedRegion.village.id) {
+        toast.warning(t('wholesale.address_incomplete') || 'Silakan lengkapi alamat pengiriman (Provinsi - Kelurahan).');
+        return;
+    }
+
     setIsSubmitting(true);
+    
+    const fullAddress = `${selectedRegion.detail ? selectedRegion.detail + ', ' : ''}${selectedRegion.village.name}, ${selectedRegion.district.name}, ${selectedRegion.regency.name}, ${selectedRegion.province.name}`;
     
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     const payload = {
         ...formData,
+        address: fullAddress,
         user_id: user.id || user.user_id || null,
         items: selectedItems.map(item => ({
             product_id: item.product.product_id,
@@ -417,7 +490,61 @@ export default function Wholesale() {
 
                     <div className="flex flex-col gap-1.5">
                         <label className="text-[10px] font-mono text-zinc-500 uppercase">{t('wholesale.shipping_address')}</label>
-                        <textarea required name="address" value={formData.address} onChange={handleFormChange} rows="3" className="bg-zinc-950 border border-zinc-800 focus:border-zinc-600 outline-none py-2 px-3 text-xs text-zinc-200 resize-none"></textarea>
+                        
+                        <div className="grid grid-cols-2 gap-3 mt-1 mb-1">
+                            <select 
+                                required 
+                                value={selectedRegion.province.id} 
+                                onChange={(e) => handleRegionChange('province', e.target.value, e.target.options[e.target.selectedIndex].text)}
+                                className="bg-zinc-950 border border-zinc-800 focus:border-zinc-600 outline-none h-9 px-2 text-xs text-zinc-200 cursor-pointer appearance-none rounded-none"
+                            >
+                                <option value="">-- Provinsi --</option>
+                                {provinces.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                            </select>
+
+                            <select 
+                                required 
+                                value={selectedRegion.regency.id} 
+                                onChange={(e) => handleRegionChange('regency', e.target.value, e.target.options[e.target.selectedIndex].text)}
+                                disabled={!selectedRegion.province.id}
+                                className="bg-zinc-950 border border-zinc-800 focus:border-zinc-600 outline-none h-9 px-2 text-xs text-zinc-200 cursor-pointer appearance-none rounded-none disabled:opacity-50"
+                            >
+                                <option value="">-- Kota/Kab --</option>
+                                {regencies.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+                            </select>
+
+                            <select 
+                                required 
+                                value={selectedRegion.district.id} 
+                                onChange={(e) => handleRegionChange('district', e.target.value, e.target.options[e.target.selectedIndex].text)}
+                                disabled={!selectedRegion.regency.id}
+                                className="bg-zinc-950 border border-zinc-800 focus:border-zinc-600 outline-none h-9 px-2 text-xs text-zinc-200 cursor-pointer appearance-none rounded-none disabled:opacity-50"
+                            >
+                                <option value="">-- Kecamatan --</option>
+                                {districts.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                            </select>
+
+                            <select 
+                                required 
+                                value={selectedRegion.village.id} 
+                                onChange={(e) => handleRegionChange('village', e.target.value, e.target.options[e.target.selectedIndex].text)}
+                                disabled={!selectedRegion.district.id}
+                                className="bg-zinc-950 border border-zinc-800 focus:border-zinc-600 outline-none h-9 px-2 text-xs text-zinc-200 cursor-pointer appearance-none rounded-none disabled:opacity-50"
+                            >
+                                <option value="">-- Kelurahan --</option>
+                                {villages.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
+                            </select>
+                        </div>
+                        
+                        <textarea 
+                            required 
+                            name="detail" 
+                            value={selectedRegion.detail} 
+                            onChange={(e) => setSelectedRegion(prev => ({...prev, detail: e.target.value}))} 
+                            rows="2" 
+                            placeholder="Detail alamat (Nama jalan, Gedung, RT/RW)" 
+                            className="bg-zinc-950 border border-zinc-800 focus:border-zinc-600 outline-none py-2 px-3 text-xs text-zinc-200 resize-none"
+                        ></textarea>
                     </div>
 
                     <div className="flex flex-col gap-1.5">
