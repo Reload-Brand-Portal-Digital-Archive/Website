@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Users, UserPlus, Mail, MousePointerClick, TrendingUp, Loader2 } from 'lucide-react';
 import axios from 'axios';
+import { useTranslation } from 'react-i18next';
 
-export const SummaryCard = ({ title, value, icon: Icon, trend, trendValue, loading }) => (
-    <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-lg relative overflow-hidden group">
+export const SummaryCard = ({ title, value, icon: Icon, trend, trendValue, loading }) => {
+    const { t } = useTranslation();
+    return (
+        <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-lg relative overflow-hidden group">
         <div className="flex justify-between items-start mb-4">
             <div>
                 <h3 className="text-zinc-400 text-sm font-medium mb-1">{title}</h3>
@@ -21,14 +24,16 @@ export const SummaryCard = ({ title, value, icon: Icon, trend, trendValue, loadi
             <div className="flex items-center text-xs mt-4">
                 <TrendingUp size={14} className="text-emerald-500 mr-1" />
                 <span className="text-emerald-500 font-medium">{trendValue}</span>
-                <span className="text-zinc-500 ml-2">vs periode sebelumnya</span>
+                <span className="text-zinc-500 ml-2">{t('admin_dashboard.vs_previous')}</span>
             </div>
         )}
         <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-zinc-800 to-zinc-900 group-hover:from-zinc-600 transition-colors" />
     </div>
-);
+    );
+};
 
 export const DashboardSummaryCards = ({ dateRange = {} }) => {
+    const { t } = useTranslation();
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -40,7 +45,7 @@ export const DashboardSummaryCards = ({ dateRange = {} }) => {
                 const params = {};
                 if (dateRange.startDate) params.startDate = dateRange.startDate;
                 if (dateRange.endDate) params.endDate = dateRange.endDate;
-                const response = await axios.get('http://localhost:5000/api/track/stats', {
+                const response = await axios.get(import.meta.env.VITE_API_URL + '/api/track/stats', {
                     headers: { 'Authorization': `Bearer ${token}` },
                     params
                 });
@@ -63,29 +68,29 @@ export const DashboardSummaryCards = ({ dateRange = {} }) => {
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             <SummaryCard
-                title="Total Page Views"
-                value={loading ? '-' : Number(stats?.total_views || 0).toLocaleString('id-ID')}
+                title={t('admin_dashboard.total_views')}
+                value={loading ? '-' : Number(stats?.total_views || 0).toLocaleString('en-US')}
                 icon={Users}
                 trend={false}
                 loading={loading}
             />
             <SummaryCard
-                title="Klik Shopee"
-                value={loading ? '-' : Number(shopeeClicks).toLocaleString('id-ID')}
+                title={t('admin_dashboard.shopee_clicks')}
+                value={loading ? '-' : Number(shopeeClicks).toLocaleString('en-US')}
                 icon={MousePointerClick}
                 trend={false}
                 loading={loading}
             />
             <SummaryCard
-                title="Klik TikTok Shop"
-                value={loading ? '-' : Number(tiktokClicks).toLocaleString('id-ID')}
+                title={t('admin_dashboard.tiktok_clicks')}
+                value={loading ? '-' : Number(tiktokClicks).toLocaleString('en-US')}
                 icon={MousePointerClick}
                 trend={false}
                 loading={loading}
             />
             <SummaryCard
-                title="Total Klik Eksternal"
-                value={loading ? '-' : Number(totalClicks).toLocaleString('id-ID')}
+                title={t('admin_dashboard.total_external_clicks')}
+                value={loading ? '-' : Number(totalClicks).toLocaleString('en-US')}
                 icon={MousePointerClick}
                 trend={false}
                 loading={loading}

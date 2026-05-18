@@ -1,8 +1,9 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { X, ChevronLeft, ChevronRight, CalendarDays, Check } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
-const MONTHS = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
-const DAYS = ['Min','Sen','Sel','Rab','Kam','Jum','Sab'];
+const FALLBACK_MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const FALLBACK_DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
 function fmt(d) { return d.toISOString().split('T')[0]; }
 function parseDate(s) { return s ? new Date(s + 'T00:00:00') : null; }
@@ -18,18 +19,20 @@ function addMonths(year, month, delta) {
     return { year: d.getFullYear(), month: d.getMonth() };
 }
 
-const PRESETS = [
-    { label: 'Hari ini', fn: () => { const t = new Date(); const s = fmt(t); return { startDate: s, endDate: s }; } },
-    { label: '7 Hari', fn: () => { const t = new Date(); const s = new Date(t); s.setDate(t.getDate() - 6); return { startDate: fmt(s), endDate: fmt(t) }; } },
-    { label: '30 Hari', fn: () => { const t = new Date(); const s = new Date(t); s.setDate(t.getDate() - 29); return { startDate: fmt(s), endDate: fmt(t) }; } },
-    { label: 'Bulan ini', fn: () => { const t = new Date(); const s = new Date(t.getFullYear(), t.getMonth(), 1); return { startDate: fmt(s), endDate: fmt(t) }; } },
-    { label: 'Bulan lalu', fn: () => { const t = new Date(); const s = new Date(t.getFullYear(), t.getMonth() - 1, 1); const e = new Date(t.getFullYear(), t.getMonth(), 0); return { startDate: fmt(s), endDate: fmt(e) }; } },
+const getPresets = (t) => [
+    { label: t('admin_date_picker.preset_today'), fn: () => { const t = new Date(); const s = fmt(t); return { startDate: s, endDate: s }; } },
+    { label: t('admin_date_picker.preset_7_days'), fn: () => { const t = new Date(); const s = new Date(t); s.setDate(t.getDate() - 6); return { startDate: fmt(s), endDate: fmt(t) }; } },
+    { label: t('admin_date_picker.preset_30_days'), fn: () => { const t = new Date(); const s = new Date(t); s.setDate(t.getDate() - 29); return { startDate: fmt(s), endDate: fmt(t) }; } },
+    { label: t('admin_date_picker.preset_this_month'), fn: () => { const t = new Date(); const s = new Date(t.getFullYear(), t.getMonth(), 1); return { startDate: fmt(s), endDate: fmt(t) }; } },
+    { label: t('admin_date_picker.preset_last_month'), fn: () => { const t = new Date(); const s = new Date(t.getFullYear(), t.getMonth() - 1, 1); const e = new Date(t.getFullYear(), t.getMonth(), 0); return { startDate: fmt(s), endDate: fmt(e) }; } },
 ];
 
-function MonthGrid({ year, month, startDate, endDate, hoverDate, onDayClick, onDayHover }) {
+function MonthGrid({ year, month, startDate, endDate, hoverDate, onDayClick, onDayHover, t }) {
     const today = fmt(new Date());
     const { firstDow, total } = getDays(year, month);
     const cells = [];
+    const monthsArray = t('admin_date_picker.months', { returnObjects: true }) || FALLBACK_MONTHS;
+    const daysArray = t('admin_date_picker.days', { returnObjects: true }) || FALLBACK_DAYS;
 
     // Blank leading cells
     for (let i = 0; i < firstDow; i++) cells.push(null);
@@ -55,10 +58,10 @@ function MonthGrid({ year, month, startDate, endDate, hoverDate, onDayClick, onD
     return (
         <div className="select-none">
             <p className="text-center text-sm font-semibold text-zinc-100 mb-4">
-                {MONTHS[month]} {year}
+                {monthsArray[month]} {year}
             </p>
             <div className="grid grid-cols-7 mb-2">
-                {DAYS.map(d => (
+                {daysArray.map(d => (
                     <div key={d} className="text-center text-[10px] font-bold text-zinc-500 uppercase tracking-wider py-1">{d}</div>
                 ))}
             </div>
@@ -109,6 +112,7 @@ function MonthGrid({ year, month, startDate, endDate, hoverDate, onDayClick, onD
 }
 
 export default function DateRangePickerModal({ onApply, onClose, initialStart = '', initialEnd = '' }) {
+    const { t } = useTranslation();
     const today = new Date();
     const [leftYear, setLeftYear] = useState(today.getFullYear());
     const [leftMonth, setLeftMonth] = useState(today.getMonth());
@@ -116,6 +120,8 @@ export default function DateRangePickerModal({ onApply, onClose, initialStart = 
     const [endDate, setEndDate] = useState(initialEnd);
     const [hoverDate, setHoverDate] = useState(null);
     const [step, setStep] = useState(startDate ? 'end' : 'start'); // 'start' or 'end'
+
+    const PRESETS = getPresets(t);
 
     const rightMon = addMonths(leftYear, leftMonth, 1);
 
@@ -153,7 +159,7 @@ export default function DateRangePickerModal({ onApply, onClose, initialStart = 
     const prevMonth = () => { const r = addMonths(leftYear, leftMonth, -1); setLeftYear(r.year); setLeftMonth(r.month); };
     const nextMonth = () => { const r = addMonths(leftYear, leftMonth, 1); setLeftYear(r.year); setLeftMonth(r.month); };
 
-    const formatDisplay = (s) => s ? parseDate(s)?.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+    const formatDisplay = (s) => s ? parseDate(s)?.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
     return (
         <div
@@ -169,7 +175,7 @@ export default function DateRangePickerModal({ onApply, onClose, initialStart = 
                 <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800">
                     <div className="flex items-center gap-2">
                         <CalendarDays size={18} className="text-rose-500" />
-                        <h2 className="text-base font-semibold text-zinc-100">Pilih Rentang Tanggal</h2>
+                        <h2 className="text-base font-semibold text-zinc-100">{t('admin_date_picker.title')}</h2>
                     </div>
                     <button onClick={onClose} className="text-zinc-500 hover:text-white transition-colors p-1 rounded-md hover:bg-zinc-800">
                         <X size={18} />
@@ -179,7 +185,7 @@ export default function DateRangePickerModal({ onApply, onClose, initialStart = 
                 <div className="flex">
                     {/* Presets sidebar */}
                     <div className="w-44 border-r border-zinc-800 p-4 flex flex-col gap-1 shrink-0">
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600 mb-2">Cepat Pilih</p>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600 mb-2">{t('admin_date_picker.quick_select')}</p>
                         {PRESETS.map(p => (
                             <button
                                 key={p.label}
@@ -196,19 +202,19 @@ export default function DateRangePickerModal({ onApply, onClose, initialStart = 
                         {/* Selected range display */}
                         <div className="flex items-center gap-3 mb-6">
                             <div className={`flex-1 px-4 py-2.5 rounded-lg border text-sm transition-all ${step === 'start' ? 'border-rose-500 bg-rose-500/10 text-rose-300' : 'border-zinc-700 bg-zinc-800/50 text-zinc-300'}`}>
-                                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 block mb-0.5">Dari</span>
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 block mb-0.5">{t('admin_date_picker.from')}</span>
                                 {formatDisplay(startDate)}
                             </div>
                             <ChevronRight size={16} className="text-zinc-600 shrink-0" />
                             <div className={`flex-1 px-4 py-2.5 rounded-lg border text-sm transition-all ${step === 'end' && startDate ? 'border-rose-500 bg-rose-500/10 text-rose-300' : 'border-zinc-700 bg-zinc-800/50 text-zinc-300'}`}>
-                                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 block mb-0.5">Sampai</span>
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 block mb-0.5">{t('admin_date_picker.to')}</span>
                                 {formatDisplay(endDate)}
                             </div>
                         </div>
 
                         {/* Step hint */}
                         <p className="text-[11px] text-zinc-600 mb-4 font-mono">
-                            {step === 'start' ? '↗ Pilih tanggal mulai' : (startDate ? '↗ Sekarang pilih tanggal akhir' : '')}
+                            {step === 'start' ? t('admin_date_picker.hint_start') : (startDate ? t('admin_date_picker.hint_end') : '')}
                         </p>
 
                         {/* Dual calendar */}
@@ -226,6 +232,7 @@ export default function DateRangePickerModal({ onApply, onClose, initialStart = 
                                     startDate={startDate} endDate={endDate} hoverDate={hoverDate}
                                     onDayClick={handleDayClick}
                                     onDayHover={setHoverDate}
+                                    t={t}
                                 />
                             </div>
                             <div>
@@ -241,6 +248,7 @@ export default function DateRangePickerModal({ onApply, onClose, initialStart = 
                                     startDate={startDate} endDate={endDate} hoverDate={hoverDate}
                                     onDayClick={handleDayClick}
                                     onDayHover={setHoverDate}
+                                    t={t}
                                 />
                             </div>
                         </div>
@@ -253,11 +261,11 @@ export default function DateRangePickerModal({ onApply, onClose, initialStart = 
                         onClick={() => { setStartDate(''); setEndDate(''); setStep('start'); }}
                         className="text-sm text-zinc-500 hover:text-zinc-300 transition-colors"
                     >
-                        Reset
+                        {t('admin_date_picker.reset')}
                     </button>
                     <div className="flex items-center gap-3">
                         <button onClick={onClose} className="px-4 py-2 text-sm text-zinc-400 hover:text-white border border-zinc-700 rounded-lg transition-all hover:bg-zinc-800">
-                            Batal
+                            {t('admin_date_picker.cancel')}
                         </button>
                         <button
                             onClick={handleApply}
@@ -265,7 +273,7 @@ export default function DateRangePickerModal({ onApply, onClose, initialStart = 
                             className="px-5 py-2 text-sm font-medium bg-rose-500 hover:bg-rose-600 text-white rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg shadow-rose-500/20"
                         >
                             <Check size={14} />
-                            Terapkan
+                            {t('admin_date_picker.apply')}
                         </button>
                     </div>
                 </div>

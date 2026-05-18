@@ -1,4 +1,5 @@
 const db = require('../config/database');
+const { logAdminActivity } = require('../utils/activityLogger');
 
 const getCategories = async () => {
     const [rows] = await db.query('SELECT setting_value FROM site_settings WHERE setting_key = "product_categories"');
@@ -36,6 +37,8 @@ exports.createCategory = async (req, res) => {
         categories.push(name);
         await saveCategories(categories);
 
+        await logAdminActivity(req, 'CREATE', 'Category', null, { name });
+
         res.status(201).json({ message: 'Kategori berhasil ditambahkan', data: categories });
     } catch (error) {
         res.status(500).json({ message: 'Gagal menambah kategori' });
@@ -48,6 +51,8 @@ exports.deleteCategory = async (req, res) => {
         let categories = await getCategories();
         categories = categories.filter(c => c !== categoryName);
         await saveCategories(categories);
+
+        await logAdminActivity(req, 'DELETE', 'Category', null, { name: categoryName });
 
         res.json({ message: 'Kategori berhasil dihapus', data: categories });
     } catch (error) {
@@ -76,6 +81,8 @@ exports.updateCategory = async (req, res) => {
 
         categories[categoryIndex] = name;
         await saveCategories(categories);
+
+        await logAdminActivity(req, 'UPDATE', 'Category', null, { oldName, newName: name });
 
         res.json({ message: 'Kategori berhasil diperbarui', data: categories });
     } catch (error) {

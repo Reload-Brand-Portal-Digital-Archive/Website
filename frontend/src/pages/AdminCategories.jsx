@@ -3,8 +3,10 @@ import { Tags, Plus, Trash2, Loader2, Edit2, X } from 'lucide-react';
 import axios from 'axios';
 import { notify } from '../lib/toast';
 import { useConfirm } from '../lib/confirm-dialog';
+import { useTranslation } from 'react-i18next';
 
 export default function AdminCategories() {
+    const { t } = useTranslation();
     const [categories, setCategories] = useState([]);
     const [newCategory, setNewCategory] = useState('');
     const [loading, setLoading] = useState(true);
@@ -15,10 +17,10 @@ export default function AdminCategories() {
     const fetchCategories = async () => {
         setLoading(true);
         try {
-            const res = await axios.get('http://localhost:5000/api/categories');
+            const res = await axios.get(import.meta.env.VITE_API_URL + '/api/categories');
             setCategories(res.data);
-        } catch (error) {
-            notify.error("Gagal mengambil data kategori");
+        } catch {
+            notify.error(t('admin_category.failed_load'));
         } finally {
             setLoading(false);
         }
@@ -32,15 +34,15 @@ export default function AdminCategories() {
 
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.post('http://localhost:5000/api/categories',
+            const res = await axios.post(import.meta.env.VITE_API_URL + '/api/categories',
                 { name: newCategory },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             setCategories(res.data.data);
             setNewCategory('');
-            toast.success(res.data.message);
+            notify.success(res.data.message);
         } catch (error) {
-            toast.error(error.response?.data?.message || "Gagal menambah kategori");
+            notify.error(error.response?.data?.message || t('admin_category.failed_add'));
         }
     };
 
@@ -55,38 +57,38 @@ export default function AdminCategories() {
 
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.put(`http://localhost:5000/api/categories/${encodeURIComponent(editingCategory)}`,
+            const res = await axios.put(`${import.meta.env.VITE_API_URL}/api/categories/${encodeURIComponent(editingCategory)}`,
                 { name: editValue },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             setCategories(res.data.data);
             setEditingCategory(null);
             setEditValue('');
-            toast.success(res.data.message || "Kategori berhasil diperbarui!");
+            notify.success(res.data.message || t('admin_category.updated_success'));
         } catch (error) {
-            toast.error(error.response?.data?.message || "Gagal memperbarui kategori");
+            notify.error(error.response?.data?.message || t('admin_category.failed_update'));
         }
     };
 
     const handleDelete = async (categoryName) => {
         const confirmed = await confirm({
-            title: 'Hapus Kategori',
-            description: `Yakin ingin menghapus kategori "${categoryName}"? Tindakan ini tidak dapat dikembalikan!`,
-            confirmText: 'Hapus',
-            cancelText: 'Batal',
+            title: t('admin_category.delete_title'),
+            description: t('admin_category.delete_confirm', { name: categoryName }),
+            confirmText: t('admin_category.delete_btn'),
+            cancelText: t('admin_category.cancel_btn'),
         });
 
         if (confirmed) {
             try {
                 const token = localStorage.getItem('token');
-                const loadingToastId = notify.loading('Menghapus kategori...');
-                const res = await axios.delete(`http://localhost:5000/api/categories/${encodeURIComponent(categoryName)}`, {
+                const loadingToastId = notify.loading(t('admin_category.deleting'));
+                const res = await axios.delete(`${import.meta.env.VITE_API_URL}/api/categories/${encodeURIComponent(categoryName)}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setCategories(res.data.data);
-                notify.update(loadingToastId, { render: res.data.message || 'Kategori berhasil dihapus!', type: 'success', isLoading: false, autoClose: 3000 });
+                notify.update(loadingToastId, { render: res.data.message || t('admin_category.deleted_success'), type: 'success', isLoading: false, autoClose: 3000 });
             } catch (error) {
-                const errorMessage = error.response?.data?.message || "Gagal menghapus kategori";
+                const errorMessage = error.response?.data?.message || t('admin_category.failed_delete');
                 notify.error(errorMessage);
             }
         }
@@ -97,9 +99,9 @@ export default function AdminCategories() {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                     <h2 className="text-2xl font-bold text-zinc-50 flex items-center gap-2">
-                        <Tags className="text-rose-500" /> Manajemen Kategori
+                        <Tags className="text-rose-500" /> {t('admin_category.page_title')}
                     </h2>
-                    <p className="text-sm text-zinc-400 mt-1">Atur label kategori produk.</p>
+                    <p className="text-sm text-zinc-400 mt-1">{t('admin_category.page_desc')}</p>
                 </div>
             </div>
 
@@ -110,7 +112,7 @@ export default function AdminCategories() {
                             type="text"
                             value={editValue}
                             onChange={(e) => setEditValue(e.target.value)}
-                            placeholder="Nama kategori..."
+                            placeholder={t('admin_category.name_placeholder')}
                             className="flex-1 bg-zinc-950 border border-zinc-800 rounded-md py-2 px-4 text-zinc-100 focus:outline-none focus:border-rose-500 transition-colors"
                             autoFocus
                         />
@@ -118,7 +120,7 @@ export default function AdminCategories() {
                             type="submit"
                             className="bg-rose-500 hover:bg-rose-600 text-white px-6 py-2 rounded-md font-medium flex items-center gap-2 transition-colors"
                         >
-                            Simpan
+                            {t('common.save') || 'Save'}
                         </button>
                         <button
                             type="button"
@@ -128,7 +130,7 @@ export default function AdminCategories() {
                             }}
                             className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-6 py-2 rounded-md font-medium flex items-center gap-2 transition-colors"
                         >
-                            Batal
+                            {t('admin_category.cancel_btn')}
                         </button>
                     </form>
                 </div>
@@ -139,14 +141,14 @@ export default function AdminCategories() {
                             type="text"
                             value={newCategory}
                             onChange={(e) => setNewCategory(e.target.value)}
-                            placeholder="Contoh: Topi Hiphop"
+                            placeholder={t('admin_category.add_placeholder')}
                             className="flex-1 bg-zinc-950 border border-zinc-800 rounded-md py-2 px-4 text-zinc-100 focus:outline-none focus:border-rose-500 transition-colors"
                         />
                         <button
                             type="submit"
                             className="bg-rose-500 hover:bg-rose-600 text-white px-6 py-2 rounded-md font-medium flex items-center gap-2 transition-colors"
                         >
-                            <Plus size={18} /> Tambah
+                            <Plus size={18} /> {t('admin_category.add_btn')}
                         </button>
                     </form>
                 </div>
@@ -161,8 +163,8 @@ export default function AdminCategories() {
                     {categories.length === 0 ? (
                         <div className="col-span-full bg-zinc-900 border border-zinc-800 rounded-lg p-12 text-center">
                             <Tags size={48} className="text-zinc-700 mx-auto mb-4" />
-                            <h3 className="text-lg font-medium text-zinc-300">Tidak ada kategori ditemukan</h3>
-                            <p className="text-zinc-500 mt-1">Coba gunakan kata kunci pencarian yang lain atau tambah kategori baru.</p>
+                            <h3 className="text-lg font-medium text-zinc-300">{t('admin_category.no_categories')}</h3>
+                            <p className="text-zinc-500 mt-1">{t('admin_category.no_categories_desc')}</p>
                         </div>
                     ) : (
                         categories.map((cat, i) => (
@@ -176,14 +178,14 @@ export default function AdminCategories() {
                                         <button
                                             onClick={() => handleEdit(cat)}
                                             className="text-zinc-600 hover:text-blue-500 transition-colors p-1"
-                                            title="Edit"
+                                            title={t('admin_category.edit_btn')}
                                         >
                                             <Edit2 size={16} />
                                         </button>
                                         <button
                                             onClick={() => handleDelete(cat)}
                                             className="text-zinc-600 hover:text-red-500 transition-colors p-1"
-                                            title="Hapus"
+                                            title={t('admin_category.delete_btn')}
                                         >
                                             <Trash2 size={16} />
                                         </button>

@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/ui/Navbar';
 import { ArrowRight, Home, Layers } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -23,6 +24,7 @@ const itemVariants = {
 };
 
 const NotFound = () => {
+  const { t } = useTranslation();
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-50 font-sans cursor-default selection:bg-white selection:text-black overflow-hidden">
       {/* Background Noise Layer */}
@@ -58,7 +60,7 @@ const NotFound = () => {
           {/* Label */}
           <motion.div variants={itemVariants} className="mb-10">
             <span className="font-mono text-xs tracking-[0.3em] text-zinc-500 uppercase">
-              [ STATUS: 404 — ROUTE NOT FOUND ]
+              {t('notfound.status_badge')}
             </span>
           </motion.div>
 
@@ -67,9 +69,9 @@ const NotFound = () => {
             variants={itemVariants}
             className="font-sans text-6xl md:text-9xl font-black uppercase tracking-tighter leading-[0.85] mb-8"
           >
-            LOST{' '}
+            {t('notfound.title_1')}{' '}
             <br />
-            <span className="text-zinc-600">SIGNAL.</span>
+            <span className="text-zinc-600">{t('notfound.title_2')}</span>
           </motion.h1>
 
           {/* Divider */}
@@ -80,7 +82,7 @@ const NotFound = () => {
             variants={itemVariants}
             className="font-mono text-sm text-zinc-500 max-w-md leading-relaxed mb-16"
           >
-            The page you're looking for has been moved, archived, or never existed in this space. Navigate back to a known coordinate.
+            {t('notfound.desc')}
           </motion.p>
 
           {/* CTAs */}
@@ -93,7 +95,7 @@ const NotFound = () => {
               className="group flex items-center justify-center gap-3 h-14 px-8 bg-white text-black font-mono text-xs uppercase tracking-widest hover:bg-zinc-200 transition-colors"
             >
               <Home className="w-3.5 h-3.5" />
-              Return Home
+              {t('notfound.return_home')}
               <ArrowRight className="w-3.5 h-3.5 translate-x-0 group-hover:translate-x-1 transition-transform" />
             </Link>
 
@@ -102,7 +104,7 @@ const NotFound = () => {
               className="group flex items-center justify-center gap-3 h-14 px-8 bg-transparent border border-zinc-800 text-zinc-300 font-mono text-xs uppercase tracking-widest hover:border-zinc-500 hover:text-white transition-all"
             >
               <Layers className="w-3.5 h-3.5" />
-              Collections
+              {t('nav.collections')}
               <ArrowRight className="w-3.5 h-3.5 translate-x-0 group-hover:translate-x-1 transition-transform" />
             </Link>
 
@@ -110,7 +112,7 @@ const NotFound = () => {
               to="/shop"
               className="group flex items-center justify-center gap-3 h-14 px-8 bg-transparent border border-zinc-800 text-zinc-500 font-mono text-xs uppercase tracking-widest hover:border-zinc-600 hover:text-zinc-300 transition-all"
             >
-              Shop
+              {t('nav.shop')}
               <ArrowRight className="w-3.5 h-3.5 translate-x-0 group-hover:translate-x-1 transition-transform" />
             </Link>
           </motion.div>
@@ -120,7 +122,7 @@ const NotFound = () => {
             variants={itemVariants}
             className="mt-16 font-mono text-[10px] text-zinc-700 uppercase tracking-widest"
           >
-            RELOAD DISTRO // SYSTEM ERROR
+            {t('notfound.footer')}
           </motion.p>
         </motion.div>
       </main>

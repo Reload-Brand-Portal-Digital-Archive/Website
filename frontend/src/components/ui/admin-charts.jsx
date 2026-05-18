@@ -5,6 +5,7 @@ import {
 } from 'recharts';
 import axios from 'axios';
 import { Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 // Fetch stats with optional date range
 async function fetchStats(dateRange = {}) {
@@ -12,7 +13,7 @@ async function fetchStats(dateRange = {}) {
     const params = {};
     if (dateRange.startDate) params.startDate = dateRange.startDate;
     if (dateRange.endDate) params.endDate = dateRange.endDate;
-    const res = await axios.get('http://localhost:5000/api/track/stats', {
+    const res = await axios.get(import.meta.env.VITE_API_URL + '/api/track/stats', {
         headers: { 'Authorization': `Bearer ${token}` },
         params
     });
@@ -75,8 +76,9 @@ function ChartWrapper({ title, subtitle, children, loading }) {
     );
 }
 
-/** Traffic Visitors — dari page_views (sesuai date range) */
+/** Traffic Visitors — dari page_views dan wholesale_orders (sesuai date range) */
 export const TrafficChart = ({ dateRange = {} }) => {
+    const { t } = useTranslation();
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -84,17 +86,24 @@ export const TrafficChart = ({ dateRange = {} }) => {
         setLoading(true);
         fetchStats(dateRange).then(stats => {
             const allDates = resolveDateRangeObj(dateRange);
-            const dailyMap = {};
+            const visitsMap = {};
             (stats?.daily_visits || []).forEach(row => {
                 const d = new Date(row.date);
-                dailyMap[toLocalDateStr(d)] = Number(row.count);
+                visitsMap[toLocalDateStr(d)] = Number(row.count);
+            });
+
+            const ordersMap = {};
+            (stats?.daily_orders || []).forEach(row => {
+                const d = new Date(row.date);
+                ordersMap[toLocalDateStr(d)] = Number(row.count);
             });
 
             const formatted = allDates.map(dateObj => {
                 const dateKey = toLocalDateStr(dateObj);
                 return {
-                    name: dateObj.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric' }),
-                    visitors: dailyMap[dateKey] || 0
+                    name: dateObj.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' }),
+                    "Page Views": visitsMap[dateKey] || 0,
+                    "Orders": ordersMap[dateKey] || 0
                 };
             });
             setData(formatted);
@@ -102,14 +111,16 @@ export const TrafficChart = ({ dateRange = {} }) => {
     }, [dateRange.startDate, dateRange.endDate]);
 
     return (
-        <ChartWrapper title="Traffic Visitors" subtitle="Page Views" loading={loading}>
+        <ChartWrapper title="Traffic Visitors" subtitle="Page Views & Orders" loading={loading}>
             <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={data}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#3f3f46" vertical={false} />
                     <XAxis dataKey="name" stroke="#a1a1aa" fontSize={12} tickLine={false} axisLine={false} />
                     <YAxis stroke="#a1a1aa" fontSize={12} tickLine={false} axisLine={false} tickFormatter={v => v >= 1000 ? `${(v/1000).toFixed(1)}k` : v} />
                     <Tooltip contentStyle={{ backgroundColor: '#18181b', borderColor: '#3f3f46', color: '#f4f4f5' }} />
-                    <Line type="monotone" dataKey="visitors" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4, fill: '#18181b', strokeWidth: 2 }} activeDot={{ r: 6 }} />
+                    <Legend wrapperStyle={{ fontSize: '12px', color: '#a1a1aa', paddingTop: '10px' }} />
+                    <Line type="monotone" dataKey="Page Views" name="Melihat Website" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4, fill: '#18181b', strokeWidth: 2 }} activeDot={{ r: 6 }} />
+                    <Line type="monotone" dataKey="Orders" name="Order" stroke="#10b981" strokeWidth={3} dot={{ r: 4, fill: '#18181b', strokeWidth: 2 }} activeDot={{ r: 6 }} />
                 </LineChart>
             </ResponsiveContainer>
         </ChartWrapper>
@@ -118,6 +129,7 @@ export const TrafficChart = ({ dateRange = {} }) => {
 
 /** User Growth — jumlah registrasi dari tabel users per hari (sesuai date range) */
 export const UserGrowthChart = ({ dateRange = {} }) => {
+    const { t } = useTranslation();
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -134,7 +146,7 @@ export const UserGrowthChart = ({ dateRange = {} }) => {
             const formatted = allDates.map(dateObj => {
                 const dateKey = toLocalDateStr(dateObj);
                 return {
-                    name: dateObj.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric' }),
+                    name: dateObj.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' }),
                     registrations: dailyMap[dateKey] || 0
                 };
             });
@@ -143,7 +155,7 @@ export const UserGrowthChart = ({ dateRange = {} }) => {
     }, [dateRange.startDate, dateRange.endDate]);
 
     return (
-        <ChartWrapper title="User Growth" subtitle="Resgistrasi Harian" loading={loading}>
+        <ChartWrapper title={t('admin_dashboard.user_growth')} subtitle={t('admin_dashboard.daily_registrations')} loading={loading}>
             <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={data}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#3f3f46" vertical={false} />
@@ -157,18 +169,50 @@ export const UserGrowthChart = ({ dateRange = {} }) => {
     );
 };
 
-/** Subscriber Chart — placeholder */
-export const SubscriberChart = () => (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
-        <h3 className="text-base font-medium text-zinc-100 mb-4">Subscriber Trend</h3>
-        <div className="h-48 w-full flex items-center justify-center">
-            <p className="text-xs text-zinc-600 font-mono">Data newsletter belum tersedia</p>
-        </div>
-    </div>
-);
+export const SubscriberChart = ({ dateRange = {} }) => {
+    const { t } = useTranslation();
+    const [data, setData] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        setLoading(true);
+        fetchStats(dateRange).then(stats => {
+            const allDates = resolveDateRangeObj(dateRange);
+            const dailyMap = {};
+            (stats?.subscriber_growth || []).forEach(row => {
+                const d = new Date(row.date);
+                dailyMap[toLocalDateStr(d)] = Number(row.count);
+            });
+
+            const formatted = allDates.map(dateObj => {
+                const dateKey = toLocalDateStr(dateObj);
+                return {
+                    name: dateObj.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' }),
+                    subscribers: dailyMap[dateKey] || 0
+                };
+            });
+            setData(formatted);
+        }).catch(console.error).finally(() => setLoading(false));
+    }, [dateRange.startDate, dateRange.endDate]);
+
+    return (
+        <ChartWrapper title={t('admin_dashboard.subscriber_trend')} subtitle={t('admin_dashboard.daily_newsletter')} loading={loading}>
+            <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={data}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#3f3f46" vertical={false} />
+                    <XAxis dataKey="name" stroke="#a1a1aa" fontSize={12} tickLine={false} axisLine={false} />
+                    <YAxis stroke="#a1a1aa" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
+                    <Tooltip contentStyle={{ backgroundColor: '#18181b', borderColor: '#3f3f46', color: '#f4f4f5' }} />
+                    <Area type="monotone" dataKey="subscribers" stroke="#10b981" fill="#10b981" fillOpacity={0.2} strokeWidth={3} activeDot={{ r: 6, fill: '#10b981', stroke: '#18181b', strokeWidth: 2 }} />
+                </AreaChart>
+            </ResponsiveContainer>
+        </ChartWrapper>
+    );
+};
 
 /** External Clicks — Shopee vs TikTok per hari (sesuai date range) */
 export const ExternalClicksChart = ({ dateRange = {} }) => {
+    const { t } = useTranslation();
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -190,7 +234,7 @@ export const ExternalClicksChart = ({ dateRange = {} }) => {
                 const dateKey = toLocalDateStr(dateObj);
                 const dayData = dailyMap[dateKey] || { Shopee: 0, TikTok: 0 };
                 return {
-                    name: dateObj.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric' }),
+                    name: dateObj.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' }),
                     Shopee: dayData.Shopee,
                     TikTok: dayData.TikTok,
                 };
@@ -203,7 +247,7 @@ export const ExternalClicksChart = ({ dateRange = {} }) => {
     return (
         <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 flex flex-col pb-3">
             <h3 className="text-base font-medium text-zinc-100 mb-4">
-                Klik Toko Eksternal <span className="text-zinc-500 text-sm font-normal ml-1">(Per Hari)</span>
+                {t('admin_dashboard.external_store_clicks')} <span className="text-zinc-500 text-sm font-normal ml-1">({t('admin_dashboard.per_day')})</span>
             </h3>
             <div className="h-[280px] w-full ">
                 {loading ? (

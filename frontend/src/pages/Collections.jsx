@@ -1,17 +1,20 @@
 import React, { useState, useEffect } from 'react';
+// eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
 import axios from 'axios';
 import CollectionCard from '../components/ui/CollectionCard';
 import Navbar from '../components/ui/Navbar';
+import { useTranslation } from 'react-i18next';
 
 const Collections = () => {
+  const { t } = useTranslation();
   const [collections, setCollections] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchCollections = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/collections');
+        const res = await axios.get(import.meta.env.VITE_API_URL + '/api/collections');
         setCollections(res.data || []);
       } catch (error) {
         console.error('Error fetching collections:', error);
@@ -45,14 +48,14 @@ const Collections = () => {
         >
           <div className="flex flex-col gap-6">
             <span className="font-mono text-xs tracking-[0.3em] text-zinc-400 uppercase">
-              [ OFFICIAL ARCHIVE ]
+              {t('collections.archive_badge')}
             </span>
             <h1 className="font-sans text-5xl md:text-8xl font-black uppercase tracking-tighter leading-[0.9]">
-              COLLECTIONS <br className="hidden md:block" />
-              <span className="text-zinc-600">DIRECTORY</span>
+              {t('collections.title_1')} <br className="hidden md:block" />
+              <span className="text-zinc-600">{t('collections.title_2')}</span>
             </h1>
             <p className="font-mono text-sm md:text-base text-zinc-500 max-w-xl leading-relaxed">
-              Explore past and present drops. Each collection represents a unique study in urban decay, technical utility, and subversive aesthetics.
+              {t('collections.desc')}
             </p>
           </div>
         </motion.div>
@@ -60,7 +63,7 @@ const Collections = () => {
         {loading && (
           <div className="text-center py-16">
             <span className="font-mono text-xs text-zinc-500 uppercase tracking-widest animate-pulse">
-              Loading collections...
+              {t('collections.loading')}
             </span>
           </div>
         )}
@@ -68,7 +71,7 @@ const Collections = () => {
         {!loading && collections.length === 0 && (
           <div className="text-center py-16">
             <span className="font-mono text-xs text-zinc-500 uppercase tracking-widest">
-              No collections found
+              {t('collections.no_collections')}
             </span>
           </div>
         )}

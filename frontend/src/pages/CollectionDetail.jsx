@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+// eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
 import axios from 'axios';
 import ProductCard from '../components/ui/ProductCard';
 import Navbar from '../components/ui/Navbar';
+import { useTranslation } from 'react-i18next';
 
 const CollectionDetail = () => {
+  const { t } = useTranslation();
   const { slug } = useParams();
   const [collection, setCollection] = useState(null);
   const [products, setProducts] = useState([]);
@@ -17,7 +20,7 @@ const CollectionDetail = () => {
         setLoading(true);
         window.scrollTo(0, 0);
 
-        const response = await axios.get(`http://localhost:5000/api/collections/slug/${slug}`);
+        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/collections/slug/${slug}`);
 
         setCollection(response.data.collection);
         setProducts(response.data.products);
@@ -40,7 +43,7 @@ const CollectionDetail = () => {
     return (
       <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
         <span className="font-mono text-xs tracking-[0.3em] uppercase text-zinc-500 animate-pulse">
-          FETCHING ARCHIVE...
+          {t('collection_detail.loading')}
         </span>
       </div>
     );
@@ -50,10 +53,10 @@ const CollectionDetail = () => {
     return (
       <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center gap-6">
         <span className="font-mono text-xs tracking-[0.3em] uppercase text-red-500">
-          DATA NOT FOUND
+          {t('collection_detail.not_found')}
         </span>
         <Link to="/collections" className="px-6 py-3 border border-white/20 font-mono text-xs uppercase tracking-widest text-white hover:bg-white hover:text-black transition-colors">
-          RETURN TO DIRECTORY
+          {t('collection_detail.return')}
         </Link>
       </div>
     );
@@ -61,7 +64,7 @@ const CollectionDetail = () => {
 
   const getImageUrl = (filename) => {
     if (!filename) return '';
-    return filename.startsWith('http') ? filename : `http://localhost:5000/uploads/${filename}`;
+    return filename.startsWith('http') ? filename : `${import.meta.env.VITE_API_URL}/uploads/${filename}`;
   };
 
   return (
@@ -95,7 +98,7 @@ const CollectionDetail = () => {
                 transition={{ duration: 0.8, delay: 0.3 }}
                 className="px-3 py-1 border border-white/20 bg-black/40 backdrop-blur-md w-fit font-mono text-xs tracking-widest text-zinc-300 uppercase"
               >
-                RELEASE_ // {collection.year}
+                {t('collection_detail.release')} {collection.year}
               </motion.span>
               <motion.h1
                 initial={{ opacity: 0, y: 20 }}
@@ -123,10 +126,10 @@ const CollectionDetail = () => {
         <section className="py-16 md:py-24 px-6 md:px-12 max-w-[1600px] mx-auto">
           <div className="flex justify-between items-end mb-12 border-b border-white/10 pb-6">
             <h2 className="font-sans text-2xl md:text-3xl font-bold uppercase tracking-tight text-white">
-              INVENTORY LIST
+              {t('collection_detail.inventory_list')}
             </h2>
             <span className="font-mono text-xs text-zinc-500 uppercase tracking-widest">
-              [ {products.length} Products Found ]
+              {t('collection_detail.products_found', { count: products.length })}
             </span>
           </div>
 
@@ -143,7 +146,7 @@ const CollectionDetail = () => {
           ) : (
             <div className="w-full py-24 flex items-center justify-center border border-dashed border-white/10">
               <span className="font-mono text-xs tracking-widest text-zinc-500 uppercase">
-                NO INVENTORY ASSIGNED YET.
+                {t('collection_detail.no_inventory')}
               </span>
             </div>
           )}

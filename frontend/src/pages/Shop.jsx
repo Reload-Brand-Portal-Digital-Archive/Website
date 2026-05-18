@@ -1,21 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
+import { Search, SlidersHorizontal } from 'lucide-react';
 import ProductCard from '../components/ui/ProductCard';
 import Navbar from '../components/ui/Navbar';
+import { useTranslation } from 'react-i18next';
 
 const Shop = () => {
+  const { t } = useTranslation();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState(['All']);
   const [activeFilter, setActiveFilter] = useState('All');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortOption, setSortOption] = useState('newest');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const [productsRes, categoriesRes] = await Promise.all([
-          axios.get('http://localhost:5000/api/products'),
-          axios.get('http://localhost:5000/api/categories')
+          axios.get(import.meta.env.VITE_API_URL + '/api/products'),
+          axios.get(import.meta.env.VITE_API_URL + '/api/categories')
         ]);
         
         const allProducts = productsRes.data || [];
@@ -52,9 +57,26 @@ const Shop = () => {
     fetchData();
   }, []);
 
-  const filteredProducts = activeFilter === 'All' 
-    ? products 
-    : products.filter(p => p.category === activeFilter);
+  const filteredProducts = products.filter(p => {
+    const matchCategory = activeFilter === 'All' || p.category === activeFilter;
+    const searchLower = searchQuery.toLowerCase();
+    const matchSearch = p.name?.toLowerCase().includes(searchLower) || p.description?.toLowerCase().includes(searchLower);
+    return matchCategory && matchSearch;
+  }).sort((a, b) => {
+    if (a.status === 'Available' && b.status !== 'Available') return -1;
+    if (a.status !== 'Available' && b.status === 'Available') return 1;
+
+    if (sortOption === 'newest') {
+        return new Date(b.created_at) - new Date(a.created_at);
+    } else if (sortOption === 'oldest') {
+        return new Date(a.created_at) - new Date(b.created_at);
+    } else if (sortOption === 'name_asc') {
+        return (a.name || '').localeCompare(b.name || '');
+    } else if (sortOption === 'name_desc') {
+        return (b.name || '').localeCompare(a.name || '');
+    }
+    return 0;
+  });
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-50 font-sans cursor-default selection:bg-white selection:text-black">
@@ -77,14 +99,14 @@ const Shop = () => {
         >
           <div className="flex flex-col gap-6">
             <span className="font-mono text-xs tracking-[0.3em] text-zinc-400 uppercase">
-              [ OFFICIAL CATALOG ]
+              {t('shop.catalog_badge')}
             </span>
             <h1 className="font-sans text-5xl md:text-8xl font-black uppercase tracking-tighter leading-[0.9]">
-              GLOBAL <br className="hidden md:block" />
-              <span className="text-zinc-600">INVENTORY</span>
+              {t('shop.title_1')} <br className="hidden md:block" />
+              <span className="text-zinc-600">{t('shop.title_2')}</span>
             </h1>
             <p className="font-mono text-sm md:text-base text-zinc-500 max-w-xl leading-relaxed">
-              Explore the entire archive of available and iconic garments. Curated for the modern operative.
+              {t('shop.desc')}
             </p>
           </div>
         </motion.div>
@@ -92,13 +114,39 @@ const Shop = () => {
         {loading && (
           <div className="text-center py-16">
             <span className="font-mono text-xs text-zinc-500 uppercase tracking-widest animate-pulse">
-              Loading products...
+              {t('shop.loading')}
             </span>
           </div>
         )}
 
         {!loading && (
           <>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
+              <div className="relative w-full md:w-96">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
+                <input 
+                  type="text" 
+                  placeholder={t('shop.search_placeholder')}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-zinc-900/50 border border-zinc-800 focus:border-zinc-500 rounded-none py-3 pl-12 pr-4 text-sm text-zinc-100 placeholder-zinc-600 transition-colors outline-none font-mono"
+                />
+              </div>
+              <div className="flex items-center gap-3 w-full md:w-auto">
+                <SlidersHorizontal size={18} className="text-zinc-500 hidden md:block" />
+                <select 
+                  value={sortOption}
+                  onChange={(e) => setSortOption(e.target.value)}
+                  className="w-full md:w-auto bg-zinc-900/50 border border-zinc-800 focus:border-zinc-500 rounded-none py-3 px-4 text-sm text-zinc-300 outline-none cursor-pointer appearance-none font-mono"
+                >
+                  <option value="newest">{t('shop.sort_newest')}</option>
+                  <option value="oldest">{t('shop.sort_oldest')}</option>
+                  <option value="name_asc">{t('shop.sort_asc')}</option>
+                  <option value="name_desc">{t('shop.sort_desc')}</option>
+                </select>
+              </div>
+            </div>
+
             <div className="flex flex-wrap items-center gap-4 md:gap-8 mb-12 border-b border-white/10 pb-6">
               {categories.map((category) => (
                 <button
@@ -110,7 +158,7 @@ const Shop = () => {
                       : 'text-zinc-500 hover:text-zinc-300'
                   }`}
                 >
-                  {category}
+                  {category === 'All' ? t('shop.all_categories') : category}
                 </button>
               ))}
             </div>
@@ -138,7 +186,7 @@ const Shop = () => {
                   className="col-span-full py-24 text-center border border-dashed border-white/10"
                 >
                   <p className="font-mono text-sm text-zinc-500 uppercase tracking-widest">
-                    [ No Entities Found In This Category ]
+                    {t('shop.no_results')}
                   </p>
                 </motion.div>
               )}

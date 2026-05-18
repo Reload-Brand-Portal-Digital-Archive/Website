@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react"
+// eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion"
 import { Link } from "react-router-dom"
 import { ArrowRight, ShoppingBag, Instagram, Twitter, Music } from "lucide-react"
@@ -11,6 +12,10 @@ import { Input } from "@/components/ui/input"
 import Navbar from "../components/ui/Navbar"
 import SplashScreen from "../components/ui/SplashScreen"
 import EndorsementCarousel from "../components/ui/EndorsementCarousel"
+import NewsletterSignup from "../components/NewsletterSignup"
+import { useSettings } from "../context/SettingsContext"
+import { useTranslation } from 'react-i18next';
+import GpsPermissionBanner from "../components/ui/GpsPermissionBanner"
 
 const staggerContainer = {
   hidden: {},
@@ -26,6 +31,17 @@ const fadeIn = {
 }
 
 function HeroSection() {
+  const { t } = useTranslation();
+  const { settings } = useSettings();
+
+  const heroHeadline = settings?.hero_headline || "New Arrivals.";
+  const words = heroHeadline.split(" ");
+  const lastWord = words.length > 1 ? words.pop() : "";
+  const firstPart = words.join(" ");
+
+  const heroSubheadline = settings?.hero_subheadline || "Everyday streetwear built for comfort, movement, and style.";
+  const heroImage = settings?.hero_banner_image ? `${import.meta.env.VITE_API_URL}/${settings.hero_banner_image}` : heroModel;
+
   return (
     <header className="relative w-full min-h-[100dvh] bg-zinc-950 overflow-hidden pt-21">
       <div
@@ -43,22 +59,22 @@ function HeroSection() {
           className="order-2 md:order-1 col-span-1 md:col-span-5 flex flex-col justify-end gap-8 px-6 md:px-12 pb-16 pt-36 md:pt-24"
         >
           <motion.span variants={fadeUp} className="font-mono text-xs tracking-[0.3em] text-zinc-500 uppercase">
-            [ RELOAD STREETWEAR ]
+            {t('landing.hero_badge')}
           </motion.span>
 
           <motion.h1
             variants={fadeUp}
-            className="font-sans text-[13vw] md:text-[7vw] text-zinc-50 font-black leading-[0.85] tracking-tighter uppercase"
+            className="font-sans text-[13vw] md:text-[7vw] text-zinc-50 font-black leading-[0.85] tracking-tighter uppercase whitespace-pre-wrap"
           >
-            New{"\n"}
-            <span className="text-zinc-600">Arrivals.</span>
+            {firstPart ? <>{firstPart}{"\n"}</> : ""}
+            <span className="text-zinc-600">{lastWord || heroHeadline}</span>
           </motion.h1>
 
           <motion.p
             variants={fadeUp}
             className="font-sans text-base text-zinc-400 max-w-[38ch] leading-relaxed"
           >
-            Everyday streetwear built for comfort, movement, and style.
+            {heroSubheadline}
           </motion.p>
 
           <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-3 mt-2">
@@ -67,7 +83,7 @@ function HeroSection() {
                 whileTap={{ scale: 0.97 }}
                 className="group inline-flex items-center gap-3 h-14 px-8 bg-zinc-50 text-zinc-950 font-mono text-xs uppercase tracking-widest hover:bg-zinc-200 transition-colors cursor-pointer"
               >
-                Collections
+                {t('nav.collections')}
                 <ArrowRight className="w-3.5 h-3.5 translate-x-0 group-hover:translate-x-1 transition-transform" />
               </motion.div>
             </Link>
@@ -76,7 +92,7 @@ function HeroSection() {
                 whileTap={{ scale: 0.97 }}
                 className="group inline-flex items-center gap-3 h-14 px-8 bg-transparent border border-zinc-700 text-zinc-300 font-mono text-xs uppercase tracking-widest hover:border-zinc-400 hover:text-white transition-all cursor-pointer"
               >
-                Shop
+                {t('nav.shop')}
                 <ArrowRight className="w-3.5 h-3.5 translate-x-0 group-hover:translate-x-1 transition-transform" />
               </motion.div>
             </Link>
@@ -85,7 +101,7 @@ function HeroSection() {
           <motion.div variants={fadeUp} className="flex items-center gap-4 mt-4">
             <div className="h-px bg-zinc-800 w-8" />
             <span className="font-mono text-[10px] text-zinc-600 uppercase tracking-widest">
-              Shop on Shopee &amp; TikTok
+              {t('landing.shop_on_marketplaces')}
             </span>
           </motion.div>
         </motion.div>
@@ -97,8 +113,8 @@ function HeroSection() {
           className="order-1 md:order-2 col-span-1 md:col-span-7 h-[55vw] md:h-full relative bg-zinc-900 overflow-hidden"
         >
           <img
-            src={heroModel}
-            alt="Reload Distro - New Arrivals"
+            src={heroImage}
+            alt={heroHeadline}
             className="absolute inset-0 w-full h-full object-cover object-top"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-zinc-950/60" />
@@ -114,6 +130,7 @@ function HeroSection() {
 }
 
 function CurrentDropSection() {
+  const { t } = useTranslation();
   const [currentDrop, setCurrentDrop] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -121,11 +138,12 @@ function CurrentDropSection() {
     const fetchCurrentDrop = async () => {
       try {
         const [productsRes, collectionsRes] = await Promise.all([
-          axios.get('http://localhost:5000/api/products'),
-          axios.get('http://localhost:5000/api/collections')
+          axios.get(import.meta.env.VITE_API_URL + '/api/products'),
+          axios.get(import.meta.env.VITE_API_URL + '/api/collections')
         ]);
 
-        const products = (productsRes.data || []).map(p => ({
+        const productsData = Array.isArray(productsRes.data) ? productsRes.data : [];
+        const products = productsData.map(p => ({
           ...p,
           type: 'product',
           display_name: p.name,
@@ -134,11 +152,12 @@ function CurrentDropSection() {
           created_at: p.created_at
         }));
 
-        const collections = (collectionsRes.data || []).map(c => ({
+        const collectionsData = Array.isArray(collectionsRes.data) ? collectionsRes.data : [];
+        const collections = collectionsData.map(c => ({
           ...c,
           type: 'collection',
           display_name: c.name,
-          spec: `Collection · ${c.year || 'Archive'}`,
+          spec: `${t('landing.collection')} · ${c.year || 'Archive'}`,
           slug: c.slug,
           created_at: c.created_at
         }));
@@ -174,17 +193,17 @@ function CurrentDropSection() {
         >
           <div>
             <span className="font-mono text-xs tracking-[0.3em] text-zinc-500 uppercase mb-4 block">
-              [ CURRENT DROP ]
+              {t('landing.current_drop_badge')}
             </span>
             <h2 className="text-4xl md:text-[5vw] font-black leading-none tracking-tighter uppercase text-zinc-50">
-              Current Drop
+              {t('landing.current_drop_title')}
             </h2>
           </div>
           <Link
             to="/shop"
             className="group inline-flex items-center gap-2 font-mono text-xs text-zinc-400 hover:text-white uppercase tracking-widest transition-colors self-start md:self-auto"
           >
-            Shop
+            {t('nav.shop')}
             <ArrowRight className="w-3.5 h-3.5 translate-x-0 group-hover:translate-x-1 transition-transform" />
           </Link>
         </motion.div>
@@ -192,7 +211,7 @@ function CurrentDropSection() {
         {loading && (
           <div className="text-center py-16">
             <span className="font-mono text-xs text-zinc-500 uppercase tracking-widest animate-pulse">
-              Loading...
+              {t('common.loading')}
             </span>
           </div>
         )}
@@ -200,7 +219,7 @@ function CurrentDropSection() {
         {!loading && currentDrop.length === 0 && (
           <div className="text-center py-16">
             <span className="font-mono text-xs text-zinc-500 uppercase tracking-widest">
-              No items available
+              {t('common.no_items')}
             </span>
           </div>
         )}
@@ -223,20 +242,20 @@ function CurrentDropSection() {
                   <div className="w-full aspect-[4/3] bg-zinc-800 border border-dashed border-zinc-700 border-r-0 md:border-r md:border-solid md:border-zinc-800 flex flex-col items-center justify-center gap-2 overflow-hidden">
                     {item.type === 'product' && item.primary_image ? (
                       <img
-                        src={`http://localhost:5000${item.primary_image}`}
+                        src={`${import.meta.env.VITE_API_URL}${item.primary_image}`}
                         alt={item.display_name}
                         className="w-full h-full object-cover"
                       />
                     ) : item.type === 'collection' && item.cover_image ? (
                       <img
-                        src={`http://localhost:5000/uploads/${item.cover_image}`}
+                        src={`${import.meta.env.VITE_API_URL}/uploads/${item.cover_image}`}
                         alt={item.display_name}
                         className="w-full h-full object-cover"
                       />
                     ) : (
                       <>
                         <span className="font-mono text-[10px] text-zinc-600 uppercase tracking-widest">
-                          {item.type} Image
+                          {t('landing.type_image', { type: item.type })}
                         </span>
                         <span className="font-mono text-[9px] text-zinc-700 uppercase tracking-wider">
                           4 : 3
@@ -264,10 +283,10 @@ function CurrentDropSection() {
                             : 'border-amber-700/50 text-amber-500'
                           }`}
                       >
-                        {item.type === 'collection' ? 'Collection' : (item.status || 'Available')}
+                        {item.type === 'collection' ? t('landing.collection') : (item.status === 'Available' ? t('landing.available') : item.status)}
                       </Badge>
                       <div className="flex items-center gap-2 font-mono text-xs text-zinc-500 group-hover:text-white transition-colors uppercase tracking-widest">
-                        View {item.type === 'collection' ? 'Collection' : 'Product'}
+                        {item.type === 'collection' ? t('landing.view_collection') : t('landing.view_product')}
                         <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                       </div>
                     </div>
@@ -283,14 +302,16 @@ function CurrentDropSection() {
 }
 
 function MaterialIntegritySection() {
+  const { t } = useTranslation();
   const [materials, setMaterials] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchMaterials = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/materials');
-        setMaterials((res.data || []).slice(0, 3));
+        const res = await axios.get(import.meta.env.VITE_API_URL + '/api/materials');
+        const data = Array.isArray(res.data) ? res.data : [];
+        setMaterials(data.slice(0, 3));
       } catch (error) {
         console.error('Error fetching materials:', error);
         setMaterials([]);
@@ -309,18 +330,18 @@ function MaterialIntegritySection() {
       : [
         {
           id: "default-1",
-          title: "Premium\nMaterials",
-          description: "Selected fabrics that feel good and hold their shape."
+          title: t('landing.material_1_title'),
+          description: t('landing.material_1_desc')
         },
         {
           id: "default-2",
-          title: "Comfortable\nFit",
-          description: "Built for daily movement with a clean streetwear silhouette."
+          title: t('landing.material_2_title'),
+          description: t('landing.material_2_desc')
         },
         {
           id: "default-3",
-          title: "Made To\nLast",
-          description: "Strong construction designed for repeated wear."
+          title: t('landing.material_3_title'),
+          description: t('landing.material_3_desc')
         }
       ];
 
@@ -335,32 +356,34 @@ function MaterialIntegritySection() {
           className="mb-16"
         >
           <span className="font-mono text-xs tracking-[0.3em] text-zinc-500 uppercase">
-            [ MATERIALS ]
+            {t('landing.materials_badge')}
           </span>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-0">
-          {displayMaterials.map((item, i) => (
-            <motion.div
-              key={item.id || i}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.3 }}
-              transition={{ duration: 0.7, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
-              className={`py-8 md:py-0 flex flex-col gap-8 ${i > 0 ? "md:border-l border-t md:border-t-0 border-zinc-800 md:pl-12" : ""
-                } ${i < displayMaterials.length - 1 ? "md:pr-12" : ""}`}
-            >
+        <div className="-mx-4 md:-mx-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-0">
+            {displayMaterials.map((item, i) => (
+              <motion.div
+                key={item.id || i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.3 }}
+                transition={{ duration: 0.7, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
+                className={`py-8 md:py-0 flex flex-col gap-8 px-4 md:px-8 ${
+                  i > 0 ? "md:border-l border-t md:border-t-0 border-zinc-800" : ""
+                }`}
+              >
               <div className="w-full aspect-[4/3] bg-zinc-800 border border-dashed border-zinc-700 flex flex-col items-center justify-center gap-2 overflow-hidden">
                 {item.image_path ? (
                   <img
-                    src={`http://localhost:5000${item.image_path}`}
+                    src={`${import.meta.env.VITE_API_URL}${item.image_path}`}
                     alt={item.title || item.description}
                     className="w-full h-full object-cover"
                   />
                 ) : (
                   <>
                     <span className="font-mono text-[9px] text-zinc-600 uppercase tracking-widest">
-                      Material Image
+                      {t('landing.material_image')}
                     </span>
                     <span className="font-mono text-[8px] text-zinc-700 uppercase tracking-wider">
                       4 : 3
@@ -380,6 +403,7 @@ function MaterialIntegritySection() {
               </div>
             </motion.div>
           ))}
+          </div>
         </div>
       </div>
     </section>
@@ -387,6 +411,9 @@ function MaterialIntegritySection() {
 }
 
 function ShopCTASection() {
+  const { t } = useTranslation();
+  const { settings } = useSettings();
+  
   return (
     <section className="w-full bg-zinc-950 border-b border-zinc-900 font-sans overflow-hidden">
       <div className="max-w-[1600px] mx-auto px-6 md:px-12 py-32 md:py-48 flex flex-col justify-between gap-24 min-h-[60vh]">
@@ -397,10 +424,10 @@ function ShopCTASection() {
           transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
         >
           <span className="font-mono text-xs tracking-[0.3em] text-zinc-500 uppercase block mb-6">
-            [ SHOP ]
+            {t('landing.shop_cta_badge')}
           </span>
           <h2 className="text-5xl md:text-[6vw] font-black leading-[0.85] tracking-tighter uppercase text-zinc-50">
-            Shop Now
+            {t('landing.shop_cta_title')}
           </h2>
         </motion.div>
 
@@ -413,23 +440,23 @@ function ShopCTASection() {
         >
           <motion.a
             whileTap={{ scale: 0.97 }}
-            href="https://tiktok.com"
+            href={settings?.tiktok_shop_url || "https://tiktok.com"}
             target="_blank"
             rel="noopener noreferrer"
             className="group flex items-center justify-center gap-3 h-14 px-8 bg-transparent border border-emerald-600/60 text-emerald-400 font-mono text-xs uppercase tracking-widest hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition-all"
           >
             <ShoppingBag className="w-4 h-4" />
-            Shop on TikTok
+            {t('landing.shop_on_tiktok')}
           </motion.a>
           <motion.a
             whileTap={{ scale: 0.97 }}
-            href="https://shopee.co.id"
+            href={settings?.shopee_shop_url || "https://shopee.co.id"}
             target="_blank"
             rel="noopener noreferrer"
             className="group flex items-center justify-center gap-3 h-14 px-8 bg-transparent border border-orange-600/60 text-orange-400 font-mono text-xs uppercase tracking-widest hover:bg-orange-600 hover:text-white hover:border-orange-600 transition-all"
           >
             <ShoppingBag className="w-4 h-4" />
-            Shop on Shopee
+            {t('landing.shop_on_shopee')}
           </motion.a>
         </motion.div>
       </div>
@@ -437,87 +464,49 @@ function ShopCTASection() {
   )
 }
 
-function NewsletterSection() {
-  const [email, setEmail] = useState("")
 
-  return (
-    <section className="w-full px-6 md:px-12 py-32 md:py-48 max-w-[1600px] mx-auto text-zinc-50 font-sans">
-      <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, amount: 0.3 }}
-        transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
-        className="flex flex-col md:flex-row md:items-end justify-between gap-16"
-      >
-        <div className="max-w-lg">
-          <span className="font-mono text-xs tracking-[0.3em] text-zinc-500 uppercase block mb-4">
-            [ NEWSLETTER ]
-          </span>
-          <h2 className="text-3xl md:text-5xl font-black leading-none tracking-tighter uppercase mb-2">
-            Sign up for{" "}
-            <span className="text-zinc-600">updates.</span>
-          </h2>
-        </div>
-
-        <form className="w-full md:max-w-md" onSubmit={e => e.preventDefault()}>
-          <div className="bg-zinc-800 border border-zinc-700 p-4 flex items-center gap-2 focus-within:border-zinc-500 transition-colors">
-            <Input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="Enter your email"
-              className="w-full bg-transparent border-0 text-zinc-50 font-mono text-sm uppercase placeholder:text-zinc-500 focus-visible:ring-0 focus-visible:ring-offset-0 px-0 rounded-none h-auto py-1"
-            />
-            <Button
-              type="submit"
-              variant="ghost"
-              className="text-xs font-mono tracking-[0.2em] text-zinc-400 hover:text-zinc-50 hover:bg-transparent uppercase px-0 h-auto whitespace-nowrap shrink-0"
-            >
-              Sign Up
-            </Button>
-          </div>
-          <p className="mt-3 font-mono text-[10px] text-zinc-600 uppercase tracking-widest">
-            Get drop updates. Unsubscribe anytime.
-          </p>
-        </form>
-      </motion.div>
-    </section>
-  )
-}
 
 function FooterSection() {
+  const { t } = useTranslation();
+  const { settings } = useSettings();
+
   return (
     <footer className="w-full bg-zinc-950 text-zinc-50 px-6 md:px-12 pt-24 pb-8 border-t border-zinc-900 font-sans">
       <div className="max-w-[1600px] mx-auto">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-10 mb-24">
           <div className="flex flex-col gap-3">
-            <span className="text-xs uppercase font-mono text-zinc-500 mb-2">[ SHOP ]</span>
-            <a href="https://tiktok.com" target="_blank" rel="noopener noreferrer" className="text-sm text-zinc-400 hover:text-zinc-50 transition-colors">Shop on TikTok</a>
-            <a href="https://shopee.co.id" target="_blank" rel="noopener noreferrer" className="text-sm text-zinc-400 hover:text-zinc-50 transition-colors">Shop on Shopee</a>
-            <a href="#" className="text-sm text-zinc-400 hover:text-zinc-50 transition-colors">Shipping &amp; Returns</a>
+            <span className="text-xs uppercase font-mono text-zinc-500 mb-2">{t('footer.shop_badge')}</span>
+            <a href={settings?.tiktok_shop_url || "https://tiktok.com"} target="_blank" rel="noopener noreferrer" className="text-sm text-zinc-400 hover:text-zinc-50 transition-colors">{t('landing.shop_on_tiktok')}</a>
+            <a href={settings?.shopee_shop_url || "https://shopee.co.id"} target="_blank" rel="noopener noreferrer" className="text-sm text-zinc-400 hover:text-zinc-50 transition-colors">{t('landing.shop_on_shopee')}</a>
+            <a href="#" className="text-sm text-zinc-400 hover:text-zinc-50 transition-colors">{t('footer.shipping')}</a>
           </div>
 
           <div className="flex flex-col gap-3">
-            <span className="text-xs uppercase font-mono text-zinc-500 mb-2">[ COLLECTIONS ]</span>
-            <Link to="/collections" className="text-sm text-zinc-400 hover:text-zinc-50 transition-colors">All Collections</Link>
-            <Link to="/shop" className="text-sm text-zinc-400 hover:text-zinc-50 transition-colors">Shop</Link>
-            <Link to="/collections" className="text-sm text-zinc-400 hover:text-zinc-50 transition-colors">New Arrivals</Link>
-            <Link to="/collections" className="text-sm text-zinc-400 hover:text-zinc-50 transition-colors">Collections</Link>
+            <span className="text-xs uppercase font-mono text-zinc-500 mb-2">{t('footer.collections_badge')}</span>
+            <Link to="/collections" className="text-sm text-zinc-400 hover:text-zinc-50 transition-colors">{t('footer.all_collections')}</Link>
+            <Link to="/shop" className="text-sm text-zinc-400 hover:text-zinc-50 transition-colors">{t('nav.shop')}</Link>
+            <Link to="/collections" className="text-sm text-zinc-400 hover:text-zinc-50 transition-colors">{t('footer.new_arrivals')}</Link>
+            <Link to="/collections" className="text-sm text-zinc-400 hover:text-zinc-50 transition-colors">{t('nav.collections')}</Link>
           </div>
 
           <div className="flex flex-col gap-3">
-            <span className="text-xs uppercase font-mono text-zinc-500 mb-2">[ SUPPORT ]</span>
-            <a href="#" className="text-sm text-zinc-400 hover:text-zinc-50 transition-colors">Terms of Service</a>
-            <a href="#" className="text-sm text-zinc-400 hover:text-zinc-50 transition-colors">Privacy Policy</a>
-            <a href="#" className="text-sm text-zinc-400 hover:text-zinc-50 transition-colors">Shipping &amp; Returns</a>
-            <a href="#" className="text-sm text-zinc-400 hover:text-zinc-50 transition-colors">Contact</a>
+            <span className="text-xs uppercase font-mono text-zinc-500 mb-2">{t('footer.support_badge')}</span>
+            <a href="#" className="text-sm text-zinc-400 hover:text-zinc-50 transition-colors">{t('footer.terms')}</a>
+            <a href="#" className="text-sm text-zinc-400 hover:text-zinc-50 transition-colors">{t('footer.privacy')}</a>
+            <a href="#" className="text-sm text-zinc-400 hover:text-zinc-50 transition-colors">{t('footer.shipping')}</a>
+            <a href="#" className="text-sm text-zinc-400 hover:text-zinc-50 transition-colors">{t('nav.contact')}</a>
           </div>
 
           <div className="flex flex-col gap-3">
-            <span className="text-xs uppercase font-mono text-zinc-500 mb-2">[ CONTACT ]</span>
-            <a href="mailto:hello@reload.xyz" className="text-sm font-mono text-zinc-400 hover:text-zinc-50 transition-colors uppercase tracking-widest">
-              HELLO@RELOAD.XYZ
+            <span className="text-xs uppercase font-mono text-zinc-500 mb-2">{t('footer.contact_badge')}</span>
+            <a href={settings?.contact_email ? `mailto:${settings.contact_email}` : "mailto:hello@reload.xyz"} className="text-sm font-mono text-zinc-400 hover:text-zinc-50 transition-colors uppercase tracking-widest break-all">
+              {settings?.contact_email || "HELLO@RELOAD.XYZ"}
             </a>
+            {settings?.whatsapp_number && (
+              <a href={`https://wa.me/${settings.whatsapp_number.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="text-sm font-mono text-zinc-400 hover:text-zinc-50 transition-colors uppercase tracking-widest">
+                WA: {settings.whatsapp_number}
+              </a>
+            )}
             <div className="flex items-center gap-4 mt-2">
               <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="text-zinc-500 hover:text-zinc-50 transition-colors" aria-label="Instagram">
                 <Instagram className="w-4 h-4" />
@@ -530,7 +519,7 @@ function FooterSection() {
               </a>
             </div>
             <p className="text-xs text-zinc-600 leading-relaxed mt-2 max-w-[28ch] font-mono uppercase tracking-wide">
-              Everyday streetwear made for the city.
+              {t('footer.slogan')}
             </p>
           </div>
         </div>
@@ -539,10 +528,10 @@ function FooterSection() {
 
         <div className="flex flex-col sm:flex-row w-full justify-between items-start sm:items-center gap-2 pb-2">
           <span className="text-xs text-zinc-600 font-mono uppercase tracking-widest">
-            (c) {new Date().getFullYear()} RELOAD Distro - All rights reserved
+            {t('footer.copyright', { year: new Date().getFullYear() })}
           </span>
           <span className="text-xs text-zinc-700 font-mono uppercase tracking-widest">
-            Reload Official Store
+            {t('footer.official_store')}
           </span>
         </div>
       </div>
@@ -553,14 +542,15 @@ function FooterSection() {
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-50 font-sans cursor-default selection:bg-white selection:text-black">
+      <GpsPermissionBanner />
       <SplashScreen />
       <Navbar />
       <HeroSection />
       <CurrentDropSection />
-      <MaterialIntegritySection />
       <EndorsementCarousel />
+      <MaterialIntegritySection />
       <ShopCTASection />
-      <NewsletterSection />
+      <NewsletterSignup />
       <FooterSection />
     </div>
   )

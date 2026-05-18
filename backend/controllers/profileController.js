@@ -7,7 +7,15 @@ exports.getWholesaleOrders = async (req, res) => {
 
     try {
         const [orders] = await db.query(
-            'SELECT * FROM wholesale_orders WHERE user_id = ? ORDER BY created_at DESC',
+            `SELECT wo.*,
+                    (
+                        SELECT metadata 
+                        FROM chats 
+                        WHERE message_type = 'wholesale_confirmed' 
+                        AND JSON_EXTRACT(metadata, '$.order_id') = wo.order_id 
+                        ORDER BY chat_id DESC LIMIT 1
+                    ) AS confirmation_metadata
+             FROM wholesale_orders wo WHERE user_id = ? ORDER BY created_at DESC`,
             [userId]
         );
 
@@ -17,7 +25,15 @@ exports.getWholesaleOrders = async (req, res) => {
 
         const orderIds = orders.map(o => o.order_id);
         const [items] = await db.query(
-            'SELECT * FROM order_items WHERE order_id IN (?)',
+            `SELECT oi.*,
+                    (
+                        SELECT pi.image_path
+                        FROM product_images pi
+                        WHERE pi.product_id = oi.product_id
+                        ORDER BY pi.is_primary DESC, pi.sort_order ASC
+                        LIMIT 1
+                    ) AS product_image
+             FROM order_items oi WHERE order_id IN (?)`,
             [orderIds]
         );
 
@@ -29,14 +45,61 @@ exports.getWholesaleOrders = async (req, res) => {
             itemsByOrder[item.order_id].push(item);
         });
 
-        const ordersWithItems = orders.map(order => ({
-            ...order,
-            items: itemsByOrder[order.order_id] || []
-        }));
+        const ordersWithItems = orders.map(order => {
+            let parsedMeta = null;
+            if (order.confirmation_metadata) {
+                try {
+                    parsedMeta = typeof order.confirmation_metadata === 'string'
+                        ? JSON.parse(order.confirmation_metadata)
+                        : order.confirmation_metadata;
+                } catch (e) { }
+            }
+            delete order.confirmation_metadata;
+
+            const finalOrder = {
+                ...order,
+                items: itemsByOrder[order.order_id] || []
+            };
+
+            if (parsedMeta) {
+                finalOrder.invoice_items = parsedMeta.invoice_items || null;
+                finalOrder.subtotal = parsedMeta.subtotal != null ? parsedMeta.subtotal : null;
+                finalOrder.grand_total = parsedMeta.grand_total != null ? parsedMeta.grand_total : null;
+            }
+
+            return finalOrder;
+        });
 
         res.status(200).json(ordersWithItems);
     } catch (error) {
         console.error('Error fetching user wholesale orders:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+};
+
+exports.markWholesaleOrdersAsRead = async (req, res) => {
+    const userId = req.user.id;
+    try {
+        await db.query('UPDATE wholesale_orders SET has_unread_updates = FALSE WHERE user_id = ?', [userId]);
+        res.status(200).json({ success: true });
+    } catch (error) {
+        console.error('Error marking orders as read:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+};
+
+exports.getNotifications = async (req, res) => {
+    const userId = req.user.id;
+    try {
+        const [chatRows] = await db.query('SELECT COUNT(*) as unreadChats FROM chats WHERE user_id = ? AND sender = "admin" AND is_read = FALSE', [userId]);
+        const [orderRows] = await db.query('SELECT COUNT(*) as unreadOrders FROM wholesale_orders WHERE user_id = ? AND has_unread_updates = TRUE', [userId]);
+
+        res.status(200).json({
+            unreadChats: chatRows[0].unreadChats > 0,
+            unreadOrders: orderRows[0].unreadOrders > 0
+        });
+    } catch (error) {
+        console.error('Error fetching notifications:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 };

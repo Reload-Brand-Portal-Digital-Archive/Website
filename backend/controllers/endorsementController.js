@@ -1,6 +1,9 @@
 const db = require('../config/database');
 const fs = require('fs');
 const path = require('path');
+const { logAdminActivity } = require('../utils/activityLogger');
+
+const SUPPORTED_RATIOS = ['4:3', '9:16'];
 
 const getEndorsements = async () => {
     const [rows] = await db.query('SELECT setting_value FROM site_settings WHERE setting_key = "endorsements_data"');
@@ -29,13 +32,22 @@ exports.getAllEndorsements = async (req, res) => {
         res.json(endorsements);
     } catch (error) {
         console.error('Error fetching endorsements:', error);
-        res.status(500).json({ message: 'Gagal mengambil data endorsement' });
+        res.status(500).json({ message: 'Failed to fetch endorsements' });
     }
 };
 
 exports.createEndorsement = async (req, res) => {
-    const { name } = req.body;
-    if (!name || !req.file) return res.status(400).json({ message: 'Nama dan gambar wajib diisi!' });
+    const { name, ratio_type, caption } = req.body;
+
+    if (!name) return res.status(400).json({ message: 'Endorser name is required!' });
+    if (!req.file) return res.status(400).json({ message: 'An image is required!' });
+
+    const resolvedRatio = (ratio_type && SUPPORTED_RATIOS.includes(ratio_type.trim()))
+        ? ratio_type.trim()
+        : '4:3';
+    if (ratio_type && !SUPPORTED_RATIOS.includes(ratio_type.trim())) {
+        console.warn(`[Endorsement] Unknown ratio_type received: "${ratio_type}" — defaulting to 4:3`);
+    }
 
     try {
         const endorsements = await getEndorsements();
@@ -44,11 +56,15 @@ exports.createEndorsement = async (req, res) => {
             id: Date.now().toString(),
             name,
             image_path: `/uploads/${req.file.filename}`,
+            ratio_type: resolvedRatio,
+            caption: caption || '',
             is_active: true
         };
 
         endorsements.push(newEndorsement);
         await saveEndorsements(endorsements);
+
+        await logAdminActivity(req, 'CREATE', 'Endorsement', newEndorsement.id, { name });
 
         res.status(201).json({ message: 'Endorsement berhasil ditambahkan', data: endorsements });
     } catch (error) {
@@ -57,15 +73,15 @@ exports.createEndorsement = async (req, res) => {
             const filePath = path.join(__dirname, '..', `uploads/${req.file.filename}`);
             if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
         }
-        res.status(500).json({ message: 'Gagal menambah endorsement' });
+        res.status(500).json({ message: 'Failed to add endorsement' });
     }
 };
 
 exports.updateEndorsement = async (req, res) => {
     const endorsementId = req.params.id;
-    const { name, is_active } = req.body;
+    const { name, is_active, ratio_type, caption } = req.body;
 
-    if (!name) return res.status(400).json({ message: 'Nama wajib diisi!' });
+    if (!name) return res.status(400).json({ message: 'Endorser name is required!' });
 
     try {
         let endorsements = await getEndorsements();
@@ -73,10 +89,17 @@ exports.updateEndorsement = async (req, res) => {
 
         if (index === -1) {
             if (req.file) fs.unlinkSync(path.join(__dirname, '..', `uploads/${req.file.filename}`));
-            return res.status(404).json({ message: 'Endorsement tidak ditemukan' });
+            return res.status(404).json({ message: 'Endorsement not found' });
         }
 
         endorsements[index].name = name;
+        endorsements[index].caption = caption !== undefined ? caption : (endorsements[index].caption || '');
+
+        if (ratio_type !== undefined && SUPPORTED_RATIOS.includes(ratio_type.toString().trim())) {
+            endorsements[index].ratio_type = ratio_type.toString().trim();
+        } else if (!endorsements[index].ratio_type) {
+            endorsements[index].ratio_type = '4:3';
+        }
 
         if (is_active !== undefined) {
             endorsements[index].is_active = is_active === true || is_active === 'true';
@@ -91,6 +114,9 @@ exports.updateEndorsement = async (req, res) => {
         }
 
         await saveEndorsements(endorsements);
+
+        await logAdminActivity(req, 'UPDATE', 'Endorsement', endorsementId, { name, is_active });
+
         res.json({ message: 'Endorsement berhasil diperbarui', data: endorsements });
     } catch (error) {
         console.error('Error updating endorsement:', error);
@@ -98,7 +124,7 @@ exports.updateEndorsement = async (req, res) => {
             const filePath = path.join(__dirname, '..', `uploads/${req.file.filename}`);
             if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
         }
-        res.status(500).json({ message: 'Gagal memperbarui endorsement' });
+        res.status(500).json({ message: 'Failed to update endorsement' });
     }
 };
 
@@ -114,11 +140,13 @@ exports.deleteEndorsement = async (req, res) => {
 
             endorsements = endorsements.filter(e => e.id !== endorsementId);
             await saveEndorsements(endorsements);
+
+            await logAdminActivity(req, 'DELETE', 'Endorsement', endorsementId, { name: toDelete.name });
         }
 
-        res.json({ message: 'Endorsement berhasil dihapus', data: endorsements });
+        res.json({ message: 'Endorsement deleted successfully', data: endorsements });
     } catch (error) {
         console.error('Error deleting endorsement:', error);
-        res.status(500).json({ message: 'Gagal menghapus endorsement' });
+        res.status(500).json({ message: 'Failed to delete endorsement' });
     }
 };

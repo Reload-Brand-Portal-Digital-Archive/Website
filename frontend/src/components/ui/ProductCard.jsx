@@ -1,13 +1,15 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 const ProductCard = ({ product, index }) => {
+  const { t } = useTranslation();
   const isSoldOut = product.status === 'Sold Out';
 
   const getImageUrl = (url) => {
     if (!url) return 'https://placehold.co/400x500/18181b/a1a1aa?text=No+Image';
-    return url.startsWith('http') ? url : `http://localhost:5000${url}`;
+    return url.startsWith('http') ? url : `${import.meta.env.VITE_API_URL}${url}`;
   };
 
   const displayImage = product.primary_image || (product.images && product.images.length > 0 ? product.images[0] : null);
@@ -31,14 +33,14 @@ const ProductCard = ({ product, index }) => {
 
         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
           <span className="font-mono text-xs tracking-widest text-white border border-white/30 px-6 py-3 uppercase bg-black/50 backdrop-blur-sm">
-            {isSoldOut ? 'ARCHIVED' : 'VIEW ITEM'}
+            {isSoldOut ? t('shop.archived') : t('shop.view_item')}
           </span>
         </div>
 
         <div className="absolute top-3 left-3 flex flex-col gap-2">
           {isSoldOut && (
             <span className="px-2 py-1 bg-red-950/80 border border-red-500/30 text-red-500 text-[10px] font-mono uppercase tracking-widest backdrop-blur-md">
-              Sold Out
+              {t('shop.sold_out')}
             </span>
           )}
         </div>
@@ -56,7 +58,7 @@ const ProductCard = ({ product, index }) => {
           </span>
           {!isSoldOut && (
             <span className="font-mono text-[10px] text-zinc-400 opacity-0 group-hover:opacity-100 transition-opacity">
-              {'>'} VIEW
+              {'>'} {t('shop.view')}
             </span>
           )}
         </div>

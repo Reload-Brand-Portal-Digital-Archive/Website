@@ -1,24 +1,30 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { ShoppingBag, Clock, RefreshCw } from 'lucide-react';
 import axios from 'axios';
+import { useTranslation } from 'react-i18next';
 
 const PLATFORM_STYLE = {
     shopee: { label: 'Shopee', color: 'text-orange-400 bg-orange-500/10' },
     tiktok: { label: 'TikTok Shop', color: 'text-pink-400 bg-pink-500/10' },
 };
 
-export default function RecentActivityLog() {
+export default function RecentActivityLog({ dateRange = {} }) {
+    const { t } = useTranslation();
     const [clicks, setClicks] = useState([]);
     const [loading, setLoading] = useState(true);
 
     const fetchData = useCallback(async () => {
         const token = localStorage.getItem('token');
         try {
-            const response = await axios.get('http://localhost:5000/api/track/stats', {
-                headers: { 'Authorization': `Bearer ${token}` }
+            const params = {};
+            if (dateRange.startDate) params.startDate = dateRange.startDate;
+            if (dateRange.endDate) params.endDate = dateRange.endDate;
+            const response = await axios.get(import.meta.env.VITE_API_URL + '/api/track/stats', {
+                headers: { 'Authorization': `Bearer ${token}` },
+                params
             });
             if (response.data.success) {
-                // Hanya tampilkan link_click (klik ke Shopee/TikTok)
+                // Only show link_click events (clicks to Shopee/TikTok)
                 const linkClicks = response.data.data.latest_activities
                     .filter(a => a.type === 'link_click');
                 setClicks(linkClicks);
@@ -28,7 +34,7 @@ export default function RecentActivityLog() {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [dateRange.startDate, dateRange.endDate]);
 
     useEffect(() => {
         fetchData();
@@ -41,7 +47,7 @@ export default function RecentActivityLog() {
             <div className="flex items-center justify-between p-5 border-b border-zinc-800">
                 <h3 className="text-sm font-semibold text-zinc-100 flex items-center gap-2">
                     <ShoppingBag size={16} className="text-rose-500" />
-                    Pesanan Terbaru (Klik ke Toko)
+                    {t('admin_dashboard.recent_store_clicks')}
                 </h3>
                 <button onClick={fetchData} className="text-zinc-500 hover:text-zinc-300 transition-colors" title="Refresh">
                     <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
@@ -54,16 +60,16 @@ export default function RecentActivityLog() {
                 </div>
             ) : clicks.length === 0 ? (
                 <div className="p-8 text-center text-zinc-600 text-sm">
-                    Belum ada klik ke toko yang tercatat.
+                    {t('admin_dashboard.no_store_clicks')}
                 </div>
             ) : (
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead>
                             <tr className="text-[11px] uppercase tracking-wider text-zinc-500 border-b border-zinc-800">
-                                <th className="px-5 py-3 text-left font-medium">Platform</th>
-                                <th className="px-5 py-3 text-left font-medium">IP Address</th>
-                                <th className="px-5 py-3 text-right font-medium">Waktu</th>
+                                <th className="px-5 py-3 text-left font-medium">{t('admin_dashboard.platform')}</th>
+                                <th className="px-5 py-3 text-left font-medium">{t('admin_dashboard.ip_address')}</th>
+                                <th className="px-5 py-3 text-right font-medium">{t('admin_dashboard.time')}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-zinc-800/60">
@@ -98,7 +104,7 @@ export default function RecentActivityLog() {
 }
 
 function formatTime(ts) {
-    return new Date(ts).toLocaleString('id-ID', {
+    return new Date(ts).toLocaleString('en-US', {
         day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
     });
 }

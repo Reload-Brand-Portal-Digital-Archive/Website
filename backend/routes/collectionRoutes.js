@@ -35,11 +35,13 @@ const upload = multer({
     }
 });
 
+const { verifyToken, isAdmin } = require('../middlewares/authMiddleware');
+
 router.get('/', collectionController.getAllCollections);
 router.get('/slug/:slug', collectionController.getCollectionBySlug);
 router.get('/:id', collectionController.getCollectionById);
-router.post('/', upload.single('cover_image'), collectionController.createCollection);
-router.put('/:id', upload.single('cover_image'), collectionController.updateCollection);
-router.delete('/:id', collectionController.deleteCollection);
+router.post('/', verifyToken, isAdmin, upload.single('cover_image'), collectionController.createCollection);
+router.put('/:id', verifyToken, isAdmin, upload.single('cover_image'), collectionController.updateCollection);
+router.delete('/:id', verifyToken, isAdmin, collectionController.deleteCollection);
 
 module.exports = router;
