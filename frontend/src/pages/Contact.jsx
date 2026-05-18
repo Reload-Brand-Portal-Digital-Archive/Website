@@ -97,7 +97,7 @@ function WholesaleOrderCard({ metadata, messageType }) {
                     <>
                         <div className="px-4 pt-3 pb-1">
                             <p className="text-[9px] uppercase tracking-widest text-zinc-500 mb-2">Items</p>
-                            <div className="space-y-1.5">
+                            <div className="space-y-1.5 max-h-[300px] overflow-y-auto custom-scrollbar pr-1">
                                 {metadata.invoice_items.map((item, i) => (
                                     <div key={i} className="flex items-center gap-2 bg-zinc-800/40 border border-zinc-800 px-2 py-1.5">
                                         {item.product_image ? (
@@ -114,7 +114,7 @@ function WholesaleOrderCard({ metadata, messageType }) {
                                         )}
                                         <div className="flex-1 min-w-0">
                                             <p className="text-zinc-200 font-medium truncate">{item.product_name_snapshot}</p>
-                                            <p className="text-zinc-500 text-[9px]">{item.size}</p>
+                                            <p className="text-zinc-500 text-[9px]">{item.size} &middot; &times;{item.quantity}</p>
                                         </div>
                                         <div className="text-right shrink-0">
                                             <p className="text-zinc-300">Rp {Number(item.unit_price || 0).toLocaleString('id-ID')}</p>
