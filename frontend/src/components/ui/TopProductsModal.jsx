@@ -133,10 +133,68 @@ export default function TopProductsModal({ isOpen, onClose, products, currentTab
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className="inline-flex items-center gap-1 text-xs font-medium bg-zinc-900 border border-zinc-800 px-2.5 py-1 rounded-md text-zinc-300">
-                                                    <Layers size={12} className="text-rose-500" />
-                                                    {item.variant}
-                                                </span>
+                                                <div className="flex flex-col gap-1">
+                                                    {(() => {
+                                                        const parseVariant = (variantStr) => {
+                                                            let jenis = '-';
+                                                            let warna = '-';
+                                                            let ukuran = '-';
+
+                                                            if (!variantStr) return { jenis, warna, ukuran };
+                                                            const str = variantStr.trim();
+
+                                                            if (str.includes('-') && str.includes(',')) {
+                                                                const parts = str.split('-');
+                                                                jenis = parts[0].trim();
+                                                                const subParts = parts[1].split(',');
+                                                                warna = subParts[0].trim();
+                                                                ukuran = subParts[1].trim();
+                                                            } else if (str.split('-').length >= 3) {
+                                                                const parts = str.split('-');
+                                                                jenis = parts.slice(0, 2).join('-');
+                                                                warna = parts[2].trim();
+                                                                ukuran = 'All Size';
+                                                            } else if (str.includes('-')) {
+                                                                const parts = str.split('-');
+                                                                jenis = parts[0].trim();
+                                                                warna = parts[1].trim();
+                                                                ukuran = 'All Size';
+                                                            } else if (str.includes(',')) {
+                                                                const parts = str.split(',');
+                                                                warna = parts[0].trim();
+                                                                ukuran = parts[1].trim();
+                                                            } else {
+                                                                ukuran = str;
+                                                            }
+
+                                                            return { jenis, warna, ukuran };
+                                                        };
+
+                                                        const { jenis, warna, ukuran } = parseVariant(item.variant);
+                                                        return (
+                                                            <>
+                                                                {jenis && jenis !== '-' && (
+                                                                    <span className="inline-flex items-center gap-1 text-[10px] bg-zinc-900 border border-zinc-800 text-zinc-400 px-2 py-0.5 rounded w-max font-medium" title="Jenis/Model">
+                                                                        <span className="text-zinc-500">Jenis:</span>
+                                                                        <strong className="text-zinc-300">{jenis}</strong>
+                                                                    </span>
+                                                                )}
+                                                                {warna && warna !== '-' && (
+                                                                    <span className="inline-flex items-center gap-1 text-[10px] bg-zinc-900 border border-zinc-800 text-zinc-400 px-2 py-0.5 rounded w-max font-medium" title="Warna">
+                                                                        <span className="text-zinc-500">Warna:</span>
+                                                                        <strong className="text-zinc-300">{warna}</strong>
+                                                                    </span>
+                                                                )}
+                                                                {ukuran && ukuran !== '-' && (
+                                                                    <span className="inline-flex items-center gap-1 text-[10px] bg-zinc-900 border border-zinc-800 text-zinc-400 px-2 py-0.5 rounded w-max font-medium" title="Ukuran">
+                                                                        <span className="text-zinc-500">Ukuran:</span>
+                                                                        <strong className="text-zinc-300">{ukuran}</strong>
+                                                                    </span>
+                                                                )}
+                                                            </>
+                                                        );
+                                                    })()}
+                                                </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-center">
                                                 <div className="flex items-center justify-center gap-1">

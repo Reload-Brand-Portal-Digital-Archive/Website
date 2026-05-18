@@ -278,8 +278,7 @@ export default function SyncEcommerceModal({ isOpen, onClose, onSyncComplete }) 
                             </div>
                             <div className="flex-1">
                                 <h3 className="font-bold text-zinc-100 group-hover:text-rose-400 transition-colors">{t('admin_sync.upload_title')}</h3>
-                                <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
-                                    {t('admin_sync.upload_desc')}
+                                <p className="text-xs text-zinc-500 mt-1 leading-relaxed" dangerouslySetInnerHTML={{ __html: t('admin_sync.upload_desc') }}>
                                 </p>
                                 
                                 <label className="mt-4 inline-flex items-center gap-2 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 px-4 py-2 text-xs font-medium rounded-lg cursor-pointer transition-all active:scale-95">
@@ -297,27 +296,27 @@ export default function SyncEcommerceModal({ isOpen, onClose, onSyncComplete }) 
                         </div>
                     </div>
 
-                    {/* Option 2: API Sync */}
+                    {/* Option 2: API Sync (Disabled) */}
                     <button 
-                        onClick={handleApiSync}
-                        disabled={isProcessing}
-                        className="w-full group text-left bg-zinc-950 border border-zinc-800 hover:border-green-500/50 hover:bg-green-500/5 rounded-xl p-5 transition-all duration-300 disabled:opacity-50 relative overflow-hidden"
+                        type="button"
+                        disabled={true}
+                        className="w-full text-left bg-zinc-950/40 border border-zinc-800/40 cursor-not-allowed rounded-xl p-5 relative overflow-hidden"
                     >
-                        <div className="flex items-start gap-4 opacity-90 group-hover:opacity-100 transition-opacity relative z-10">
-                            <div className="p-3 rounded-lg bg-zinc-900 text-zinc-400 group-hover:text-green-400 group-hover:bg-green-500/10 transition-colors duration-300">
-                                <RefreshCw size={24} className="group-hover:animate-spin-slow" />
+                        <div className="flex items-start gap-4 opacity-55 relative z-10">
+                            <div className="p-3 rounded-lg bg-zinc-900 text-zinc-500">
+                                <RefreshCw size={24} />
                             </div>
                             <div className="flex-1">
                                 <div className="flex items-center gap-2">
-                                    <h3 className="font-bold text-zinc-100 group-hover:text-green-400 transition-colors">{t('admin_sync.api_sync_title')}</h3>
-                                    <span className="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full font-mono uppercase tracking-tighter border border-green-500/30">{t('admin_sync.badge_active')}</span>
+                                    <h3 className="font-bold text-zinc-500">{t('admin_sync.api_sync_title')}</h3>
+                                    <span className="text-[10px] bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded-full font-mono uppercase tracking-tighter border border-zinc-700">{t('admin_sync.badge_disabled') || "Disabled"}</span>
                                 </div>
                                 <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
                                     {t('admin_sync.api_sync_desc')}
                                 </p>
-                                <div className="mt-3 flex items-center gap-1.5 text-green-500/80 text-[10px] font-medium uppercase tracking-wider">
-                                    <CheckCircle2 size={12} />
-                                    <span>{t('admin_sync.api_sync_ready')}</span>
+                                <div className="mt-3 flex items-center gap-1.5 text-zinc-500 text-[10px] font-medium uppercase tracking-wider">
+                                    <AlertCircle size={12} className="text-zinc-500" />
+                                    <span>{t('admin_sync.api_sync_disabled') || "Fitur dinonaktifkan sementara"}</span>
                                 </div>
                             </div>
                         </div>

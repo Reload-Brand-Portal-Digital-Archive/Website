@@ -50,8 +50,12 @@ export default function TopProductsTable({ refreshTrigger }) {
                     productMap[key].platforms[plat] = (productMap[key].platforms[plat] || 0) + 1;
                 });
 
-                // Urutkan dari kuantitas/transaksi terbanyak
-                const sorted = Object.values(productMap).sort((a, b) => b.quantity - a.quantity || b.transactions - a.transactions);
+                // Urutkan dari kuantitas/transaksi terbanyak dengan tie-breaker total_amount (pendapatan)
+                const sorted = Object.values(productMap).sort((a, b) => {
+                    if (b.quantity !== a.quantity) return b.quantity - a.quantity;
+                    if (b.transactions !== a.transactions) return b.transactions - a.transactions;
+                    return b.total_amount - a.total_amount; // tie-breaker: higher sales/amount first
+                });
                 setProducts(sorted);
             }
         } catch (error) {
@@ -198,10 +202,66 @@ export default function TopProductsTable({ refreshTrigger }) {
                                                 )}
                                             </div>
                                             <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                                                <span className="inline-flex items-center gap-1 text-[10px] font-medium bg-zinc-950 border border-zinc-800 text-zinc-400 px-2 py-0.5 rounded">
-                                                    <Layers size={10} className="text-rose-500" />
-                                                    Ukuran: <strong className="text-zinc-300">{item.variant}</strong>
-                                                </span>
+                                                {(() => {
+                                                    const parseVariant = (variantStr) => {
+                                                        let jenis = '-';
+                                                        let warna = '-';
+                                                        let ukuran = '-';
+
+                                                        if (!variantStr) return { jenis, warna, ukuran };
+                                                        const str = variantStr.trim();
+
+                                                        if (str.includes('-') && str.includes(',')) {
+                                                            const parts = str.split('-');
+                                                            jenis = parts[0].trim();
+                                                            const subParts = parts[1].split(',');
+                                                            warna = subParts[0].trim();
+                                                            ukuran = subParts[1].trim();
+                                                        } else if (str.split('-').length >= 3) {
+                                                            const parts = str.split('-');
+                                                            jenis = parts.slice(0, 2).join('-');
+                                                            warna = parts[2].trim();
+                                                            ukuran = 'All Size';
+                                                        } else if (str.includes('-')) {
+                                                            const parts = str.split('-');
+                                                            jenis = parts[0].trim();
+                                                            warna = parts[1].trim();
+                                                            ukuran = 'All Size';
+                                                        } else if (str.includes(',')) {
+                                                            const parts = str.split(',');
+                                                            warna = parts[0].trim();
+                                                            ukuran = parts[1].trim();
+                                                        } else {
+                                                            ukuran = str;
+                                                        }
+
+                                                        return { jenis, warna, ukuran };
+                                                    };
+
+                                                    const { jenis, warna, ukuran } = parseVariant(item.variant);
+                                                    return (
+                                                        <>
+                                                            {jenis && jenis !== '-' && (
+                                                                <span className="inline-flex items-center gap-1 text-[10px] font-medium bg-zinc-950 border border-zinc-800 text-zinc-400 px-2 py-0.5 rounded" title="Jenis/Model">
+                                                                    <span className="text-zinc-500">Jenis:</span>
+                                                                    <strong className="text-zinc-300">{jenis}</strong>
+                                                                </span>
+                                                            )}
+                                                            {warna && warna !== '-' && (
+                                                                <span className="inline-flex items-center gap-1 text-[10px] font-medium bg-zinc-950 border border-zinc-800 text-zinc-400 px-2 py-0.5 rounded" title="Warna">
+                                                                    <span className="text-zinc-500">Warna:</span>
+                                                                    <strong className="text-zinc-300">{warna}</strong>
+                                                                </span>
+                                                            )}
+                                                            {ukuran && ukuran !== '-' && (
+                                                                <span className="inline-flex items-center gap-1 text-[10px] font-medium bg-zinc-950 border border-zinc-800 text-zinc-400 px-2 py-0.5 rounded" title="Ukuran">
+                                                                    <span className="text-zinc-500">Ukuran:</span>
+                                                                    <strong className="text-zinc-300">{ukuran}</strong>
+                                                                </span>
+                                                            )}
+                                                        </>
+                                                    );
+                                                })()}
                                                 {item.category && item.category !== 'Uncategorized' && (
                                                     <span className="text-[9px] text-zinc-400 bg-zinc-800/60 px-1.5 py-0.5 rounded">
                                                         {item.category}
