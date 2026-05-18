@@ -456,6 +456,11 @@ export default function AdminProducts() {
             notify.error(t('admin_product.category_required'));
             return setErrors({ category: t('admin_product.category_required') });
         }
+        if (!Array.isArray(formData.sizes) || formData.sizes.length === 0) {
+            const sizeErr = t('admin_product.size_required', { defaultValue: 'Mohon pilih setidaknya satu ukuran baju.' });
+            notify.error(sizeErr);
+            return setErrors({ sizes: sizeErr });
+        }
         if (imageManager.length === 0) {
             notify.error(t('admin_product.min_image_required'));
             return setErrors({ images: t('admin_product.min_image_required') });
@@ -905,9 +910,9 @@ export default function AdminProducts() {
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-zinc-300">{t('admin_product.size_label')}</label>
+                        <label className="text-sm font-medium text-zinc-300">{t('admin_product.size_label')} <span className="text-rose-500">*</span></label>
                         <div className="flex flex-wrap gap-2 pt-1">
-                            {['S', 'M', 'L', 'XL', 'XXL'].map(size => {
+                            {['M', 'L', 'XL', 'XXL'].map(size => {
                                 const isSelected = Array.isArray(formData.sizes) && formData.sizes.includes(size);
                                 return (
                                     <button
@@ -924,6 +929,7 @@ export default function AdminProducts() {
                                 );
                             })}
                         </div>
+                        {errors.sizes && <p className="text-xs text-red-500">{errors.sizes}</p>}
                     </div>
 
                     <div className="space-y-3">

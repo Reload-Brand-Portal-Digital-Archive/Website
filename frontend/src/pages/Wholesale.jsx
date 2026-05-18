@@ -32,6 +32,7 @@ export default function Wholesale() {
   const [regencies, setRegencies] = useState([]);
   const [districts, setDistricts] = useState([]);
   const [villages, setVillages] = useState([]);
+  const [loadingRegions, setLoadingRegions] = useState({ province: false, regency: false, district: false, village: false });
 
   const [selectedRegion, setSelectedRegion] = useState({
       province: { id: '', name: '' },
@@ -83,9 +84,11 @@ export default function Wholesale() {
     fetchPastStores();
 
     // Fetch initial provinces
+    setLoadingRegions(prev => ({ ...prev, province: true }));
     axios.get('https://www.emsifa.com/api-wilayah-indonesia/api/provinces.json')
       .then(res => setProvinces(res.data))
-      .catch(err => console.error(err));
+      .catch(err => console.error(err))
+      .finally(() => setLoadingRegions(prev => ({ ...prev, province: false })));
   }, []);
 
   useEffect(() => {
@@ -93,9 +96,11 @@ export default function Wholesale() {
           setRegencies([]); setDistricts([]); setVillages([]);
           return;
       }
+      setLoadingRegions(prev => ({ ...prev, regency: true }));
       axios.get(`https://www.emsifa.com/api-wilayah-indonesia/api/regencies/${selectedRegion.province.id}.json`)
           .then(res => setRegencies(res.data))
-          .catch(err => console.error(err));
+          .catch(err => console.error(err))
+          .finally(() => setLoadingRegions(prev => ({ ...prev, regency: false })));
   }, [selectedRegion.province.id]);
 
   useEffect(() => {
@@ -103,9 +108,11 @@ export default function Wholesale() {
           setDistricts([]); setVillages([]);
           return;
       }
+      setLoadingRegions(prev => ({ ...prev, district: true }));
       axios.get(`https://www.emsifa.com/api-wilayah-indonesia/api/districts/${selectedRegion.regency.id}.json`)
           .then(res => setDistricts(res.data))
-          .catch(err => console.error(err));
+          .catch(err => console.error(err))
+          .finally(() => setLoadingRegions(prev => ({ ...prev, district: false })));
   }, [selectedRegion.regency.id]);
 
   useEffect(() => {
@@ -113,9 +120,11 @@ export default function Wholesale() {
           setVillages([]);
           return;
       }
+      setLoadingRegions(prev => ({ ...prev, village: true }));
       axios.get(`https://www.emsifa.com/api-wilayah-indonesia/api/villages/${selectedRegion.district.id}.json`)
           .then(res => setVillages(res.data))
-          .catch(err => console.error(err));
+          .catch(err => console.error(err))
+          .finally(() => setLoadingRegions(prev => ({ ...prev, village: false })));
   }, [selectedRegion.district.id]);
 
   const filteredProducts = useMemo(() => {
@@ -496,9 +505,9 @@ export default function Wholesale() {
                                 required 
                                 value={selectedRegion.province.id} 
                                 onChange={(e) => handleRegionChange('province', e.target.value, e.target.options[e.target.selectedIndex].text)}
-                                className="bg-zinc-950 border border-zinc-800 focus:border-zinc-600 outline-none h-9 px-2 text-xs text-zinc-200 cursor-pointer appearance-none rounded-none"
+                                className="bg-zinc-950 border border-zinc-800 focus:border-zinc-600 outline-none h-9 px-2 text-xs text-zinc-200 cursor-pointer appearance-none rounded-none disabled:opacity-50"
                             >
-                                <option value="">-- Provinsi --</option>
+                                <option value="">{loadingRegions.province ? 'Loading...' : '-- Provinsi --'}</option>
                                 {provinces.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                             </select>
 
@@ -506,10 +515,10 @@ export default function Wholesale() {
                                 required 
                                 value={selectedRegion.regency.id} 
                                 onChange={(e) => handleRegionChange('regency', e.target.value, e.target.options[e.target.selectedIndex].text)}
-                                disabled={!selectedRegion.province.id}
+                                disabled={!selectedRegion.province.id || loadingRegions.regency}
                                 className="bg-zinc-950 border border-zinc-800 focus:border-zinc-600 outline-none h-9 px-2 text-xs text-zinc-200 cursor-pointer appearance-none rounded-none disabled:opacity-50"
                             >
-                                <option value="">-- Kota/Kab --</option>
+                                <option value="">{loadingRegions.regency ? 'Loading...' : '-- Kota/Kab --'}</option>
                                 {regencies.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
                             </select>
 
@@ -517,10 +526,10 @@ export default function Wholesale() {
                                 required 
                                 value={selectedRegion.district.id} 
                                 onChange={(e) => handleRegionChange('district', e.target.value, e.target.options[e.target.selectedIndex].text)}
-                                disabled={!selectedRegion.regency.id}
+                                disabled={!selectedRegion.regency.id || loadingRegions.district}
                                 className="bg-zinc-950 border border-zinc-800 focus:border-zinc-600 outline-none h-9 px-2 text-xs text-zinc-200 cursor-pointer appearance-none rounded-none disabled:opacity-50"
                             >
-                                <option value="">-- Kecamatan --</option>
+                                <option value="">{loadingRegions.district ? 'Loading...' : '-- Kecamatan --'}</option>
                                 {districts.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                             </select>
 
@@ -528,10 +537,10 @@ export default function Wholesale() {
                                 required 
                                 value={selectedRegion.village.id} 
                                 onChange={(e) => handleRegionChange('village', e.target.value, e.target.options[e.target.selectedIndex].text)}
-                                disabled={!selectedRegion.district.id}
+                                disabled={!selectedRegion.district.id || loadingRegions.village}
                                 className="bg-zinc-950 border border-zinc-800 focus:border-zinc-600 outline-none h-9 px-2 text-xs text-zinc-200 cursor-pointer appearance-none rounded-none disabled:opacity-50"
                             >
-                                <option value="">-- Kelurahan --</option>
+                                <option value="">{loadingRegions.village ? 'Loading...' : '-- Kelurahan --'}</option>
                                 {villages.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
                             </select>
                         </div>

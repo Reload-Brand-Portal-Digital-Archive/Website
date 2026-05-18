@@ -41,7 +41,8 @@ function FileBubble({ metadata, isAdmin }) {
 }
 
 // ── Wholesale Invoice Card (confirmed / rejected) ─────────────────────────────
-function WholesaleInvoiceCard({ metadata, isConfirmed }) {
+function WholesaleInvoiceCard({ metadata: rawMeta, isConfirmed }) {
+    const metadata = typeof rawMeta === 'string' ? JSON.parse(rawMeta) : rawMeta || {};
     const hasItems = Array.isArray(metadata.invoice_items) && metadata.invoice_items.length > 0;
     return (
         <div className={`border w-full max-w-lg text-xs font-mono ${
@@ -51,7 +52,7 @@ function WholesaleInvoiceCard({ metadata, isConfirmed }) {
             <div className={`flex items-center gap-2 px-4 py-3 border-b ${isConfirmed ? 'border-emerald-500/20' : 'border-rose-500/20'}`}>
                 {isConfirmed ? <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> : <XCircle className="w-4 h-4 text-rose-400 shrink-0" />}
                 <span className={`uppercase tracking-widest font-bold text-[10px] ${isConfirmed ? 'text-emerald-400' : 'text-rose-400'}`}>
-                    Order #{metadata.order_id} — {isConfirmed ? 'Confirmed' : 'Rejected'}
+                    Order #{metadata.order_id || 'N/A'} — {isConfirmed ? 'Confirmed' : 'Rejected'}
                 </span>
                 <Receipt className="w-3 h-3 ml-auto opacity-40" />
             </div>
@@ -123,8 +124,9 @@ function WholesaleInvoiceCard({ metadata, isConfirmed }) {
 }
 
 // ── Wholesale Order Card ──────────────────────────────────────────────────────
-function WholesaleOrderCard({ metadata, messageType }) {
-    if (!metadata) return null;
+function WholesaleOrderCard({ metadata: rawMeta, messageType }) {
+    if (!rawMeta) return null;
+    const metadata = typeof rawMeta === 'string' ? JSON.parse(rawMeta) : rawMeta;
     const isConfirmed = messageType === 'wholesale_confirmed';
     const isRejected  = messageType === 'wholesale_rejected';
 
@@ -203,6 +205,10 @@ function ConfirmationPanel({ session, token, onDone, t }) {
     const [submitting, setSubmitting] = useState(null); // 'confirm'|'reject'|null
     const [loadingItems, setLoading]  = useState(false);
     const [fetchedOrderId, setFetchedOrderId] = useState(null);
+    const [allProducts, setAllProducts] = useState([]);
+    const [showAddProduct, setShowAddProduct] = useState(false);
+    const [newProduct, setNewProduct] = useState({ id: '', size: '' });
+    const [pendingDecision, setPendingDecision] = useState(null); // 'confirm' | 'reject' | null
 
     const orderId = session?.pending_order_id;
 
@@ -212,11 +218,15 @@ function ConfirmationPanel({ session, token, onDone, t }) {
         if (fetchedOrderId === orderId) return; // Don't refetch if already loaded for this order
 
         setLoading(true);
-        axios.get(`${API}/api/wholesale/${orderId}`, { headers: { Authorization: `Bearer ${token}` } })
-            .then(res => {
-                const items = (res.data.items || []).map(it => ({ ...it, unit_price: '' }));
+        Promise.all([
+            axios.get(`${API}/api/wholesale/${orderId}`, { headers: { Authorization: `Bearer ${token}` } }),
+            axios.get(`${API}/api/products`)
+        ])
+            .then(([orderRes, productsRes]) => {
+                const items = (orderRes.data.items || []).map(it => ({ ...it, unit_price: '' }));
                 setOrderItems(items);
                 setFetchedOrderId(orderId);
+                setAllProducts(Array.isArray(productsRes.data) ? productsRes.data : (productsRes.data?.products || []));
             })
             .catch(err => { console.error(err); notify.error('Failed to load order items.'); })
             .finally(() => setLoading(false));
@@ -264,16 +274,57 @@ function ConfirmationPanel({ session, token, onDone, t }) {
         if (!isNaN(n)) setOrderItems(prev => prev.map((it, i) => i === idx ? { ...it, quantity: Math.max(0, n) } : it));
     };
 
-    const handleDecision = async (decision) => {
+    const getAvailableSizes = (product) => {
+        let sizes = [];
+        try {
+            sizes = JSON.parse(product.sizes);
+            if (!Array.isArray(sizes)) sizes = product.sizes.split(',').map(s => s.trim());
+        } catch {
+            sizes = product.sizes ? product.sizes.split(',').map(s => s.trim()) : ['One Size'];
+        }
+        const usedSizes = orderItems.filter(item => item.product_id === product.product_id).map(item => item.size);
+        return sizes.filter(s => !usedSizes.includes(s));
+    };
+
+    const handleAddProduct = () => {
+        if (!newProduct.id || !newProduct.size) return;
+        const prod = allProducts.find(p => p.product_id === Number(newProduct.id));
+        if (!prod) return;
+
+        setOrderItems(prev => [
+            ...prev,
+            {
+                product_id: prod.product_id,
+                product_name_snapshot: prod.name,
+                product_image: prod.primary_image || (prod.images && prod.images[0]) || null,
+                size: newProduct.size,
+                quantity: 1,
+                unit_price: ''
+            }
+        ]);
+        setNewProduct({ id: '', size: '' });
+        setShowAddProduct(false);
+    };
+
+    const handleDecision = (decision) => {
         if (decision === 'confirm') {
-            const missing = orderItems.some(it => it.unit_price === '' || parseFloat(it.unit_price) < 0);
-            if (missing) { notify.warning('Please enter a valid price for every item.'); return; }
+            const missing = orderItems.some(it => {
+                const qty = it.quantity !== undefined && it.quantity !== null && it.quantity !== '' ? Number(it.quantity) : 1;
+                if (qty === 0) return false;
+                return it.unit_price === '' || parseFloat(it.unit_price) < 0;
+            });
+            if (missing) { notify.warning('Please enter a valid price for every item (unless quantity is 0).'); return; }
             if (shippingCost === '' || parseFloat(shippingCost) < 0) {
                 notify.warning('Please enter a valid shipping cost.'); return;
             }
         }
-        if (decision === 'reject' && !window.confirm(t('admin_chats.reject_confirm_msg'))) return;
+        setPendingDecision(decision);
+    };
 
+    const finalizeDecision = async () => {
+        if (!pendingDecision) return;
+        const decision = pendingDecision;
+        
         setSubmitting(decision);
         try {
             const invoiceItems = orderItems.map(it => {
@@ -302,6 +353,7 @@ function ConfirmationPanel({ session, token, onDone, t }) {
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             notify.success(decision === 'confirm' ? t('admin_chats.confirm_success') : t('admin_chats.reject_success'));
+            setPendingDecision(null);
             onDone();
         } catch (err) {
             console.error(err);
@@ -425,6 +477,62 @@ function ConfirmationPanel({ session, token, onDone, t }) {
                                     );
                                 })}
                             </div>
+                            
+                            {/* ADD PRODUCT BUTTON / FORM */}
+                            <div className="mt-3">
+                                {!showAddProduct ? (
+                                    <button 
+                                        onClick={() => setShowAddProduct(true)}
+                                        className="flex items-center gap-1.5 text-[9px] font-mono uppercase tracking-widest px-2 py-1.5 bg-zinc-800/40 border border-zinc-700 text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+                                    >
+                                        <Plus className="w-3 h-3" /> Add Product
+                                    </button>
+                                ) : (
+                                    <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 bg-zinc-900/60 border border-zinc-700 p-2">
+                                        <select 
+                                            className="flex-1 bg-zinc-950 border border-zinc-700 h-7 px-2 text-xs text-zinc-200 outline-none"
+                                            value={newProduct.id}
+                                            onChange={e => setNewProduct(prev => ({...prev, id: e.target.value, size: ''}))}
+                                        >
+                                            <option value="">-- Select Product --</option>
+                                            {allProducts
+                                                .filter(p => p.status === 'Available' && getAvailableSizes(p).length > 0)
+                                                .map(p => (
+                                                    <option key={p.product_id} value={p.product_id}>{p.name}</option>
+                                                ))
+                                            }
+                                        </select>
+                                        <select 
+                                            className="w-24 bg-zinc-950 border border-zinc-700 h-7 px-2 text-xs text-zinc-200 outline-none"
+                                            value={newProduct.size}
+                                            onChange={e => setNewProduct(prev => ({...prev, size: e.target.value}))}
+                                        >
+                                            <option value="">-- Size --</option>
+                                            {(() => {
+                                                if (!newProduct.id) return null;
+                                                const p = allProducts.find(x => x.product_id === Number(newProduct.id));
+                                                if (!p) return null;
+                                                return getAvailableSizes(p).map(s => <option key={s} value={s}>{s}</option>);
+                                            })()}
+                                        </select>
+                                        <div className="flex items-center gap-2">
+                                            <button 
+                                                onClick={handleAddProduct}
+                                                disabled={!newProduct.id || !newProduct.size}
+                                                className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-[9px] font-bold uppercase px-3 h-7 transition-colors"
+                                            >
+                                                Add
+                                            </button>
+                                            <button 
+                                                onClick={() => { setShowAddProduct(false); setNewProduct({ id: '', size: '' }); }}
+                                                className="bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white text-[9px] font-bold uppercase px-3 h-7 transition-colors"
+                                            >
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     )}
 
@@ -485,6 +593,54 @@ function ConfirmationPanel({ session, token, onDone, t }) {
                             <XCircle className="w-4 h-4" />
                             {submitting === 'reject' ? t('admin_chats.rejecting') : t('admin_chats.reject_btn')}
                         </button>
+                    </div>
+                </div>
+            )}
+            
+            {/* Confirmation Modal */}
+            {pendingDecision && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+                    <div className="bg-zinc-950 border border-zinc-800 p-6 max-w-sm w-full shadow-2xl animate-in fade-in zoom-in duration-200">
+                        <div className="flex items-center gap-3 mb-4">
+                            {pendingDecision === 'confirm' ? (
+                                <div className="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-500 flex items-center justify-center shrink-0">
+                                    <CheckCircle2 className="w-5 h-5" />
+                                </div>
+                            ) : (
+                                <div className="w-10 h-10 rounded-full bg-rose-500/20 text-rose-500 flex items-center justify-center shrink-0">
+                                    <AlertCircle className="w-5 h-5" />
+                                </div>
+                            )}
+                            <div>
+                                <h3 className="text-zinc-100 font-bold uppercase tracking-wider text-sm">
+                                    {pendingDecision === 'confirm' ? 'Finalize Invoice?' : 'Reject Order?'}
+                                </h3>
+                                <p className="text-zinc-500 text-xs mt-1">
+                                    {pendingDecision === 'confirm' 
+                                        ? 'Are you sure you want to approve this order? The invoice will be final.'
+                                        : 'Are you sure you want to reject this wholesale order? This cannot be undone.'
+                                    }
+                                </p>
+                            </div>
+                        </div>
+                        <div className="flex items-center justify-end gap-3 mt-6">
+                            <button 
+                                onClick={() => setPendingDecision(null)}
+                                disabled={!!submitting}
+                                className="px-4 py-2 text-xs font-mono font-semibold uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                onClick={finalizeDecision}
+                                disabled={!!submitting}
+                                className={`px-4 py-2 text-xs font-mono font-semibold uppercase tracking-widest text-white transition-colors ${
+                                    pendingDecision === 'confirm' ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-rose-600 hover:bg-rose-500'
+                                }`}
+                            >
+                                {submitting ? 'Processing...' : (pendingDecision === 'confirm' ? 'Yes, Confirm' : 'Yes, Reject')}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
