@@ -688,9 +688,6 @@ export default function AdminChats() {
             setFilteredSessions(chatSessions);
         } else {
             const q = searchQuery.toLowerCase();
-            setFilteredSessions(chatSessions.filter(s =>
-                s.name.toLowerCase().includes(q) || s.email.toLowerCase().includes(q)
-            ));
         }
     }, [searchQuery, chatSessions]);
 
@@ -880,7 +877,6 @@ export default function AdminChats() {
                                                 )}
                                             </div>
                                         </div>
-                                        <p className="text-xs text-zinc-500 truncate">{session.email}</p>
                                         <p className="text-[10px] text-zinc-600 mt-1">
                                             {new Date(session.last_activity).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                         </p>
@@ -904,7 +900,6 @@ export default function AdminChats() {
                                 </div>
                                 <div>
                                     <h3 className="font-bold text-sm text-zinc-100">{selectedUser.name}</h3>
-                                    <p className="text-xs text-zinc-500">{selectedUser.email}</p>
                                 </div>
                             </div>
                             {selectedUser.pending_order_id && (
